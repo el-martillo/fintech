@@ -1094,3 +1094,82 @@ body.light .spinner-sm { border-color: rgba(0,0,0,0.1); border-top-color: var(--
   overflow: hidden;
   line-height: 0;
 }
+
+/* ── Hero banner ── */
+.hero-banner {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 1.75rem;
+}
+.hero-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.hero-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(13,15,20,0.82) 0%, rgba(13,15,20,0.4) 60%, rgba(13,15,20,0.1) 100%);
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+}
+.hero-banner-text {
+  max-width: 420px;
+}
+.hero-badge {
+  display: inline-block;
+  background: rgba(108,99,255,0.25);
+  border: 1px solid rgba(108,99,255,0.4);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #a9a3ff;
+  margin-bottom: 0.5rem;
+}
+.hero-banner-text h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+}
+.hero-banner-text p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.5;
+}
+
+/* keep banner dark regardless of light mode */
+body.light .hero-banner-overlay {
+  background: linear-gradient(90deg, rgba(13,15,20,0.80) 0%, rgba(13,15,20,0.38) 60%, rgba(13,15,20,0.05) 100%);
+}
+
+@media (max-width: 600px) {
+  .hero-banner { height: 140px; }
+  .hero-banner-text h2 { font-size: 1.1rem; }
+  .hero-banner-overlay { padding: 0 1.25rem; }
+}
+
+/* ── Light mode banner swap ── */
+body.light .hero-banner-img {
+  content: url('images/light_banner.jpg');
+}
+body.light .hero-banner-overlay {
+  background: linear-gradient(90deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.35) 60%, rgba(255,255,255,0.0) 100%);
+}
+body.light .hero-banner-text h2 { color: #111318; }
+body.light .hero-banner-text p  { color: rgba(0,0,0,0.55); }
+body.light .hero-badge {
+  background: rgba(80,70,229,0.12);
+  border-color: rgba(80,70,229,0.3);
+}
