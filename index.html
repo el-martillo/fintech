@@ -58,92 +58,166 @@
 </head>
 
 <body>
-<div class="page">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="header-badge">
-      <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-        <circle cx="4" cy="4" r="4" fill="#6c63ff"/>
-      </svg>
-      AI-powered · eToro ready
-    </div>
-    <h1>Stock <span>Advisor</span></h1>
-    <p>AI analysis and trade recommendations, saved to your database.</p>
-  </div>
-
-  <!-- Search -->
-  <div class="search-box">
-    <div class="chips" id="chips">
-      <span class="chip" onclick="setTicker('AAPL')">AAPL</span>
-      <span class="chip" onclick="setTicker('TSLA')">TSLA</span>
-      <span class="chip" onclick="setTicker('NVDA')">NVDA</span>
-      <span class="chip" onclick="setTicker('AMZN')">AMZN</span>
-      <span class="chip" onclick="setTicker('META')">META</span>
-      <span class="chip" onclick="setTicker('MSFT')">MSFT</span>
-      <span class="chip" onclick="setTicker('BTC')">BTC</span>
-      <span class="chip" onclick="setTicker('ETH')">ETH</span>
-    </div>
-    <div class="input-row">
-      <input type="text" id="ticker-input" placeholder="Enter ticker e.g. AAPL, TSLA…" autocomplete="off" autocapitalize="characters" />
-      <button class="btn-analyze" id="analyze-btn" onclick="analyzeStock()">
-        <span id="btn-label">Analyze</span>
-      </button>
-    </div>
-    <div class="error-msg" id="error-msg"></div>
-  </div>
-
-  <!-- Loading -->
-  <div class="state-msg" id="loading-state">
-    <div class="spinner" style="margin: 0 auto 1rem;"></div>
-    Fetching analysis…
-  </div>
-
-  <!-- Result -->
-  <div id="result">
-    <div class="result-header">
-      <div>
-        <div class="result-ticker" id="res-ticker"></div>
-        <div class="result-company" id="res-company"></div>
+  <!-- Top navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-logo">
+        <svg class="etoro-spin" width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="17" cy="17" r="15.5" stroke="#2bbc76" stroke-width="2.5"/>
+          <text x="17" y="22" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="12" fill="#2bbc76">eT</text>
+        </svg>
       </div>
-      <div id="res-signal"></div>
+      <div class="navbar-title">
+        <h1>Stock <span>Advisor</span></h1>
+        <p>AI-powered · eToro ready</p>
+      </div>
+      <div class="navbar-actions">
+        <button class="navbar-account" title="Account">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </button>
+      </div>
     </div>
+  </nav>
 
-    <div class="metrics-grid" id="res-metrics"></div>
-
-    <div class="panel">
-      <div class="panel-title">Analysis breakdown</div>
-      <ul class="factors" id="res-factors"></ul>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">eToro trade recommendation</div>
-      <p class="trade-text" id="res-trade"></p>
-    </div>
-
-    <a class="btn-etoro" id="res-etoro-link" href="#" target="_blank" rel="noopener">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-      </svg>
-      Open on eToro
-    </a>
-
-    <div class="disclaimer">
-      ⚠️ For informational purposes only — not financial advice. CFDs and stock trading involve risk of loss. Always do your own research before trading.
-    </div>
+  <!-- Theme toggle -->
+  <div class="theme-bar">
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+      <span class="theme-icon" id="theme-icon">
+        <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </span>
+      <span id="theme-label">Light mode</span>
+    </button>
   </div>
 
-  <!-- History -->
-  <div class="history-section">
-    <div class="history-title">
-      Recent analyses
-      <span id="history-count"></span>
-    </div>
-    <div class="history-grid" id="history-grid">
-      <div class="history-empty">No analyses yet. Search a ticker above.</div>
-    </div>
-  </div>
+<div class="page">
+  <div class="layout">
 
+    <!-- ── Main column (2/3) ── -->
+    <div class="col-main">
+
+      <!-- Search -->
+      <div class="search-box">
+        <div class="chips" id="chips">
+          <span class="chip" onclick="setTicker('AAPL')">AAPL</span>
+          <span class="chip" onclick="setTicker('TSLA')">TSLA</span>
+          <span class="chip" onclick="setTicker('NVDA')">NVDA</span>
+          <span class="chip" onclick="setTicker('AMZN')">AMZN</span>
+          <span class="chip" onclick="setTicker('META')">META</span>
+          <span class="chip" onclick="setTicker('MSFT')">MSFT</span>
+          <span class="chip" onclick="setTicker('BTC')">BTC</span>
+          <span class="chip" onclick="setTicker('ETH')">ETH</span>
+        </div>
+        <div class="input-row">
+          <input type="text" id="ticker-input" placeholder="Enter ticker e.g. AAPL, TSLA…" autocomplete="off" autocapitalize="characters" />
+          <button class="btn-analyze" id="analyze-btn" onclick="analyzeStock()">
+            <span id="btn-label">Analyze</span>
+          </button>
+        </div>
+        <div class="error-msg" id="error-msg"></div>
+      </div>
+
+      <!-- Loading -->
+      <div class="state-msg" id="loading-state">
+        <div class="spinner" style="margin: 0 auto 1rem;"></div>
+        Fetching analysis…
+      </div>
+
+      <!-- Result -->
+      <div id="result">
+        <div class="result-header">
+          <div>
+            <div class="result-ticker" id="res-ticker"></div>
+            <div class="result-company" id="res-company"></div>
+          </div>
+          <div id="res-signal"></div>
+        </div>
+
+        <div class="metrics-grid" id="res-metrics"></div>
+
+        <div class="panel">
+          <div class="panel-title">Analysis breakdown</div>
+          <ul class="factors" id="res-factors"></ul>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">eToro trade recommendation</div>
+          <p class="trade-text" id="res-trade"></p>
+        </div>
+
+        <a class="btn-etoro" id="res-etoro-link" href="#" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          Open on eToro
+        </a>
+
+        <div class="disclaimer">
+          ⚠️ For informational purposes only — not financial advice. CFDs and stock trading involve risk of loss. Always do your own research before trading.
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="history-section">
+        <div class="history-title">
+          Recent analyses
+          <span id="history-count"></span>
+        </div>
+        <div class="history-grid" id="history-grid">
+          <div class="history-empty">No analyses yet. Search a ticker above.</div>
+        </div>
+      </div>
+
+    </div><!-- /col-main -->
+
+    <!-- ── Sidebar (1/3) ── -->
+    <aside class="col-sidebar">
+
+      <!-- Ticker lookup tool -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Ticker lookup
+        </div>
+        <p class="sidebar-hint">Don't know the ticker? Search by company name.</p>
+        <div class="lookup-row">
+          <input type="text" id="lookup-input" placeholder="e.g. SpaceX, Nvidia…" autocomplete="off" />
+          <button class="btn-lookup" id="lookup-btn" onclick="lookupTicker()">Find</button>
+        </div>
+        <div class="lookup-error" id="lookup-error"></div>
+        <div class="lookup-loading" id="lookup-loading" style="display:none">
+          <div class="spinner-sm"></div> Searching…
+        </div>
+        <div class="lookup-results" id="lookup-results"></div>
+      </div>
+
+      <!-- Market snapshot placeholder -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Quick picks
+        </div>
+        <p class="sidebar-hint">Jump straight into an analysis.</p>
+        <div class="quick-grid">
+          <button class="quick-btn" onclick="setTicker('AAPL')">AAPL</button>
+          <button class="quick-btn" onclick="setTicker('TSLA')">TSLA</button>
+          <button class="quick-btn" onclick="setTicker('NVDA')">NVDA</button>
+          <button class="quick-btn" onclick="setTicker('AMZN')">AMZN</button>
+          <button class="quick-btn" onclick="setTicker('META')">META</button>
+          <button class="quick-btn" onclick="setTicker('MSFT')">MSFT</button>
+          <button class="quick-btn" onclick="setTicker('BTC')">BTC</button>
+          <button class="quick-btn" onclick="setTicker('ETH')">ETH</button>
+          <button class="quick-btn" onclick="setTicker('GOOG')">GOOG</button>
+          <button class="quick-btn" onclick="setTicker('NFLX')">NFLX</button>
+        </div>
+      </div>
+
+    </aside><!-- /col-sidebar -->
+
+  </div><!-- /layout -->
 </div>
 
 <script>
@@ -151,7 +225,7 @@
      CONFIG — replace these with your own values
   ═══════════════════════════════════════════════════ */
   const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
   // Anthropic key is stored securely in the Supabase Edge Function — not here
   /* ═══════════════════════════════════════════════════ */
 
@@ -353,6 +427,65 @@
   /* ── Keyboard support ── */
   $('ticker-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') analyzeStock();
+  });
+
+  /* ── Theme toggle ── */
+  function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    document.getElementById('theme-label').textContent = isLight ? 'Dark mode' : 'Light mode';
+    document.getElementById('icon-moon').style.display = isLight ? 'none' : 'block';
+    document.getElementById('icon-sun').style.display  = isLight ? 'block' : 'none';
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  }
+  if (localStorage.getItem('theme') === 'light') toggleTheme();
+
+  /* ── Ticker lookup ── */
+  async function lookupTicker() {
+    const query = $('lookup-input').value.trim();
+    if (!query) return;
+    $('lookup-error').textContent = '';
+    $('lookup-results').innerHTML = '';
+    $('lookup-loading').style.display = 'flex';
+    $('lookup-btn').disabled = true;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ ticker: '__lookup__', lookupQuery: query })
+      });
+      const data = await res.json();
+      const results = data.lookupResults || [];
+      if (!results.length) {
+        $('lookup-results').innerHTML = '<div class="lookup-empty">No matches found.</div>';
+      } else {
+        $('lookup-results').innerHTML = results.map(r => `
+          <div class="lookup-item" onclick="useLookupResult('${r.ticker}')">
+            <span class="lookup-ticker">${r.ticker}</span>
+            <span class="lookup-name">${r.name}</span>
+            <span class="lookup-use">Use →</span>
+          </div>`).join('');
+      }
+    } catch (err) {
+      $('lookup-error').textContent = 'Lookup failed. Try again.';
+    } finally {
+      $('lookup-loading').style.display = 'none';
+      $('lookup-btn').disabled = false;
+    }
+  }
+
+  function useLookupResult(ticker) {
+    $('ticker-input').value = ticker;
+    $('lookup-results').innerHTML = '';
+    $('lookup-input').value = '';
+    analyzeStock();
+  }
+
+  $('lookup-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') lookupTicker();
   });
 
   /* ── Init ── */
