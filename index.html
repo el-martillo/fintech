@@ -94,6 +94,23 @@
   </div>
 
 <div class="page">
+
+  <!-- ── Recommendations ── -->
+  <section class="recs-section">
+    <div class="recs-header">
+      <span class="recs-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Recommendations
+      </span>
+      <span class="recs-sub">AI buy/sell signals on today's biggest movers</span>
+    </div>
+    <div class="recs-grid" id="recs-grid">
+      <div class="movers-loading" style="grid-column:1/-1">
+        <div class="spinner-sm"></div> Loading recommendations…
+      </div>
+    </div>
+  </section>
+
   <div class="layout">
 
     <!-- ── Main column (2/3) ── -->
@@ -120,6 +137,25 @@
         </div>
       </div>
 
+<<<<<<< HEAD
+=======
+      <!-- Top copy investors -->
+      <div class="movers-section">
+        <div class="movers-header">
+          <span class="movers-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Top copy investors
+          </span>
+          <a class="movers-link" href="https://www.etoro.com/discover/copy-trading" target="_blank" rel="noopener">View on eToro →</a>
+        </div>
+        <div class="investors-grid" id="investors-grid">
+          <div class="movers-loading">
+            <div class="spinner-sm"></div> Loading investors…
+          </div>
+        </div>
+      </div>
+
+>>>>>>> a84e6e2 (Update)
       <!-- Search -->
       <div class="search-box">
         <div class="chips" id="chips">
@@ -239,6 +275,23 @@
     </aside><!-- /col-sidebar -->
 
   </div><!-- /layout -->
+
+  <!-- ── Financial news ── -->
+  <section class="news-section">
+    <div class="recs-header">
+      <span class="recs-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+        Financial news
+      </span>
+      <span class="recs-sub">Latest headlines from global markets</span>
+    </div>
+    <div class="news-grid" id="news-grid">
+      <div class="movers-loading" style="grid-column:1/-1">
+        <div class="spinner-sm"></div> Loading news…
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <script>
@@ -544,9 +597,103 @@
     }
   }
 
+<<<<<<< HEAD
   /* ── Init ── */
   loadHistory();
   loadMovers();
+=======
+  /* ── Top copy investors ── */
+  async function loadInvestors() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ ticker: '__investors__' })
+      });
+      const data = await res.json();
+      const investors = data.investors || [];
+      if (!investors.length) {
+        $('investors-grid').innerHTML = '<div class="movers-empty">Could not load investors.</div>';
+        return;
+      }
+      $('investors-grid').innerHTML = investors.map(inv => {
+        const pos = inv.gain.startsWith('+');
+        return `
+          <div class="investor-card">
+            <div class="investor-avatar">${inv.initials}</div>
+            <div class="investor-info">
+              <div class="investor-name">${inv.name}</div>
+              <div class="investor-meta">${inv.copiers.toLocaleString()} copiers · ${inv.risk} risk</div>
+            </div>
+            <div class="investor-gain ${pos ? 'pos' : 'neg'}">${inv.gain}</div>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      $('investors-grid').innerHTML = '<div class="movers-empty">Could not load investors.</div>';
+    }
+  }
+
+  /* ── Recommendations ── */
+  async function loadRecommendations() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__recommendations__' })
+      });
+      const data = await res.json();
+      const recs = data.recommendations || [];
+      if (!recs.length) { $('recs-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load recommendations.</div>'; return; }
+      $('recs-grid').innerHTML = recs.map(r => {
+        const sigClass = r.signal === 'BUY' ? 'signal-BUY' : r.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
+        const pos = r.change.startsWith('+');
+        return `
+          <div class="rec-card" onclick="setTicker('${r.ticker}')">
+            <div class="rec-top">
+              <div>
+                <div class="rec-ticker">${r.ticker}</div>
+                <div class="rec-name">${r.name}</div>
+              </div>
+              <span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${r.signal}</span>
+            </div>
+            <div class="rec-price">$${r.price} <span class="${pos ? 'pos' : 'neg'}">${r.change}</span></div>
+            <div class="rec-reason">${r.reason}</div>
+          </div>`;
+      }).join('');
+    } catch(e) { $('recs-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load recommendations.</div>'; }
+  }
+
+  /* ── Financial news ── */
+  async function loadNews() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__news__' })
+      });
+      const data = await res.json();
+      const articles = data.news || [];
+      if (!articles.length) { $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>'; return; }
+      $('news-grid').innerHTML = articles.map(a => `
+        <div class="news-card">
+          <div class="news-source">${a.source} · ${a.time}</div>
+          <div class="news-headline">${a.headline}</div>
+          <div class="news-summary">${a.summary}</div>
+          <div class="news-tickers">${(a.tickers||[]).map(t => `<span class="news-ticker-tag" onclick="event.stopPropagation();setTicker('${t}')">${t}</span>`).join('')}</div>
+        </div>`).join('');
+    } catch(e) { $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>'; }
+  }
+
+  /* ── Init ── */
+  loadHistory();
+  loadMovers();
+  loadInvestors();
+  loadRecommendations();
+  loadNews();
+>>>>>>> a84e6e2 (Update)
 </script>
 </body>
 </html>
