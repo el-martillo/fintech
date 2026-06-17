@@ -99,6 +99,27 @@
     <!-- ── Main column (2/3) ── -->
     <div class="col-main">
 
+      <div class="col-main-title">
+        <h2>Market Analysis</h2>
+        <p>Enter a ticker to get an AI-powered trade recommendation.</p>
+      </div>
+
+      <!-- Daily movers -->
+      <div class="movers-section">
+        <div class="movers-header">
+          <span class="movers-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            Daily movers
+          </span>
+          <span class="movers-updated" id="movers-updated"></span>
+        </div>
+        <div class="movers-grid" id="movers-grid">
+          <div class="movers-loading">
+            <div class="spinner-sm"></div> Loading movers…
+          </div>
+        </div>
+      </div>
+
       <!-- Search -->
       <div class="search-box">
         <div class="chips" id="chips">
@@ -488,8 +509,44 @@
     if (e.key === 'Enter') lookupTicker();
   });
 
+  /* ── Daily movers ── */
+  async function loadMovers() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ ticker: '__movers__' })
+      });
+      const data = await res.json();
+      const movers = data.movers || [];
+      if (!movers.length) {
+        $('movers-grid').innerHTML = '<div class="movers-empty">Could not load movers.</div>';
+        return;
+      }
+      $('movers-updated').textContent = 'Updated just now';
+      $('movers-grid').innerHTML = movers.map(m => {
+        const pos = m.change.startsWith('+');
+        return `
+          <div class="mover-card" onclick="setTicker('${m.ticker}')">
+            <div class="mover-top">
+              <span class="mover-ticker">${m.ticker}</span>
+              <span class="mover-change ${pos ? 'pos' : 'neg'}">${m.change}</span>
+            </div>
+            <div class="mover-name">${m.name}</div>
+            <div class="mover-price">$${m.price}</div>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      $('movers-grid').innerHTML = '<div class="movers-empty">Could not load movers.</div>';
+    }
+  }
+
   /* ── Init ── */
   loadHistory();
+  loadMovers();
 </script>
 </body>
 </html>
