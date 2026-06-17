@@ -753,8 +753,6 @@ body.light .spinner-sm { border-color: rgba(0,0,0,0.1); border-top-color: var(--
 @media (max-width: 480px) {
   .movers-grid { grid-template-columns: repeat(2, 1fr); }
 }
-<<<<<<< HEAD
-=======
 
 /* ── Top copy investors ── */
 .investors-grid {
@@ -964,4 +962,50 @@ body.light .spinner-sm { border-color: rgba(0,0,0,0.1); border-top-color: var(--
 @media (max-width: 480px) {
   .recs-grid  { grid-template-columns: 1fr; }
 }
->>>>>>> a84e6e2 (Update)
+
+/* ── Sidebar daily movers list ── */
+.sidebar-movers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-mover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.sidebar-mover-row:last-child { border-bottom: none; }
+.sidebar-mover-row:hover { opacity: 0.75; }
+.sidebar-mover-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sidebar-mover-left .mover-ticker { font-size: 13px; }
+.sidebar-mover-left .mover-name {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+.sidebar-mover-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.sidebar-mover-right .mover-change { font-size: 13px; }
+.sidebar-mover-right .mover-price {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
