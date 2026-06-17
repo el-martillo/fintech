@@ -116,11 +116,6 @@
     <!-- ── Main column (2/3) ── -->
     <div class="col-main">
 
-      <div class="col-main-title">
-        <h2>Market Analysis</h2>
-        <p>Enter a ticker to get an AI-powered trade recommendation.</p>
-      </div>
-
       <!-- Top copy investors -->
       <div class="movers-section">
         <div class="movers-header">
@@ -139,6 +134,11 @@
 
       <!-- Search -->
       <div class="search-box">
+        <div class="search-box-title">
+          <h2>Market Analysis</h2>
+          <p>Enter a ticker to get an AI-powered trade recommendation.</p>
+        </div>
+        <div class="quick-picks-label">Quick picks</div>
         <div class="chips" id="chips">
           <span class="chip" onclick="setTicker('AAPL')">AAPL</span>
           <span class="chip" onclick="setTicker('TSLA')">TSLA</span>
@@ -254,26 +254,7 @@
         <div class="lookup-results" id="lookup-results"></div>
       </div>
 
-      <!-- Market snapshot placeholder -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Quick picks
-        </div>
-        <p class="sidebar-hint">Jump straight into an analysis.</p>
-        <div class="quick-grid">
-          <button class="quick-btn" onclick="setTicker('AAPL')">AAPL</button>
-          <button class="quick-btn" onclick="setTicker('TSLA')">TSLA</button>
-          <button class="quick-btn" onclick="setTicker('NVDA')">NVDA</button>
-          <button class="quick-btn" onclick="setTicker('AMZN')">AMZN</button>
-          <button class="quick-btn" onclick="setTicker('META')">META</button>
-          <button class="quick-btn" onclick="setTicker('MSFT')">MSFT</button>
-          <button class="quick-btn" onclick="setTicker('BTC')">BTC</button>
-          <button class="quick-btn" onclick="setTicker('ETH')">ETH</button>
-          <button class="quick-btn" onclick="setTicker('GOOG')">GOOG</button>
-          <button class="quick-btn" onclick="setTicker('NFLX')">NFLX</button>
-        </div>
-      </div>
+
 
     </aside><!-- /col-sidebar -->
 
@@ -655,6 +636,31 @@
     }
   }
 
+  /* ── Sparkline builder ── */
+  function buildSparkline(data, isPos) {
+    if (!data || data.length < 2) return '';
+    const w = 120, h = 36, pad = 2;
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const pts = data.map((v, i) => {
+      const x = pad + (i / (data.length - 1)) * (w - pad * 2);
+      const y = h - pad - ((v - min) / range) * (h - pad * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    const color = isPos ? 'var(--green)' : 'var(--red)';
+    const fillColor = isPos ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+    // Close path for fill
+    const firstX = pad;
+    const lastX = (w - pad).toFixed(1);
+    const baseY = h - pad;
+    const fillPts = `${firstX},${baseY} ${pts} ${lastX},${baseY}`;
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block;width:100%;">
+      <polygon points="${fillPts}" fill="${fillColor}" stroke="none"/>
+      <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>`;
+  }
+
   /* ── Recommendations ── */
   async function loadRecommendations() {
     try {
@@ -669,6 +675,8 @@
       $('recs-grid').innerHTML = recs.map(r => {
         const sigClass = r.signal === 'BUY' ? 'signal-BUY' : r.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
         const pos = r.change.startsWith('+');
+        const sparkColor = pos ? 'var(--green)' : 'var(--red)';
+        const sparkline = buildSparkline(r.weekData || [], pos);
         return `
           <div class="rec-card" onclick="setTicker('${r.ticker}')">
             <div class="rec-top">
@@ -679,6 +687,7 @@
               <span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${r.signal}</span>
             </div>
             <div class="rec-price">$${r.price} <span class="${pos ? 'pos' : 'neg'}">${r.change}</span></div>
+            <div class="rec-sparkline">${sparkline}</div>
             <div class="rec-reason">${r.reason}</div>
           </div>`;
       }).join('');

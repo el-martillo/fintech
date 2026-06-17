@@ -1057,3 +1057,40 @@ body.light .spinner-sm { border-color: rgba(0,0,0,0.1); border-top-color: var(--
   flex-shrink: 0;
 }
 .btn-input-clear:hover { background: var(--text-muted); }
+
+/* ── Search box title ── */
+.search-box-title {
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+.search-box-title h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+.search-box-title p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* ── Quick picks label ── */
+.quick-picks-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+/* ── Rec sparkline ── */
+.rec-sparkline {
+  margin: 4px 0;
+  border-radius: 4px;
+  overflow: hidden;
+  line-height: 0;
+}
