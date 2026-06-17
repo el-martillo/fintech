@@ -703,7 +703,12 @@
             <div class="rec-reason">${r.reason}</div>
           </div>`;
       }).join('');
-    } catch(e) { $('recs-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load recommendations.</div>'; }
+    } catch(e) {
+      $('recs-grid').innerHTML = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
+        Could not load recommendations.
+        <button onclick="loadRecommendations()" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;">Retry</button>
+      </div>`;
+    }
   }
 
   /* ── Financial news ── */
@@ -731,11 +736,11 @@
   async function initSections() {
     loadHistory();
     loadMovers();
-    await delay(800);
+    await delay(1000);
     loadInvestors();
-    await delay(800);
+    await delay(1200);
     loadRecommendations();
-    await delay(800);
+    await delay(1500);
     loadNews();
   }
 
