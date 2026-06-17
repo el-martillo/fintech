@@ -727,15 +727,24 @@
     } catch(e) { $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>'; }
   }
 
-  /* ── Init ── */
-  loadHistory();
-  loadMovers();
-  loadInvestors();
-  loadRecommendations();
-  loadNews();
+  /* ── Staggered init to avoid rate limits ── */
+  async function initSections() {
+    loadHistory();
+    loadMovers();
+    await delay(800);
+    loadInvestors();
+    await delay(800);
+    loadRecommendations();
+    await delay(800);
+    loadNews();
+  }
 
-  // Refresh movers every 60 seconds
-  setInterval(loadMovers, 60000);
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  initSections();
+
+  // Refresh movers every 90 seconds
+  setInterval(loadMovers, 90000);
 </script>
 </body>
 </html>
