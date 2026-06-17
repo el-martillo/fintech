@@ -1009,3 +1009,51 @@ body.light .spinner-sm { border-color: rgba(0,0,0,0.1); border-top-color: var(--
   color: var(--text-dim);
   font-family: var(--mono);
 }
+
+/* ── Clear / close buttons ── */
+.btn-clear-result {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.btn-clear-result:hover {
+  background: var(--red-bg);
+  border-color: rgba(239,68,68,0.3);
+  color: var(--red);
+}
+.lookup-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.lookup-input-wrap input {
+  width: 100%;
+  padding-right: 28px;
+}
+.btn-input-clear {
+  position: absolute;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--text-dim);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.btn-input-clear:hover { background: var(--text-muted); }

@@ -171,7 +171,12 @@
             <div class="result-ticker" id="res-ticker"></div>
             <div class="result-company" id="res-company"></div>
           </div>
-          <div id="res-signal"></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="res-signal"></div>
+            <button class="btn-clear-result" onclick="clearResult()" title="Clear result">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
         </div>
 
         <div class="metrics-grid" id="res-metrics"></div>
@@ -234,7 +239,12 @@
         </div>
         <p class="sidebar-hint">Don't know the ticker? Search by company name.</p>
         <div class="lookup-row">
-          <input type="text" id="lookup-input" placeholder="e.g. SpaceX, Nvidia…" autocomplete="off" />
+          <div class="lookup-input-wrap">
+            <input type="text" id="lookup-input" placeholder="e.g. SpaceX, Nvidia…" autocomplete="off" oninput="toggleLookupClear()" />
+            <button class="btn-input-clear" id="lookup-clear-btn" onclick="clearLookup()" title="Clear" style="display:none">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
           <button class="btn-lookup" id="lookup-btn" onclick="lookupTicker()">Find</button>
         </div>
         <div class="lookup-error" id="lookup-error"></div>
@@ -548,7 +558,26 @@
     $('ticker-input').value = ticker;
     $('lookup-results').innerHTML = '';
     $('lookup-input').value = '';
+    $('lookup-clear-btn').style.display = 'none';
     analyzeStock();
+  }
+
+  function clearLookup() {
+    $('lookup-input').value = '';
+    $('lookup-results').innerHTML = '';
+    $('lookup-error').textContent = '';
+    $('lookup-clear-btn').style.display = 'none';
+    $('lookup-input').focus();
+  }
+
+  function toggleLookupClear() {
+    $('lookup-clear-btn').style.display = $('lookup-input').value.length ? 'flex' : 'none';
+  }
+
+  function clearResult() {
+    hide('result');
+    $('ticker-input').value = '';
+    clearError();
   }
 
   $('lookup-input').addEventListener('keydown', e => {
