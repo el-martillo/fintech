@@ -231,6 +231,7 @@
         <div class="sidebar-section-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 17"/><polyline points="16 7 22 7 22 13"/></svg>
           Daily movers
+          <span class="movers-live-badge"><span class="live-dot"></span>Live</span>
           <span class="movers-updated" id="movers-updated" style="font-weight:400;text-transform:none;letter-spacing:0;margin-left:auto;"></span>
         </div>
         <div class="sidebar-movers-list" id="movers-grid">
@@ -589,7 +590,8 @@
         $('movers-grid').innerHTML = '<div class="movers-empty">Could not load movers.</div>';
         return;
       }
-      $('movers-updated').textContent = 'just now';
+      const now = new Date();
+      $('movers-updated').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
       $('movers-grid').innerHTML = movers.map(m => {
         const pos = m.change.startsWith('+');
         return `
@@ -600,7 +602,7 @@
             </div>
             <div class="sidebar-mover-right">
               <span class="mover-change ${pos ? 'pos' : 'neg'}">${m.change}</span>
-              <span class="mover-price">$${m.price}</span>
+              <span class="mover-price" title="Stock price">$${m.price}</span>
             </div>
           </div>`;
       }).join('');
@@ -621,7 +623,10 @@
         body: JSON.stringify({ ticker: '__investors__' })
       });
       const data = await res.json();
-      const investors = data.investors || [];
+      const investors = (data.investors || []).sort((a, b) => {
+        const parse = g => parseFloat((g || '0').replace('%', '').replace('+', ''));
+        return parse(b.gain) - parse(a.gain);
+      });
       if (!investors.length) {
         $('investors-grid').innerHTML = '<div class="movers-empty">Could not load investors.</div>';
         return;
@@ -728,6 +733,9 @@
   loadInvestors();
   loadRecommendations();
   loadNews();
+
+  // Refresh movers every 60 seconds
+  setInterval(loadMovers, 60000);
 </script>
 </body>
 </html>
