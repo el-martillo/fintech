@@ -869,16 +869,20 @@
       renderGrid('recs-grid-stocks', stocks);
       renderGrid('recs-grid-crypto', crypto);
 
-      // Enrich with AI signals in parallel across both lists
-      const enrichGrid = (gridId, items) =>
-        Promise.all(items.map(async (r, i) => {
-          const ai  = await fetchAISignal(r.ticker, r.price, r.change, r.name, r.direction, r.weekTrend, r.weekPct);
+      // Enrich with AI signals sequentially to avoid overwhelming the Edge Function
+      const enrichGrid = async (gridId, items) => {
+        for (let i = 0; i < items.length; i++) {
+          const r  = items[i];
+          const ai = await fetchAISignal(r.ticker, r.price, r.change, r.name, r.direction, r.weekTrend, r.weekPct);
           const tmp = document.createElement('div');
           tmp.innerHTML = renderRecCard(r, ai);
           $(gridId).children[i]?.replaceWith(tmp.firstElementChild);
-        }));
+        }
+      };
 
-      await Promise.all([enrichGrid('recs-grid-stocks', stocks), enrichGrid('recs-grid-crypto', crypto)]);
+      // Run stocks then crypto sequentially
+      await enrichGrid('recs-grid-stocks', stocks);
+      await enrichGrid('recs-grid-crypto', crypto);
 
     } catch(e) {
       const errHtml = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
