@@ -670,10 +670,14 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
     try {
       const quotes = await Promise.all(MOVERS_TICKERS.map(async t => {
         try {
-          const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?range=1d&interval=1d&includePrePost=false`;
-          const res = await fetch(url);
-          if (!res.ok) return null;
-          const json = await res.json();
+          let json = null;
+          for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
+            try {
+              const res = await fetch(`https://${host}/v8/finance/chart/${encodeURIComponent(t)}?range=1d&interval=1d&includePrePost=false`);
+              if (res.ok) { json = await res.json(); break; }
+            } catch {}
+          }
+          if (!json) return null;
           const meta = json?.chart?.result?.[0]?.meta;
           if (!meta) return null;
           const price = meta.regularMarketPrice;
@@ -783,25 +787,34 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
   const REC_TICKERS = ['AAPL','NVDA','TSLA','MSFT','AMZN','META','GOOGL','BTC-USD'];
 
   async function fetchYahooQuote(ticker) {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=5d&interval=1d&includePrePost=false`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Yahoo ${res.status}`);
-    const json = await res.json();
-    const result = json?.chart?.result?.[0];
-    if (!result) throw new Error('no result');
-    const meta   = result.meta;
-    const closes = result.indicators?.quote?.[0]?.close?.filter(p => p != null) || [];
-    const price  = meta.regularMarketPrice ?? closes[closes.length - 1];
-    const prev   = meta.chartPreviousClose ?? closes[closes.length - 2] ?? price;
-    const change = prev ? (((price - prev) / prev) * 100) : 0;
-    const sign   = change >= 0 ? '+' : '';
-    return {
-      ticker,
-      name:     meta.longName || meta.shortName || ticker,
-      price:    price.toFixed(2),
-      change:   `${sign}${change.toFixed(2)}%`,
-      weekData: closes.map(p => parseFloat(p.toFixed(2))),
-    };
+    // Try query1 first, fall back to query2 if it fails
+    const hosts = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
+    let lastErr;
+    for (const host of hosts) {
+      try {
+        const url = `https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=5d&interval=1d&includePrePost=false`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Yahoo ${res.status}`);
+        const json = await res.json();
+        const result = json?.chart?.result?.[0];
+        if (!result) throw new Error('no result');
+        const meta   = result.meta;
+        const closes = (result.indicators?.quote?.[0]?.close || []).filter(p => p != null);
+        const price  = meta.regularMarketPrice ?? closes[closes.length - 1];
+        const prev   = meta.chartPreviousClose ?? closes[closes.length - 2] ?? price;
+        if (!price) throw new Error('no price');
+        const change = prev ? (((price - prev) / prev) * 100) : 0;
+        const sign   = change >= 0 ? '+' : '';
+        return {
+          ticker,
+          name:     meta.longName || meta.shortName || ticker,
+          price:    price.toFixed(2),
+          change:   `${sign}${change.toFixed(2)}%`,
+          weekData: closes.map(p => parseFloat(p.toFixed(2))),
+        };
+      } catch(e) { lastErr = e; }
+    }
+    throw lastErr;
   }
 
   async function fetchAISignal(ticker, price, change, name) {
@@ -864,10 +877,13 @@ Reply ONLY with a JSON object, no markdown:
   async function loadRecommendations() {
     $('recs-grid').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Loading recommendations…</div>';
     try {
-      // Fetch all quotes in parallel
-      const quotes = await Promise.all(REC_TICKERS.map(t => fetchYahooQuote(t).catch(() => null)));
-      const valid  = quotes.filter(Boolean);
-      if (!valid.length) throw new Error('No quotes');
+      // Fetch all quotes in parallel — each wrapped so one failure doesn't kill all
+      const quotes = await Promise.all(REC_TICKERS.map(t => fetchYahooQuote(t).catch(e => {
+        console.warn(`Quote failed for ${t}:`, e.message);
+        return null;
+      })));
+      const valid = quotes.filter(Boolean);
+      if (!valid.length) throw new Error('No quotes returned from Yahoo Finance');
 
       // Render cards with placeholder signals first so the grid appears immediately
       $('recs-grid').innerHTML = valid.map(r => renderRecCard(r, { signal: 'HOLD', reason: 'Loading signal…' })).join('');
@@ -971,11 +987,15 @@ Reply ONLY with a JSON object, no markdown:
 
     try {
       const { range, interval } = CHART_PARAMS[period] || CHART_PARAMS['1D'];
-      // Use Yahoo Finance v8 chart API — no key required
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}&includePrePost=false`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Yahoo Finance ${res.status}`);
-      const json = await res.json();
+      // Try query1 then query2 as fallback
+      let json = null;
+      for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
+        try {
+          const res = await fetch(`https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}&includePrePost=false`);
+          if (res.ok) { json = await res.json(); break; }
+        } catch {}
+      }
+      if (!json) throw new Error('Yahoo Finance unavailable');
 
       const result = json?.chart?.result?.[0];
       if (!result) throw new Error('No chart data');
