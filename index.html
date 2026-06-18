@@ -754,7 +754,7 @@
       const articles = data.news || [];
       if (!articles.length) { $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>'; return; }
       $('news-grid').innerHTML = articles.map(a => `
-        <div class="news-card">
+        <div class="news-card" onclick="if('${a.url||''}' !== '#') window.open('${a.url||'#'}','_blank')" style="${a.url ? 'cursor:pointer' : ''}">
           <div class="news-source">${a.source} · ${a.time}</div>
           <div class="news-headline">${a.headline}</div>
           <div class="news-summary">${a.summary}</div>
