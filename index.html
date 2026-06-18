@@ -761,32 +761,24 @@
   }
 
   async function fetchYahooQuote(ticker) {
-    // Fetch 1d first (same params movers uses — known to work)
-    const result = await yahooFetch(ticker, '1d', '1d');
+    // Use 5d/1d so we get multiple daily closes — always derive price from closes array
+    const result = await yahooFetch(ticker, '5d', '1d');
     if (!result) throw new Error(`No data for ${ticker}`);
 
-    const meta  = result.meta;
-    const price = meta.regularMarketPrice;
-    const prev  = meta.chartPreviousClose ?? meta.previousClose ?? price;
-    if (!price) throw new Error('no price');
-    const change = prev ? (((price - prev) / prev) * 100) : 0;
-    const sign   = change >= 0 ? '+' : '';
+    const closes = (result.indicators?.quote?.[0]?.close || []).filter(p => p != null);
+    if (closes.length < 2) throw new Error('insufficient closes');
 
-    // Fetch 5d closes for sparkline separately — best-effort, don't fail if missing
-    let weekData = [];
-    try {
-      const r5 = await yahooFetch(ticker, '5d', '1d');
-      weekData = (r5?.indicators?.quote?.[0]?.close || [])
-        .filter(p => p != null)
-        .map(p => parseFloat(p.toFixed(2)));
-    } catch {}
+    const price = closes[closes.length - 1];
+    const prev  = closes[closes.length - 2];
+    const change = ((price - prev) / prev) * 100;
+    const sign   = change >= 0 ? '+' : '';
 
     return {
       ticker,
-      name:     meta.longName || meta.shortName || ticker,
+      name:     result.meta?.longName || result.meta?.shortName || ticker,
       price:    price.toFixed(2),
       change:   `${sign}${change.toFixed(2)}%`,
-      weekData,
+      weekData: closes.map(p => parseFloat(p.toFixed(2))),
     };
   }
 
