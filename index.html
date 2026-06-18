@@ -262,10 +262,7 @@
   ═══════════════════════════════════════════════════ */
   const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
-  // ANTHROPIC_API_KEY is loaded from config.js — if missing, show a clear error
-  if (typeof ANTHROPIC_API_KEY === 'undefined') {
-    console.error('config.js not loaded — ANTHROPIC_API_KEY missing');
-  }
+  // Anthropic calls are proxied via Supabase Edge Function — no client-side key needed
   /* ═══════════════════════════════════════════════════ */
 
   const { createClient } = supabase;
@@ -334,58 +331,21 @@
     }
   }
 
-  /* ── Call Anthropic directly ── */
+  /* ── Call Anthropic via Supabase Edge Function proxy (avoids CORS) ── */
   async function fetchAnalysis(ticker) {
-    if (typeof ANTHROPIC_API_KEY === 'undefined' || !ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === 'YOUR_ANTHROPIC_API_KEY') {
-      throw new Error('Anthropic API key not configured. Add your key to config.js in the repo folder.');
-    }
-    const prompt = `You are a financial analyst assistant. Analyze the stock or crypto ticker "${ticker}" for a retail trader on eToro.
-
-Return ONLY a valid JSON object — no markdown fences, no preamble, no explanation. Exact structure:
-{
-  "ticker": "${ticker}",
-  "companyName": "Full name of the company or asset",
-  "price": "Approximate current price in USD as a string e.g. '182.50'",
-  "priceChange1d": "1-day % change as string e.g. '+1.2%' or '-0.8%'",
-  "weekChange": "1-week % change as string",
-  "peRatio": "P/E ratio as string, or 'N/A' for crypto",
-  "marketCap": "Market cap e.g. '2.8T' or '450B'",
-  "sector": "Sector or asset class",
-  "signal": "BUY or SELL or HOLD",
-  "confidence": "High or Medium or Low",
-  "pros": ["concise positive factor", "concise positive factor", "concise positive factor"],
-  "cons": ["concise risk factor", "concise risk factor"],
-  "neutral": ["one neutral context point"],
-  "tradeSummary": "2-3 sentence eToro-specific recommendation with suggested timeframe and position sizing approach.",
-  "etoroUrl": "https://www.etoro.com/markets/${ticker.toLowerCase()}"
-}
-
-Be specific and data-informed. Keep each bullet under 15 words.`;
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-allow-browser': 'true'
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ ticker })
     });
-
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `API error ${res.status}`);
+      throw new Error(err.error || `API error ${res.status}`);
     }
-
-    const data = await res.json();
-    const text = data.content.map(b => b.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    return JSON.parse(clean);
+    return await res.json();
   }
 
   /* ── localStorage history (max 5) ── */
@@ -599,7 +559,7 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
   }
   if (localStorage.getItem('theme') === 'light') toggleTheme();
 
-  /* ── Ticker lookup — Yahoo Finance search ── */
+  /* ── Ticker lookup — via Edge Function proxy ── */
   async function lookupTicker() {
     const query = $('lookup-input').value.trim();
     if (!query) return;
@@ -609,18 +569,21 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
     $('lookup-btn').disabled = true;
 
     try {
-      const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=6&newsCount=0&enableFuzzyQuery=false&quotesQueryId=tss_match_phrase_query`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Yahoo ${res.status}`);
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__lookup__', lookupQuery: query })
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
-      const quotes = (data.quotes || []).filter(q => q.symbol && q.shortname || q.longname);
-      if (!quotes.length) {
+      const results = data.lookupResults || [];
+      if (!results.length) {
         $('lookup-results').innerHTML = '<div class="lookup-empty">No matches found.</div>';
       } else {
-        $('lookup-results').innerHTML = quotes.map(q => `
-          <div class="lookup-item" onclick="useLookupResult('${q.symbol}')">
-            <span class="lookup-ticker">${q.symbol}</span>
-            <span class="lookup-name">${q.shortname || q.longname || ''}</span>
+        $('lookup-results').innerHTML = results.map(r => `
+          <div class="lookup-item" onclick="useLookupResult('${r.ticker}')">
+            <span class="lookup-ticker">${r.ticker}</span>
+            <span class="lookup-name">${r.name}</span>
             <span class="lookup-use">Use →</span>
           </div>`).join('');
       }
@@ -749,18 +712,18 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
   /* ── Recommendations — real Yahoo Finance data + AI signal ── */
   const REC_TICKERS = ['AAPL','NVDA','TSLA','MSFT','AMZN','META','GOOGL','BTC-USD'];
 
+  // All Yahoo Finance calls go through the Edge Function to avoid CORS
   async function yahooFetch(ticker, range, interval) {
-    for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
-      try {
-        const url = `https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}&includePrePost=false`;
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const json = await res.json();
-        const result = json?.chart?.result?.[0];
-        if (result) return result;
-      } catch {}
-    }
-    return null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__yahoo__', yTicker: ticker, range, interval })
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json?.result ?? null;
+    } catch { return null; }
   }
 
   async function fetchYahooQuote(ticker) {
@@ -794,31 +757,19 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
   }
 
   async function fetchAISignal(ticker, price, change, name) {
-    const prompt = `You are a financial analyst. Given this real market data for ${name} (${ticker}):
-- Current price: $${price}
-- Today's change: ${change}
-
-Reply ONLY with a JSON object, no markdown:
-{"signal":"BUY or SELL or HOLD","reason":"one concise sentence under 15 words explaining why"}`;
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-allow-browser': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 120,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    if (!res.ok) return { signal: 'HOLD', reason: 'Signal unavailable.' };
-    const data = await res.json();
-    const text = data.content?.map(b => b.text || '').join('').replace(/```json|```/g,'').trim();
-    try { return JSON.parse(text); } catch { return { signal: 'HOLD', reason: 'Signal unavailable.' }; }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price, change, name })
+      });
+      if (!res.ok) return { signal: 'HOLD', reason: 'Signal unavailable.' };
+      const data = await res.json();
+      return { signal: data.signal || 'HOLD', reason: data.reason || '' };
+    } catch { return { signal: 'HOLD', reason: 'Signal unavailable.' }; }
   }
 
   function renderRecCard(r, ai) {
@@ -879,53 +830,28 @@ Reply ONLY with a JSON object, no markdown:
     }
   }
 
-  /* ── Financial news — Yahoo Finance ── */
+  /* ── Financial news — via Edge Function proxy ── */
   async function loadNews() {
     try {
-      // Fetch news for a basket of major tickers and deduplicate
-      const tickers = ['AAPL','NVDA','TSLA','MSFT','BTC-USD'];
-      const allArticles = [];
-      const seen = new Set();
-
-      await Promise.all(tickers.map(async t => {
-        try {
-          const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${t}&quotesCount=0&newsCount=4&enableFuzzyQuery=false`;
-          const res = await fetch(url);
-          if (!res.ok) return;
-          const data = await res.json();
-          (data.news || []).forEach(a => {
-            if (!seen.has(a.uuid)) {
-              seen.add(a.uuid);
-              allArticles.push(a);
-            }
-          });
-        } catch {}
-      }));
-
-      // Sort by publish time, take top 6
-      const articles = allArticles
-        .sort((a, b) => (b.providerPublishTime || 0) - (a.providerPublishTime || 0))
-        .slice(0, 6);
-
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__news__' })
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      const articles = data.news || [];
       if (!articles.length) {
         $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>';
         return;
       }
-
-      $('news-grid').innerHTML = articles.map(a => {
-        const time = a.providerPublishTime
-          ? new Date(a.providerPublishTime * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-          : '';
-        const source = a.publisher || 'Yahoo Finance';
-        const tickers = (a.relatedTickers || []).slice(0, 3);
-        return `
-          <div class="news-card" onclick="window.open('${a.link || '#'}','_blank')" style="cursor:pointer;">
-            <div class="news-source">${source}${time ? ' · ' + time : ''}</div>
-            <div class="news-headline">${a.title || ''}</div>
-            <div class="news-summary">${a.summary || ''}</div>
-            <div class="news-tickers">${tickers.map(t => `<span class="news-ticker-tag" onclick="event.stopPropagation();setTicker('${t}')">${t}</span>`).join('')}</div>
-          </div>`;
-      }).join('');
+      $('news-grid').innerHTML = articles.map(a => `
+        <div class="news-card" onclick="if('${a.url||''}' !== '#') window.open('${a.url||'#'}','_blank')" style="${a.url ? 'cursor:pointer' : ''}">
+          <div class="news-source">${a.source} · ${a.time}</div>
+          <div class="news-headline">${a.headline}</div>
+          <div class="news-summary">${a.summary}</div>
+          <div class="news-tickers">${(a.tickers||[]).map(t => `<span class="news-ticker-tag" onclick="event.stopPropagation();setTicker('${t}')">${t}</span>`).join('')}</div>
+        </div>`).join('');
     } catch(e) {
       $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>';
     }
