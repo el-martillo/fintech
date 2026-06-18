@@ -1290,3 +1290,26 @@ body.light .hero-badge {
   color: #a9a3ff;
   background: var(--accent-dim);
 }
+
+/* ── Recs sub-headers ── */
+.recs-sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+  margin-top: 0.25rem;
+}
+.recs-sub-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.recs-sub-note {
+  font-size: 11px;
+  color: var(--text-dim);
+}

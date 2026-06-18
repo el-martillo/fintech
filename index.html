@@ -67,12 +67,31 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Recommendations
       </span>
-      <span class="recs-sub">Stocks with consistent 2-day momentum · AI signals</span>
+      <span class="recs-sub">2-day momentum · AI signals</span>
     </div>
-    <div class="recs-grid" id="recs-grid">
-      <div class="movers-loading" style="grid-column:1/-1">
-        <div class="spinner-sm"></div> Loading recommendations…
-      </div>
+
+    <!-- Stocks (shortable) -->
+    <div class="recs-sub-header">
+      <span class="recs-sub-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>
+        Stocks &amp; ETFs
+      </span>
+      <span class="recs-sub-note">Long &amp; short available</span>
+    </div>
+    <div class="recs-grid" id="recs-grid-stocks">
+      <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
+    </div>
+
+    <!-- Crypto (long only) -->
+    <div class="recs-sub-header" style="margin-top:1.25rem;">
+      <span class="recs-sub-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5h3a2 2 0 0 1 0 4h-3v-4zm0 4h3.5a2 2 0 0 1 0 4H9.5v-4z"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="18" x2="12" y2="20"/></svg>
+        Crypto
+      </span>
+      <span class="recs-sub-note">Long only · cannot be shorted on eToro</span>
+    </div>
+    <div class="recs-grid" id="recs-grid-crypto">
+      <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
     </div>
   </section>
 
@@ -766,7 +785,7 @@
     };
   }
 
-  async function fetchAISignal(ticker, price, change, name) {
+  async function fetchAISignal(ticker, price, change, name, direction) {
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
@@ -774,7 +793,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price, change, name })
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price, change, name, direction })
       });
       if (!res.ok) return { signal: 'HOLD', reason: 'Signal unavailable.' };
       const data = await res.json();
@@ -811,10 +830,20 @@
       </div>`;
   }
 
+  const CRYPTO_TICKERS = new Set(['BTC-USD','ETH-USD','SOL-USD','BNB-USD','XRP-USD','DOGE-USD','ADA-USD','AVAX-USD','DOT-USD','MATIC-USD','COIN']);
+
+  function isCrypto(ticker) {
+    return ticker.endsWith('-USD') || CRYPTO_TICKERS.has(ticker);
+  }
+
+  function setGridEmpty(gridId, msg) {
+    $(gridId).innerHTML = `<div class="movers-empty" style="grid-column:1/-1">${msg}</div>`;
+  }
+
   async function loadRecommendations() {
-    $('recs-grid').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening for momentum stocks…</div>';
+    $('recs-grid-stocks').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>';
+    $('recs-grid-crypto').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>';
     try {
-      // Ask Edge Function to screen for 2-day consistent movers
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
@@ -823,26 +852,39 @@
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
       const picks = data.picks || [];
-      if (!picks.length) throw new Error('No momentum stocks found');
 
-      // Render cards immediately with real data and direction-based signal placeholder
-      $('recs-grid').innerHTML = picks.map(r => {
-        const placeholder = { signal: r.direction === 'up' ? 'BUY' : 'SELL', reason: 'Loading AI analysis…' };
-        return renderRecCard(r, placeholder);
-      }).join('');
+      const stocks = picks.filter(r => !isCrypto(r.ticker));
+      const crypto = picks.filter(r =>  isCrypto(r.ticker));
 
-      // Then enrich each with AI signal in parallel
-      await Promise.all(picks.map(async (r, i) => {
-        const ai  = await fetchAISignal(r.ticker, r.price, r.change, r.name);
-        const tmp = document.createElement('div');
-        tmp.innerHTML = renderRecCard(r, ai);
-        $('recs-grid').children[i]?.replaceWith(tmp.firstElementChild);
-      }));
+      // Render placeholders immediately
+      const renderGrid = (gridId, items) => {
+        if (!items.length) { setGridEmpty(gridId, 'No momentum picks right now.'); return; }
+        $(gridId).innerHTML = items.map(r => {
+          const placeholder = { signal: r.direction === 'up' ? 'BUY' : 'SELL', reason: 'Loading AI analysis…' };
+          return renderRecCard(r, placeholder);
+        }).join('');
+      };
+      renderGrid('recs-grid-stocks', stocks);
+      renderGrid('recs-grid-crypto', crypto);
+
+      // Enrich with AI signals in parallel across both lists
+      const enrichGrid = (gridId, items) =>
+        Promise.all(items.map(async (r, i) => {
+          const ai  = await fetchAISignal(r.ticker, r.price, r.change, r.name, r.direction);
+          const tmp = document.createElement('div');
+          tmp.innerHTML = renderRecCard(r, ai);
+          $(gridId).children[i]?.replaceWith(tmp.firstElementChild);
+        }));
+
+      await Promise.all([enrichGrid('recs-grid-stocks', stocks), enrichGrid('recs-grid-crypto', crypto)]);
+
     } catch(e) {
-      $('recs-grid').innerHTML = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
+      const errHtml = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
         Could not load recommendations.
         <button onclick="loadRecommendations()" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);">Retry</button>
       </div>`;
+      $('recs-grid-stocks').innerHTML = errHtml;
+      $('recs-grid-crypto').innerHTML = '';
     }
   }
 
