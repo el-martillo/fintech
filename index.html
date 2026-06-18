@@ -663,17 +663,19 @@
     try {
       const quotes = await Promise.all(MOVERS_TICKERS.map(async t => {
         try {
-          const result = await yahooFetch(t, '1d', '1d');
+          // Use 5d/1d so we have at least 2 closes — derive price from array, never meta
+          const result = await yahooFetch(t, '5d', '1d');
           if (!result) return null;
-          const meta = result.meta;
-          if (!meta) return null;
-          const price = meta.regularMarketPrice;
-          const prev  = meta.chartPreviousClose ?? meta.previousClose ?? price;
-          const pct   = prev ? ((price - prev) / prev) * 100 : 0;
+          const closes = (result.indicators?.quote?.[0]?.close || []).filter(p => p != null);
+          if (closes.length < 2) return null;
+          const price = closes[closes.length - 1];
+          const prev  = closes[closes.length - 2];
+          const pct   = ((price - prev) / prev) * 100;
           const sign  = pct >= 0 ? '+' : '';
+          const meta  = result.meta;
           return {
             ticker: t,
-            name:   (meta.longName || meta.shortName || t).replace('USD', '').trim(),
+            name:   (meta?.longName || meta?.shortName || t).replace(' USD','').trim(),
             price:  price.toFixed(2),
             change: `${sign}${pct.toFixed(2)}%`,
             absPct: Math.abs(pct),
