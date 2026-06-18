@@ -67,7 +67,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Recommendations
       </span>
-      <span class="recs-sub">AI buy/sell signals on today's biggest movers</span>
+      <span class="recs-sub">Stocks with consistent 2-day momentum · AI signals</span>
     </div>
     <div class="recs-grid" id="recs-grid">
       <div class="movers-loading" style="grid-column:1/-1">
@@ -173,7 +173,10 @@
       <div class="history-section">
         <div class="history-title">
           Recent analyses
-          <span id="history-count"></span>
+          <span style="display:flex;align-items:center;gap:8px;">
+            <span id="history-count"></span>
+            <button onclick="clearHistory()" id="history-clear-btn" title="Clear history" style="display:none;background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 6px;border-radius:4px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">Clear</button>
+          </span>
         </div>
         <div class="history-grid" id="history-grid">
           <div class="history-empty">No analyses yet. Search a ticker above.</div>
@@ -372,7 +375,7 @@
       etoroUrl:     a.etoroUrl,
       savedAt:      new Date().toISOString()
     });
-    history = history.slice(0, 5);
+    history = history.slice(0, 4);
     try { localStorage.setItem(LS_KEY, JSON.stringify(history)); } catch(e) {}
   }
 
@@ -487,6 +490,7 @@
 
   function renderHistory(rows) {
     $('history-count').textContent = `${rows.length} saved`;
+    $('history-clear-btn').style.display = 'inline';
     $('history-grid').innerHTML = rows.map(row => {
       const date  = new Date(row.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
       const color = row.signal === 'BUY' ? 'var(--green)' : row.signal === 'SELL' ? 'var(--red)' : 'var(--amber)';
@@ -500,6 +504,13 @@
           <div class="history-signal" style="color:${color}">${row.signal} · ${row.confidence}</div>
         </div>`;
     }).join('');
+  }
+
+  function clearHistory() {
+    try { localStorage.removeItem(LS_KEY); } catch(e) {}
+    $('history-grid').innerHTML = '<div class="history-empty">No analyses yet. Search a ticker above.</div>';
+    $('history-count').textContent = '';
+    $('history-clear-btn').style.display = 'none';
   }
 
   function loadFromLocal(ticker) {
@@ -710,7 +721,6 @@
   }
 
   /* ── Recommendations — real Yahoo Finance data + AI signal ── */
-  const REC_TICKERS = ['AAPL','NVDA','TSLA','MSFT','AMZN','META','GOOGL','BTC-USD'];
 
   // All Yahoo Finance calls go through the Edge Function to avoid CORS
   async function yahooFetch(ticker, range, interval) {
@@ -802,25 +812,31 @@
   }
 
   async function loadRecommendations() {
-    $('recs-grid').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Loading recommendations…</div>';
+    $('recs-grid').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening for momentum stocks…</div>';
     try {
-      // Fetch all quotes in parallel — each wrapped so one failure doesn't kill all
-      const quotes = await Promise.all(REC_TICKERS.map(t => fetchYahooQuote(t).catch(e => {
-        console.warn(`Quote failed for ${t}:`, e.message);
-        return null;
-      })));
-      const valid = quotes.filter(Boolean);
-      if (!valid.length) throw new Error('No quotes returned from Yahoo Finance');
+      // Ask Edge Function to screen for 2-day consistent movers
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__trending__' })
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      const picks = data.picks || [];
+      if (!picks.length) throw new Error('No momentum stocks found');
 
-      // Render cards with placeholder signals first so the grid appears immediately
-      $('recs-grid').innerHTML = valid.map(r => renderRecCard(r, { signal: 'HOLD', reason: 'Loading signal…' })).join('');
+      // Render cards immediately with real data and direction-based signal placeholder
+      $('recs-grid').innerHTML = picks.map(r => {
+        const placeholder = { signal: r.direction === 'up' ? 'BUY' : 'SELL', reason: 'Loading AI analysis…' };
+        return renderRecCard(r, placeholder);
+      }).join('');
 
-      // Then fetch AI signals in parallel and update each card in place
-      await Promise.all(valid.map(async (r, i) => {
+      // Then enrich each with AI signal in parallel
+      await Promise.all(picks.map(async (r, i) => {
         const ai  = await fetchAISignal(r.ticker, r.price, r.change, r.name);
         const tmp = document.createElement('div');
         tmp.innerHTML = renderRecCard(r, ai);
-        $('recs-grid').children[i].replaceWith(tmp.firstElementChild);
+        $('recs-grid').children[i]?.replaceWith(tmp.firstElementChild);
       }));
     } catch(e) {
       $('recs-grid').innerHTML = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
