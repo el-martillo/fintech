@@ -262,8 +262,10 @@
   ═══════════════════════════════════════════════════ */
   const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
-  // Loaded from config.js (gitignored) — see README
-  // const ANTHROPIC_API_KEY is defined in config.js
+  // ANTHROPIC_API_KEY is loaded from config.js — if missing, show a clear error
+  if (typeof ANTHROPIC_API_KEY === 'undefined') {
+    console.error('config.js not loaded — ANTHROPIC_API_KEY missing');
+  }
   /* ═══════════════════════════════════════════════════ */
 
   const { createClient } = supabase;
@@ -334,6 +336,9 @@
 
   /* ── Call Anthropic directly ── */
   async function fetchAnalysis(ticker) {
+    if (typeof ANTHROPIC_API_KEY === 'undefined' || !ANTHROPIC_API_KEY || ANTHROPIC_API_KEY === 'YOUR_ANTHROPIC_API_KEY') {
+      throw new Error('Anthropic API key not configured. Add your key to config.js in the repo folder.');
+    }
     const prompt = `You are a financial analyst assistant. Analyze the stock or crypto ticker "${ticker}" for a retail trader on eToro.
 
 Return ONLY a valid JSON object — no markdown fences, no preamble, no explanation. Exact structure:
