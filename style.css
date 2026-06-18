@@ -1328,3 +1328,77 @@ body.light .hero-badge {
 .movers-divider:first-child { margin-top: 0; }
 .movers-divider.pos { color: var(--green); }
 .movers-divider.neg { color: var(--red); }
+
+/* ── Exchange ticker bar ── */
+.exchange-ticker-bar {
+  position: sticky;
+  top: 60px;
+  z-index: 90;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  overflow: hidden;
+  height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+.exchange-ticker-track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: ticker-scroll 60s linear infinite;
+  will-change: transform;
+}
+.exchange-ticker-track:hover { animation-play-state: paused; }
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.exchange-ticker-loading {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 0 1rem;
+}
+
+.exchange-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  border-right: 1px solid var(--border);
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.exchange-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: var(--mono);
+  color: var(--text);
+}
+.exchange-loc {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.exchange-chg {
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: var(--mono);
+}
+.exchange-status {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.status-open   { background: rgba(34,197,94,0.12);  color: var(--green); border: 1px solid rgba(34,197,94,0.2);  }
+.status-closed { background: rgba(85,90,110,0.15);  color: var(--text-dim); border: 1px solid rgba(85,90,110,0.15); }
+
+body.light .exchange-ticker-bar { background: var(--surface); }
