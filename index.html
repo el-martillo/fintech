@@ -60,45 +60,45 @@
     </div>
   </div>
 
-  <!-- ── Recommendations ── -->
-  <section class="recs-section">
-    <div class="recs-header">
-      <span class="recs-title">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        Recommendations
-      </span>
-      <span class="recs-sub">2-day momentum · AI signals</span>
-    </div>
-
-    <!-- Stocks (shortable) -->
-    <div class="recs-sub-header">
-      <span class="recs-sub-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>
-        Stocks &amp; ETFs
-      </span>
-      <span class="recs-sub-note">Long &amp; short available</span>
-    </div>
-    <div class="recs-grid" id="recs-grid-stocks">
-      <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
-    </div>
-
-    <!-- Crypto (long only) -->
-    <div class="recs-sub-header" style="margin-top:1.25rem;">
-      <span class="recs-sub-label">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5h3a2 2 0 0 1 0 4h-3v-4zm0 4h3.5a2 2 0 0 1 0 4H9.5v-4z"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="18" x2="12" y2="20"/></svg>
-        Crypto
-      </span>
-      <span class="recs-sub-note">Long only · cannot be shorted on eToro</span>
-    </div>
-    <div class="recs-grid" id="recs-grid-crypto">
-      <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
-    </div>
-  </section>
-
   <div class="layout">
 
     <!-- ── Main column (2/3) ── -->
     <div class="col-main">
+
+      <!-- ── Recommendations ── -->
+      <section class="recs-section">
+        <div class="recs-header">
+          <span class="recs-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Recommendations
+          </span>
+          <span class="recs-sub">2-day momentum · AI signals</span>
+        </div>
+
+        <!-- Stocks (shortable) -->
+        <div class="recs-sub-header">
+          <span class="recs-sub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>
+            Stocks &amp; ETFs
+          </span>
+          <span class="recs-sub-note">Long &amp; short available</span>
+        </div>
+        <div class="recs-grid" id="recs-grid-stocks">
+          <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
+        </div>
+
+        <!-- Crypto (long only) -->
+        <div class="recs-sub-header" style="margin-top:1.25rem;">
+          <span class="recs-sub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5h3a2 2 0 0 1 0 4h-3v-4zm0 4h3.5a2 2 0 0 1 0 4H9.5v-4z"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="18" x2="12" y2="20"/></svg>
+            Crypto
+          </span>
+          <span class="recs-sub-note">Long only · cannot be shorted on eToro</span>
+        </div>
+        <div class="recs-grid" id="recs-grid-crypto">
+          <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
+        </div>
+      </section>
 
       <!-- Search -->
       <div class="search-box">
@@ -785,7 +785,7 @@
     };
   }
 
-  async function fetchAISignal(ticker, price, change, name, direction) {
+  async function fetchAISignal(ticker, price, change, name, direction, weekTrend, weekPct) {
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
@@ -793,7 +793,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price, change, name, direction })
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price, change, name, direction, weekTrend, weekPct })
       });
       if (!res.ok) return { signal: 'HOLD', reason: 'Signal unavailable.' };
       const data = await res.json();
@@ -870,7 +870,7 @@
       // Enrich with AI signals in parallel across both lists
       const enrichGrid = (gridId, items) =>
         Promise.all(items.map(async (r, i) => {
-          const ai  = await fetchAISignal(r.ticker, r.price, r.change, r.name, r.direction);
+          const ai  = await fetchAISignal(r.ticker, r.price, r.change, r.name, r.direction, r.weekTrend, r.weekPct);
           const tmp = document.createElement('div');
           tmp.innerHTML = renderRecCard(r, ai);
           $(gridId).children[i]?.replaceWith(tmp.firstElementChild);
