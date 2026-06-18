@@ -49,11 +49,18 @@
     </div>
   </nav>
 
+  <!-- ── Exchange ticker bar ── -->
+  <div class="exchange-ticker-bar">
+    <div class="exchange-ticker-track" id="exchange-ticker-track">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
 <div class="page">
 
   <!-- ── Hero banner ── -->
   <div class="hero-banner">
-    <img src="images/dark_banner.jpg" alt="Market chart banner" class="hero-banner-img" />
+    <img src="dark_banner.jpg" alt="Market chart banner" class="hero-banner-img" />
     <div class="hero-banner-overlay">
       <div class="hero-banner-text">
         <span class="hero-badge">AI-powered · eToro ready</span>
@@ -1079,6 +1086,103 @@
 
   function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+
+  /* ── Exchange Ticker Bar ── */
+
+  const EXCHANGES = [
+    { name: 'NYSE',    label: 'New York SE',      flag: '🇺🇸', tz: 'America/New_York',    open: '09:30', close: '16:00', index: '^NYA',     yTicker: 'IVV'  },
+    { name: 'NASDAQ',  label: 'Nasdaq',            flag: '🇺🇸', tz: 'America/New_York',    open: '09:30', close: '16:00', index: '^IXIC',    yTicker: 'QQQ'  },
+    { name: 'SSE',     label: 'Shanghai SE',       flag: '🇨🇳', tz: 'Asia/Shanghai',       open: '09:30', close: '15:00', index: '000001.SS', yTicker: '000001.SS' },
+    { name: 'TSE',     label: 'Tokyo SE',          flag: '🇯🇵', tz: 'Asia/Tokyo',          open: '09:00', close: '15:30', index: '^N225',    yTicker: '^N225' },
+    { name: 'Euronext',label: 'Euronext',          flag: '🇪🇺', tz: 'Europe/Paris',        open: '09:00', close: '17:30', index: '^N100',    yTicker: '^N100' },
+    { name: 'LSE',     label: 'London SE',         flag: '🇬🇧', tz: 'Europe/London',       open: '08:00', close: '16:30', index: '^FTSE',    yTicker: '^FTSE' },
+    { name: 'NSE',     label: 'National SE India', flag: '🇮🇳', tz: 'Asia/Kolkata',        open: '09:15', close: '15:30', index: '^NSEI',    yTicker: '^NSEI' },
+    { name: 'HKEX',    label: 'Hong Kong Exch.',   flag: '🇭🇰', tz: 'Asia/Hong_Kong',      open: '09:30', close: '16:00', index: '^HSI',     yTicker: '^HSI'  },
+    { name: 'SZSE',    label: 'Shenzhen SE',       flag: '🇨🇳', tz: 'Asia/Shanghai',       open: '09:30', close: '15:00', index: '399001.SZ',yTicker: '399001.SZ' },
+    { name: 'TMX',     label: 'Toronto SE',        flag: '🇨🇦', tz: 'America/Toronto',     open: '09:30', close: '16:00', index: '^GSPTSE',  yTicker: '^GSPTSE' },
+  ];
+
+  function isExchangeOpen(exch) {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: exch.tz,
+      hour: '2-digit', minute: '2-digit', hour12: false,
+      weekday: 'short'
+    });
+    const parts = formatter.formatToParts(now);
+    const weekday = parts.find(p => p.type === 'weekday').value;
+    const hour    = parseInt(parts.find(p => p.type === 'hour').value);
+    const minute  = parseInt(parts.find(p => p.type === 'minute').value);
+
+    if (weekday === 'Sat' || weekday === 'Sun') return false;
+
+    const [oh, om] = exch.open.split(':').map(Number);
+    const [ch, cm] = exch.close.split(':').map(Number);
+    const nowMins  = hour * 60 + minute;
+    const openMins = oh * 60 + om;
+    const closeMins = ch * 60 + cm;
+    return nowMins >= openMins && nowMins < closeMins;
+  }
+
+  function renderExchangeTicker(items) {
+    const track = $('exchange-ticker-track');
+    if (!track) return;
+
+    // Build items HTML — duplicate for seamless loop
+    const buildItem = (ex, data) => {
+      const open   = isExchangeOpen(ex);
+      const pos    = data && data.change >= 0;
+      const pct    = data ? (pos ? '+' : '') + data.change.toFixed(2) + '%' : '…';
+      const color  = data ? (pos ? 'var(--green)' : 'var(--red)') : 'var(--text-dim)';
+      const statusClass = open ? 'status-open' : 'status-closed';
+      const statusLabel = open ? 'OPEN' : 'CLOSED';
+      const dot = open
+        ? '<span class="live-dot" style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:livepulse 1.5s ease-in-out infinite;flex-shrink:0;"></span>'
+        : '';
+
+      return `<div class="exchange-item">
+        <span style="font-size:14px;line-height:1;">${ex.flag}</span>
+        <span class="exchange-name">${ex.name}</span>
+        <span class="exchange-location">${ex.label}</span>
+        <span class="exchange-change" style="color:${color}">${pct}</span>
+        <span class="exchange-status ${statusClass}">${dot}${open ? '&nbsp;' : ''}${statusLabel}</span>
+      </div>`;
+    };
+
+    let html = items.map(({ ex, data }) => buildItem(ex, data)).join('');
+    // Duplicate for seamless infinite scroll
+    track.innerHTML = html + html;
+  }
+
+  async function loadExchangeTicker() {
+    // Render immediately with open/closed status, no data yet
+    const items = EXCHANGES.map(ex => ({ ex, data: null }));
+    renderExchangeTicker(items);
+
+    // Fetch data for each exchange via yahooFetch proxy
+    const results = await Promise.all(EXCHANGES.map(async (ex) => {
+      try {
+        const result = await yahooFetch(ex.yTicker, '5d', '1d');
+        if (!result) return { ex, data: null };
+        const closes = (result.indicators?.quote?.[0]?.close || []).filter(p => p != null);
+        if (closes.length < 2) return { ex, data: null };
+        const price  = closes[closes.length - 1];
+        const prev   = closes[closes.length - 2];
+        const change = ((price - prev) / prev) * 100;
+        return { ex, data: { price, change } };
+      } catch { return { ex, data: null }; }
+    }));
+
+    renderExchangeTicker(results);
+
+    // Refresh open/closed status every minute (prices stay until next full reload)
+    setInterval(() => {
+      // Only re-render open/closed badges without re-fetching prices
+      renderExchangeTicker(results);
+    }, 60000);
+  }
+
+  loadExchangeTicker();
   initSections();
 
   // Refresh movers every 5 minutes
