@@ -9,54 +9,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!--
-  ═══════════════════════════════════════════════════════
-    CONFIGURATION — fill these in before deploying
-  ═══════════════════════════════════════════════════════
-
-  1. SUPABASE
-     - Go to https://supabase.com → your project → Settings → API
-     - Copy "Project URL" → SUPABASE_URL
-     - Copy "anon public" key → SUPABASE_ANON_KEY
-     - Run this SQL in your Supabase SQL editor to create the table:
-
-       CREATE TABLE stock_analyses (
-         id            bigserial PRIMARY KEY,
-         ticker        text NOT NULL,
-         company_name  text,
-         signal        text,
-         confidence    text,
-         price         text,
-         price_change  text,
-         week_change   text,
-         pe_ratio      text,
-         market_cap    text,
-         sector        text,
-         pros          jsonb,
-         cons          jsonb,
-         neutral       jsonb,
-         trade_summary text,
-         etoro_url     text,
-         created_at    timestamptz DEFAULT now()
-       );
-
-       -- Optional: allow public inserts/reads (adjust to your auth setup)
-       ALTER TABLE stock_analyses ENABLE ROW LEVEL SECURITY;
-       CREATE POLICY "public read"  ON stock_analyses FOR SELECT USING (true);
-       CREATE POLICY "public insert" ON stock_analyses FOR INSERT WITH CHECK (true);
-
-  2. ANTHROPIC API KEY
-     - Go to https://console.anthropic.com → API Keys
-     - IMPORTANT: for production, proxy this through your own backend
-       so the key is never exposed in client-side code.
-     - For a private GitHub Pages repo or local use it's acceptable short-term.
-
-  ═══════════════════════════════════════════════════════
-  -->
-
+  
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="config.js"></script>
 </head>
 
 <body>
@@ -310,7 +267,8 @@
   ═══════════════════════════════════════════════════ */
   const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
-  // Anthropic key is stored securely in the Supabase Edge Function — not here
+  // Loaded from config.js (gitignored) — see README
+  // const ANTHROPIC_API_KEY is defined in config.js
   /* ═══════════════════════════════════════════════════ */
 
   const { createClient } = supabase;
@@ -788,45 +746,110 @@
     </svg>`;
   }
 
-  /* ── Recommendations ── */
+  /* ── Recommendations — real Yahoo Finance data + AI signal ── */
+  const REC_TICKERS = ['AAPL','NVDA','TSLA','MSFT','AMZN','META','GOOGL','BTC-USD'];
+
+  async function fetchYahooQuote(ticker) {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=5d&interval=1d&includePrePost=false`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Yahoo ${res.status}`);
+    const json = await res.json();
+    const result = json?.chart?.result?.[0];
+    if (!result) throw new Error('no result');
+    const meta   = result.meta;
+    const closes = result.indicators?.quote?.[0]?.close?.filter(p => p != null) || [];
+    const price  = meta.regularMarketPrice ?? closes[closes.length - 1];
+    const prev   = meta.chartPreviousClose ?? closes[closes.length - 2] ?? price;
+    const change = prev ? (((price - prev) / prev) * 100) : 0;
+    const sign   = change >= 0 ? '+' : '';
+    return {
+      ticker,
+      name:     meta.longName || meta.shortName || ticker,
+      price:    price.toFixed(2),
+      change:   `${sign}${change.toFixed(2)}%`,
+      weekData: closes.map(p => parseFloat(p.toFixed(2))),
+    };
+  }
+
+  async function fetchAISignal(ticker, price, change, name) {
+    const prompt = `You are a financial analyst. Given this real market data for ${name} (${ticker}):
+- Current price: $${price}
+- Today's change: ${change}
+
+Reply ONLY with a JSON object, no markdown:
+{"signal":"BUY or SELL or HOLD","reason":"one concise sentence under 15 words explaining why"}`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 120,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) return { signal: 'HOLD', reason: 'Signal unavailable.' };
+    const data = await res.json();
+    const text = data.content?.map(b => b.text || '').join('').replace(/```json|```/g,'').trim();
+    try { return JSON.parse(text); } catch { return { signal: 'HOLD', reason: 'Signal unavailable.' }; }
+  }
+
+  function renderRecCard(r, ai) {
+    const signal   = ai.signal || 'HOLD';
+    const reason   = ai.reason || '';
+    const sigClass = signal === 'BUY' ? 'signal-BUY' : signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
+    const pos      = r.change.startsWith('+');
+    const sparkline = buildSparkline(r.weekData, pos);
+    const etoroTicker = r.ticker.replace('-USD','').toLowerCase();
+    const etoroUrl = `https://www.etoro.com/markets/${etoroTicker}`;
+    // store live data so clicking the card uses real figures
+    liveMarketData[r.ticker] = { price: r.price, change: r.change };
+    return `
+      <div class="rec-card" onclick="setTickerFromMover('${r.ticker}','${r.price}','${r.change}')">
+        <div class="rec-top">
+          <div>
+            <div class="rec-ticker">${r.ticker.replace('-USD','')}</div>
+            <div class="rec-name">${r.name}</div>
+          </div>
+          <span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>
+        </div>
+        <div class="rec-price">$${r.price} <span class="${pos ? 'pos' : 'neg'}">${r.change}</span></div>
+        <div class="rec-sparkline">${sparkline}</div>
+        <div class="rec-reason">${reason}</div>
+        <a class="rec-etoro-link" href="${etoroUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Trade on eToro
+        </a>
+      </div>`;
+  }
+
   async function loadRecommendations() {
+    $('recs-grid').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Loading recommendations…</div>';
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__recommendations__' })
-      });
-      const data = await res.json();
-      const recs = data.recommendations || [];
-      if (!recs.length) { $('recs-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load recommendations.</div>'; return; }
-      $('recs-grid').innerHTML = recs.map(r => {
-        const sigClass = r.signal === 'BUY' ? 'signal-BUY' : r.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
-        const pos = r.change.startsWith('+');
-        const sparkColor = pos ? 'var(--green)' : 'var(--red)';
-        const sparkline = buildSparkline(r.weekData || [], pos);
-        const etoroUrl = `https://www.etoro.com/markets/${r.ticker.toLowerCase()}`;
-        return `
-          <div class="rec-card" onclick="setTicker('${r.ticker}')">
-            <div class="rec-top">
-              <div>
-                <div class="rec-ticker">${r.ticker}</div>
-                <div class="rec-name">${r.name}</div>
-              </div>
-              <span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${r.signal}</span>
-            </div>
-            <div class="rec-price">$${r.price} <span class="${pos ? 'pos' : 'neg'}">${r.change}</span></div>
-            <div class="rec-sparkline">${sparkline}</div>
-            <div class="rec-reason">${r.reason}</div>
-            <a class="rec-etoro-link" href="${etoroUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              Trade on eToro
-            </a>
-          </div>`;
-      }).join('');
+      // Fetch all quotes in parallel
+      const quotes = await Promise.all(REC_TICKERS.map(t => fetchYahooQuote(t).catch(() => null)));
+      const valid  = quotes.filter(Boolean);
+      if (!valid.length) throw new Error('No quotes');
+
+      // Render cards with placeholder signals first so the grid appears immediately
+      $('recs-grid').innerHTML = valid.map(r => renderRecCard(r, { signal: 'HOLD', reason: 'Loading signal…' })).join('');
+
+      // Then fetch AI signals in parallel and update each card in place
+      await Promise.all(valid.map(async (r, i) => {
+        const ai  = await fetchAISignal(r.ticker, r.price, r.change, r.name);
+        const tmp = document.createElement('div');
+        tmp.innerHTML = renderRecCard(r, ai);
+        $('recs-grid').children[i].replaceWith(tmp.firstElementChild);
+      }));
     } catch(e) {
       $('recs-grid').innerHTML = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
         Could not load recommendations.
-        <button onclick="loadRecommendations()" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;">Retry</button>
+        <button onclick="loadRecommendations()" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);">Retry</button>
       </div>`;
     }
   }
