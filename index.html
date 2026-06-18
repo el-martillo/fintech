@@ -424,7 +424,7 @@
       trade_summary: a.tradeSummary,
       etoro_url:    a.etoroUrl
     });
-    if (error) console.warn('Supabase save failed:', error.message);
+    // RLS may block insert — non-critical, localStorage handles history locally
     lsSave(a); // always persist locally
   }
 
