@@ -298,7 +298,7 @@ body {
 }
 
 /* ── History ── */
-.history-section { margin-top: 2.5rem; }
+.history-section { margin-top: 1rem; }
 .history-title {
   font-size: 13px;
   font-weight: 500;
@@ -669,6 +669,7 @@ body.light .spinner-sm { border-color: rgba(0,0,0,0.1); border-top-color: var(--
 
 /* ── Daily movers ── */
 .movers-section {
+  margin-top: 1rem;
   margin-bottom: 1.5rem;
 }
 .movers-header {

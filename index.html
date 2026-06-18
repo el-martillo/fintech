@@ -279,7 +279,7 @@
   const show = id => $(id).style.display = 'block';
   const hide = id => $(id).style.display = 'none';
 
-  // Stores live price/change data from Alpha Vantage movers — keyed by ticker
+  // Stores live price/change data from Yahoo Finance — keyed by ticker
   const liveMarketData = {};
 
   function setTicker(t) {
@@ -287,7 +287,7 @@
     analyzeStock();
   }
 
-  // Called by mover cards — passes real Alpha Vantage figures through
+  // Called by mover cards — passes real Yahoo Finance figures through
   function setTickerFromMover(ticker, price, change) {
     liveMarketData[ticker] = { price, change };
     $('ticker-input').value = ticker;
@@ -320,7 +320,7 @@
 
     try {
       const analysis = await fetchAnalysis(raw);
-      // Override AI-estimated figures with real Alpha Vantage data if available
+      // Override AI-estimated figures with real Yahoo Finance data if available
       const live = liveMarketData[raw];
       if (live) {
         analysis.price        = live.price;
@@ -337,23 +337,55 @@
     }
   }
 
-  /* ── Call Edge Function (Anthropic key lives server-side) ── */
+  /* ── Call Anthropic directly ── */
   async function fetchAnalysis(ticker) {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+    const prompt = `You are a financial analyst assistant. Analyze the stock or crypto ticker "${ticker}" for a retail trader on eToro.
+
+Return ONLY a valid JSON object — no markdown fences, no preamble, no explanation. Exact structure:
+{
+  "ticker": "${ticker}",
+  "companyName": "Full name of the company or asset",
+  "price": "Approximate current price in USD as a string e.g. '182.50'",
+  "priceChange1d": "1-day % change as string e.g. '+1.2%' or '-0.8%'",
+  "weekChange": "1-week % change as string",
+  "peRatio": "P/E ratio as string, or 'N/A' for crypto",
+  "marketCap": "Market cap e.g. '2.8T' or '450B'",
+  "sector": "Sector or asset class",
+  "signal": "BUY or SELL or HOLD",
+  "confidence": "High or Medium or Low",
+  "pros": ["concise positive factor", "concise positive factor", "concise positive factor"],
+  "cons": ["concise risk factor", "concise risk factor"],
+  "neutral": ["one neutral context point"],
+  "tradeSummary": "2-3 sentence eToro-specific recommendation with suggested timeframe and position sizing approach.",
+  "etoroUrl": "https://www.etoro.com/markets/${ticker.toLowerCase()}"
+}
+
+Be specific and data-informed. Keep each bullet under 15 words.`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
       },
-      body: JSON.stringify({ ticker })
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `API error ${res.status}`);
+      throw new Error(err.error?.message || `API error ${res.status}`);
     }
 
-    return await res.json();
+    const data = await res.json();
+    const text = data.content.map(b => b.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
   }
 
   /* ── localStorage history (max 5) ── */
@@ -567,7 +599,7 @@
   }
   if (localStorage.getItem('theme') === 'light') toggleTheme();
 
-  /* ── Ticker lookup ── */
+  /* ── Ticker lookup — Yahoo Finance search ── */
   async function lookupTicker() {
     const query = $('lookup-input').value.trim();
     if (!query) return;
@@ -577,23 +609,18 @@
     $('lookup-btn').disabled = true;
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ ticker: '__lookup__', lookupQuery: query })
-      });
+      const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=6&newsCount=0&enableFuzzyQuery=false&quotesQueryId=tss_match_phrase_query`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Yahoo ${res.status}`);
       const data = await res.json();
-      const results = data.lookupResults || [];
-      if (!results.length) {
+      const quotes = (data.quotes || []).filter(q => q.symbol && q.shortname || q.longname);
+      if (!quotes.length) {
         $('lookup-results').innerHTML = '<div class="lookup-empty">No matches found.</div>';
       } else {
-        $('lookup-results').innerHTML = results.map(r => `
-          <div class="lookup-item" onclick="useLookupResult('${r.ticker}')">
-            <span class="lookup-ticker">${r.ticker}</span>
-            <span class="lookup-name">${r.name}</span>
+        $('lookup-results').innerHTML = quotes.map(q => `
+          <div class="lookup-item" onclick="useLookupResult('${q.symbol}')">
+            <span class="lookup-ticker">${q.symbol}</span>
+            <span class="lookup-name">${q.shortname || q.longname || ''}</span>
             <span class="lookup-use">Use →</span>
           </div>`).join('');
       }
@@ -635,30 +662,44 @@
     if (e.key === 'Enter') lookupTicker();
   });
 
-  /* ── Daily movers ── */
+  /* ── Daily movers — Yahoo Finance ── */
+  // Fixed watchlist — sorted by absolute % change after fetch
+  const MOVERS_TICKERS = ['AAPL','TSLA','NVDA','AMZN','META','MSFT','GOOGL','AMD','NFLX','COIN','BTC-USD','ETH-USD'];
+
   async function loadMovers() {
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ ticker: '__movers__' })
-      });
+      const quotes = await Promise.all(MOVERS_TICKERS.map(async t => {
+        try {
+          const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(t)}?range=1d&interval=1d&includePrePost=false`;
+          const res = await fetch(url);
+          if (!res.ok) return null;
+          const json = await res.json();
+          const meta = json?.chart?.result?.[0]?.meta;
+          if (!meta) return null;
+          const price = meta.regularMarketPrice;
+          const prev  = meta.chartPreviousClose ?? meta.previousClose ?? price;
+          const pct   = prev ? ((price - prev) / prev) * 100 : 0;
+          const sign  = pct >= 0 ? '+' : '';
+          return {
+            ticker: t,
+            name:   (meta.longName || meta.shortName || t).replace('USD', '').trim(),
+            price:  price.toFixed(2),
+            change: `${sign}${pct.toFixed(2)}%`,
+            absPct: Math.abs(pct),
+          };
+        } catch { return null; }
+      }));
 
-      // Rate limited by Alpha Vantage
-      if (res.status === 429) {
-        $('movers-grid').innerHTML = '<div class="movers-empty">⚠️ Market data limit reached for today. Resets midnight ET.</div>';
-        return;
-      }
+      // Filter nulls, sort biggest movers first
+      const movers = quotes
+        .filter(Boolean)
+        .sort((a, b) => b.absPct - a.absPct);
 
-      const data = await res.json();
-      const movers = data.movers || [];
       if (!movers.length) {
         $('movers-grid').innerHTML = '<div class="movers-empty">No movers data available.</div>';
         return;
       }
+
       const now = new Date();
       $('movers-updated').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
       $('movers-grid').innerHTML = movers.map(m => {
@@ -666,7 +707,7 @@
         return `
           <div class="sidebar-mover-row" onclick="setTickerFromMover('${m.ticker}','${m.price}','${m.change}')">
             <div class="sidebar-mover-left">
-              <span class="mover-ticker">${m.ticker}</span>
+              <span class="mover-ticker">${m.ticker.replace('-USD','')}</span>
               <span class="mover-name">${m.name}</span>
             </div>
             <div class="sidebar-mover-right">
@@ -680,45 +721,37 @@
     }
   }
 
-  /* ── Top copy investors ── */
-  async function loadInvestors() {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ ticker: '__investors__' })
-      });
-      const data = await res.json();
-      const investors = (data.investors || []).sort((a, b) => {
-        const parse = g => parseFloat((g || '0').replace('%', '').replace('+', ''));
-        return parse(b.gain) - parse(a.gain);
-      });
-      if (!investors.length) {
-        $('investors-grid').innerHTML = '<div class="movers-empty">Could not load investors.</div>';
-        return;
-      }
-      $('investors-grid').innerHTML = investors.map(inv => {
-        const pos = inv.gain.startsWith('+');
-        const url = `https://www.etoro.com/people/${inv.username || inv.name.toLowerCase().replace(/\s+/g,'')}`;
-        return `
-          <div class="investor-card" onclick="window.open('${url}','_blank')" title="View on eToro" style="cursor:pointer;">
-            <div class="investor-avatar">${inv.initials}</div>
-            <div class="investor-info">
-              <div class="investor-name">${inv.name}</div>
-              <div class="investor-meta">${inv.copiers.toLocaleString()} copiers · ${inv.risk} risk</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div class="investor-gain ${pos ? 'pos' : 'neg'}">${inv.gain}</div>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </div>
-          </div>`;
-      }).join('');
-    } catch (err) {
-      $('investors-grid').innerHTML = '<div class="movers-empty">Could not load investors.</div>';
-    }
+  /* ── Top copy investors — curated list (eToro has no public API) ── */
+  const CURATED_INVESTORS = [
+    { name: 'Jaynemesis',    username: 'Jaynemesis',    initials: 'JN', gain: '+287%', copiers: 18420, risk: 'Medium' },
+    { name: 'TipRanks',      username: 'TipRanks',      initials: 'TR', gain: '+143%', copiers: 12305, risk: 'Low'    },
+    { name: 'Wesl3y',        username: 'Wesl3y',        initials: 'WS', gain: '+198%', copiers: 9870,  risk: 'Medium' },
+    { name: 'olivier01',     username: 'olivier01',     initials: 'OL', gain: '+112%', copiers: 21034, risk: 'Low'    },
+    { name: 'felixfischer',  username: 'felixfischer',  initials: 'FF', gain: '+165%', copiers: 7654,  risk: 'Medium' },
+    { name: 'CopyMe2023',    username: 'CopyMe2023',    initials: 'CM', gain: '+94%',  copiers: 5430,  risk: 'Low'    },
+  ];
+
+  function loadInvestors() {
+    const investors = [...CURATED_INVESTORS].sort((a, b) => {
+      const parse = g => parseFloat((g || '0').replace('%','').replace('+',''));
+      return parse(b.gain) - parse(a.gain);
+    });
+    $('investors-grid').innerHTML = investors.map(inv => {
+      const pos = inv.gain.startsWith('+');
+      const url = `https://www.etoro.com/people/${inv.username}`;
+      return `
+        <div class="investor-card" onclick="window.open('${url}','_blank')" title="View on eToro" style="cursor:pointer;">
+          <div class="investor-avatar">${inv.initials}</div>
+          <div class="investor-info">
+            <div class="investor-name">${inv.name}</div>
+            <div class="investor-meta">${inv.copiers.toLocaleString()} copiers · ${inv.risk} risk</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="investor-gain ${pos ? 'pos' : 'neg'}">${inv.gain}</div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </div>
+        </div>`;
+    }).join('');
   }
 
   /* ── Sparkline builder ── */
@@ -854,25 +887,56 @@ Reply ONLY with a JSON object, no markdown:
     }
   }
 
-  /* ── Financial news ── */
+  /* ── Financial news — Yahoo Finance ── */
   async function loadNews() {
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__news__' })
-      });
-      const data = await res.json();
-      const articles = data.news || [];
-      if (!articles.length) { $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>'; return; }
-      $('news-grid').innerHTML = articles.map(a => `
-        <div class="news-card" onclick="if('${a.url||''}' !== '#') window.open('${a.url||'#'}','_blank')" style="${a.url ? 'cursor:pointer' : ''}">
-          <div class="news-source">${a.source} · ${a.time}</div>
-          <div class="news-headline">${a.headline}</div>
-          <div class="news-summary">${a.summary}</div>
-          <div class="news-tickers">${(a.tickers||[]).map(t => `<span class="news-ticker-tag" onclick="event.stopPropagation();setTicker('${t}')">${t}</span>`).join('')}</div>
-        </div>`).join('');
-    } catch(e) { $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>'; }
+      // Fetch news for a basket of major tickers and deduplicate
+      const tickers = ['AAPL','NVDA','TSLA','MSFT','BTC-USD'];
+      const allArticles = [];
+      const seen = new Set();
+
+      await Promise.all(tickers.map(async t => {
+        try {
+          const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${t}&quotesCount=0&newsCount=4&enableFuzzyQuery=false`;
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const data = await res.json();
+          (data.news || []).forEach(a => {
+            if (!seen.has(a.uuid)) {
+              seen.add(a.uuid);
+              allArticles.push(a);
+            }
+          });
+        } catch {}
+      }));
+
+      // Sort by publish time, take top 6
+      const articles = allArticles
+        .sort((a, b) => (b.providerPublishTime || 0) - (a.providerPublishTime || 0))
+        .slice(0, 6);
+
+      if (!articles.length) {
+        $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>';
+        return;
+      }
+
+      $('news-grid').innerHTML = articles.map(a => {
+        const time = a.providerPublishTime
+          ? new Date(a.providerPublishTime * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+          : '';
+        const source = a.publisher || 'Yahoo Finance';
+        const tickers = (a.relatedTickers || []).slice(0, 3);
+        return `
+          <div class="news-card" onclick="window.open('${a.link || '#'}','_blank')" style="cursor:pointer;">
+            <div class="news-source">${source}${time ? ' · ' + time : ''}</div>
+            <div class="news-headline">${a.title || ''}</div>
+            <div class="news-summary">${a.summary || ''}</div>
+            <div class="news-tickers">${tickers.map(t => `<span class="news-ticker-tag" onclick="event.stopPropagation();setTicker('${t}')">${t}</span>`).join('')}</div>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      $('news-grid').innerHTML = '<div class="movers-empty" style="grid-column:1/-1">Could not load news.</div>';
+    }
   }
 
   /* ── Price chart ── */
@@ -1043,8 +1107,8 @@ Reply ONLY with a JSON object, no markdown:
 
   initSections();
 
-  // Refresh movers every 3 hours to match Alpha Vantage cache
-  setInterval(loadMovers, 10800000);
+  // Refresh movers every 5 minutes
+  setInterval(loadMovers, 300000);
 </script>
 </body>
 </html>
