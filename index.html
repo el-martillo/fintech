@@ -321,8 +321,18 @@
   const show = id => $(id).style.display = 'block';
   const hide = id => $(id).style.display = 'none';
 
+  // Stores live price/change data from Alpha Vantage movers — keyed by ticker
+  const liveMarketData = {};
+
   function setTicker(t) {
     $('ticker-input').value = t;
+    analyzeStock();
+  }
+
+  // Called by mover cards — passes real Alpha Vantage figures through
+  function setTickerFromMover(ticker, price, change) {
+    liveMarketData[ticker] = { price, change };
+    $('ticker-input').value = ticker;
     analyzeStock();
   }
 
@@ -352,6 +362,12 @@
 
     try {
       const analysis = await fetchAnalysis(raw);
+      // Override AI-estimated figures with real Alpha Vantage data if available
+      const live = liveMarketData[raw];
+      if (live) {
+        analysis.price        = live.price;
+        analysis.priceChange1d = live.change;
+      }
       await saveToSupabase(analysis);
       renderResult(analysis);
       loadHistory();
@@ -690,7 +706,7 @@
       $('movers-grid').innerHTML = movers.map(m => {
         const pos = m.change.startsWith('+');
         return `
-          <div class="sidebar-mover-row" onclick="setTicker('${m.ticker}')">
+          <div class="sidebar-mover-row" onclick="setTickerFromMover('${m.ticker}','${m.price}','${m.change}')">
             <div class="sidebar-mover-left">
               <span class="mover-ticker">${m.ticker}</span>
               <span class="mover-name">${m.name}</span>
@@ -841,6 +857,14 @@
   let currentChartTicker = '';
   let chartCache = {};
 
+  // Maps UI tab labels to Yahoo Finance range/interval params
+  const CHART_PARAMS = {
+    '1D': { range: '1d',  interval: '5m'  },
+    '1W': { range: '5d',  interval: '60m' },
+    '1M': { range: '1mo', interval: '1d'  },
+    '1Y': { range: '1y',  interval: '1wk' },
+  };
+
   async function loadPriceChart(ticker, period) {
     const canvas = $('price-chart');
     const loading = $('chart-loading');
@@ -859,28 +883,43 @@
     }
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__chart__', chartTicker: ticker, period })
-      });
+      const { range, interval } = CHART_PARAMS[period] || CHART_PARAMS['1D'];
+      // Use Yahoo Finance v8 chart API — no key required
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}&includePrePost=false`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Yahoo Finance ${res.status}`);
+      const json = await res.json();
 
-      if (res.status === 429) {
-        loading.style.display = 'none';
-        error.style.display = 'block';
-        error.textContent = '⚠️ Market data limit reached for today.';
-        return;
-      }
+      const result = json?.chart?.result?.[0];
+      if (!result) throw new Error('No chart data');
 
-      const data = await res.json();
-      if (!data.labels || !data.prices) throw new Error('No chart data');
+      const timestamps = result.timestamp || [];
+      const closes     = result.indicators?.quote?.[0]?.close || [];
 
-      chartCache[cacheKey] = data;
-      renderChart(data, period);
+      // Filter out null closes (pre/post market gaps)
+      const pairs = timestamps
+        .map((t, i) => ({ t, p: closes[i] }))
+        .filter(x => x.p != null);
+
+      if (pairs.length < 2) throw new Error('Insufficient data');
+
+      // Format labels based on period
+      const fmt = period === '1D'
+        ? t => new Date(t * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        : t => new Date(t * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+      const chartData = {
+        labels: pairs.map(x => fmt(x.t)),
+        prices: pairs.map(x => parseFloat(x.p.toFixed(2))),
+      };
+
+      chartCache[cacheKey] = chartData;
+      renderChart(chartData, period);
     } catch(e) {
       loading.style.display = 'none';
       error.style.display = 'block';
-      error.textContent = 'Could not load chart data.';
+      error.textContent = 'Could not load chart data — market may be closed or ticker unavailable.';
+      console.warn('Chart error:', e);
     }
   }
 
