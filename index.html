@@ -123,22 +123,6 @@
     <!-- ── Main column (2/3) ── -->
     <div class="col-main">
 
-      <!-- Top copy investors -->
-      <div class="movers-section">
-        <div class="movers-header">
-          <span class="movers-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Top copy investors
-          </span>
-          <a class="movers-link" href="https://www.etoro.com/discover/copy-trading" target="_blank" rel="noopener">View on eToro →</a>
-        </div>
-        <div class="investors-grid" id="investors-grid">
-          <div class="movers-loading">
-            <div class="spinner-sm"></div> Loading investors…
-          </div>
-        </div>
-      </div>
-
       <!-- Search -->
       <div class="search-box">
         <div class="search-box-title">
@@ -218,6 +202,22 @@
         </div>
         <div class="history-grid" id="history-grid">
           <div class="history-empty">No analyses yet. Search a ticker above.</div>
+        </div>
+      </div>
+
+      <!-- Top copy investors -->
+      <div class="movers-section">
+        <div class="movers-header">
+          <span class="movers-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Top copy investors
+          </span>
+          <a class="movers-link" href="https://www.etoro.com/discover/copy-trading" target="_blank" rel="noopener">View on eToro →</a>
+        </div>
+        <div class="investors-grid" id="investors-grid">
+          <div class="movers-loading">
+            <div class="spinner-sm"></div> Loading investors…
+          </div>
         </div>
       </div>
 
@@ -584,10 +584,17 @@
         },
         body: JSON.stringify({ ticker: '__movers__' })
       });
+
+      // Rate limited by Alpha Vantage
+      if (res.status === 429) {
+        $('movers-grid').innerHTML = '<div class="movers-empty">⚠️ Market data limit reached for today. Resets midnight ET.</div>';
+        return;
+      }
+
       const data = await res.json();
       const movers = data.movers || [];
       if (!movers.length) {
-        $('movers-grid').innerHTML = '<div class="movers-empty">Could not load movers.</div>';
+        $('movers-grid').innerHTML = '<div class="movers-empty">No movers data available.</div>';
         return;
       }
       const now = new Date();
@@ -748,8 +755,8 @@
 
   initSections();
 
-  // Refresh movers every 90 seconds
-  setInterval(loadMovers, 90000);
+  // Refresh movers every 3 hours to match Alpha Vantage cache
+  setInterval(loadMovers, 10800000);
 </script>
 </body>
 </html>
