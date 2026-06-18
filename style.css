@@ -1305,3 +1305,41 @@ body.light .hero-badge {
   background: rgba(43,188,118,0.22);
   border-color: rgba(43,188,118,0.5);
 }
+
+/* ── Footer ── */
+.site-footer {
+  max-width: 760px;
+  margin: 2.5rem auto 0;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  gap: 12px;
+}
+.footer-left {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.footer-top-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.footer-top-btn:hover {
+  border-color: var(--accent);
+  color: #a9a3ff;
+  background: var(--accent-dim);
+}
