@@ -670,15 +670,9 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
     try {
       const quotes = await Promise.all(MOVERS_TICKERS.map(async t => {
         try {
-          let json = null;
-          for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
-            try {
-              const res = await fetch(`https://${host}/v8/finance/chart/${encodeURIComponent(t)}?range=1d&interval=1d&includePrePost=false`);
-              if (res.ok) { json = await res.json(); break; }
-            } catch {}
-          }
-          if (!json) return null;
-          const meta = json?.chart?.result?.[0]?.meta;
+          const result = await yahooFetch(t, '1d', '1d');
+          if (!result) return null;
+          const meta = result.meta;
           if (!meta) return null;
           const price = meta.regularMarketPrice;
           const prev  = meta.chartPreviousClose ?? meta.previousClose ?? price;
@@ -786,35 +780,48 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
   /* ── Recommendations — real Yahoo Finance data + AI signal ── */
   const REC_TICKERS = ['AAPL','NVDA','TSLA','MSFT','AMZN','META','GOOGL','BTC-USD'];
 
-  async function fetchYahooQuote(ticker) {
-    // Try query1 first, fall back to query2 if it fails
-    const hosts = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
-    let lastErr;
-    for (const host of hosts) {
+  async function yahooFetch(ticker, range, interval) {
+    for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
       try {
-        const url = `https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=5d&interval=1d&includePrePost=false`;
+        const url = `https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}&includePrePost=false`;
         const res = await fetch(url);
-        if (!res.ok) throw new Error(`Yahoo ${res.status}`);
+        if (!res.ok) continue;
         const json = await res.json();
         const result = json?.chart?.result?.[0];
-        if (!result) throw new Error('no result');
-        const meta   = result.meta;
-        const closes = (result.indicators?.quote?.[0]?.close || []).filter(p => p != null);
-        const price  = meta.regularMarketPrice ?? closes[closes.length - 1];
-        const prev   = meta.chartPreviousClose ?? closes[closes.length - 2] ?? price;
-        if (!price) throw new Error('no price');
-        const change = prev ? (((price - prev) / prev) * 100) : 0;
-        const sign   = change >= 0 ? '+' : '';
-        return {
-          ticker,
-          name:     meta.longName || meta.shortName || ticker,
-          price:    price.toFixed(2),
-          change:   `${sign}${change.toFixed(2)}%`,
-          weekData: closes.map(p => parseFloat(p.toFixed(2))),
-        };
-      } catch(e) { lastErr = e; }
+        if (result) return result;
+      } catch {}
     }
-    throw lastErr;
+    return null;
+  }
+
+  async function fetchYahooQuote(ticker) {
+    // Fetch 1d first (same params movers uses — known to work)
+    const result = await yahooFetch(ticker, '1d', '1d');
+    if (!result) throw new Error(`No data for ${ticker}`);
+
+    const meta  = result.meta;
+    const price = meta.regularMarketPrice;
+    const prev  = meta.chartPreviousClose ?? meta.previousClose ?? price;
+    if (!price) throw new Error('no price');
+    const change = prev ? (((price - prev) / prev) * 100) : 0;
+    const sign   = change >= 0 ? '+' : '';
+
+    // Fetch 5d closes for sparkline separately — best-effort, don't fail if missing
+    let weekData = [];
+    try {
+      const r5 = await yahooFetch(ticker, '5d', '1d');
+      weekData = (r5?.indicators?.quote?.[0]?.close || [])
+        .filter(p => p != null)
+        .map(p => parseFloat(p.toFixed(2)));
+    } catch {}
+
+    return {
+      ticker,
+      name:     meta.longName || meta.shortName || ticker,
+      price:    price.toFixed(2),
+      change:   `${sign}${change.toFixed(2)}%`,
+      weekData,
+    };
   }
 
   async function fetchAISignal(ticker, price, change, name) {
@@ -987,18 +994,8 @@ Reply ONLY with a JSON object, no markdown:
 
     try {
       const { range, interval } = CHART_PARAMS[period] || CHART_PARAMS['1D'];
-      // Try query1 then query2 as fallback
-      let json = null;
-      for (const host of ['query1.finance.yahoo.com','query2.finance.yahoo.com']) {
-        try {
-          const res = await fetch(`https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}&includePrePost=false`);
-          if (res.ok) { json = await res.json(); break; }
-        } catch {}
-      }
-      if (!json) throw new Error('Yahoo Finance unavailable');
-
-      const result = json?.chart?.result?.[0];
-      if (!result) throw new Error('No chart data');
+      const result = await yahooFetch(ticker, range, interval);
+      if (!result) throw new Error('Yahoo Finance unavailable');
 
       const timestamps = result.timestamp || [];
       const closes     = result.indicators?.quote?.[0]?.close || [];
