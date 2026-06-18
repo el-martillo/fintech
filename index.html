@@ -40,21 +40,132 @@
           <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           <span id="theme-label">Light</span>
         </button>
-        <button class="navbar-account" title="Account">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-          </svg>
-        </button>
+        <div id="auth-slot" style="position:relative;flex-shrink:0;"></div>
       </div>
     </div>
-  </nav>
 
-  <!-- ── Exchange ticker bar ── -->
-  <div class="exchange-ticker-bar">
-    <div class="exchange-ticker-track" id="exchange-ticker-track">
-      <!-- populated by JS -->
-    </div>
-  </div>
+  <!-- ── Auth panel (slides down from navbar) ── -->
+  <div class="auth-panel" id="auth-panel" role="dialog" aria-modal="true" aria-label="Account">
+    <div class="auth-panel-backdrop" id="auth-backdrop" onclick="closeAuthPanel()"></div>
+    <div class="auth-panel-card" id="auth-card">
+
+      <!-- ── Logged-out state ── -->
+      <div id="auth-logged-out">
+
+        <!-- Tab bar -->
+        <div class="auth-tabs" id="auth-tabs">
+          <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign in</button>
+          <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create account</button>
+        </div>
+
+        <div class="auth-messages">
+          <div class="auth-error" id="auth-error"></div>
+          <div class="auth-success" id="auth-success"></div>
+        </div>
+
+        <!-- Sign-in fields -->
+        <div id="panel-signin">
+          <div class="auth-field">
+            <label>Email</label>
+            <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <div class="auth-pw-wrap">
+              <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password"/>
+              <button type="button" class="auth-pw-eye" onclick="togglePw('si-password',this)" tabindex="-1">
+                <svg class="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="auth-forgot-row">
+            <button type="button" class="auth-link-btn" onclick="switchTab('reset')">Forgot password?</button>
+          </div>
+          <button class="auth-submit-btn" id="si-btn" onclick="handleSignIn()">Sign in</button>
+          <div class="auth-or"><span>or</span></div>
+          <button class="auth-google-btn" onclick="handleGoogleAuth()">
+            <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+          </button>
+        </div>
+
+        <!-- Sign-up fields -->
+        <div id="panel-signup" style="display:none">
+          <div class="auth-field">
+            <label>Email</label>
+            <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <div class="auth-pw-wrap">
+              <input type="password" id="su-password" placeholder="At least 8 characters" autocomplete="new-password"/>
+              <button type="button" class="auth-pw-eye" onclick="togglePw('su-password',this)" tabindex="-1">
+                <svg class="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="auth-field">
+            <label>Confirm password</label>
+            <input type="password" id="su-confirm" placeholder="Repeat password" autocomplete="new-password"/>
+          </div>
+          <button class="auth-submit-btn" id="su-btn" onclick="handleSignUp()">Create account</button>
+          <div class="auth-or"><span>or</span></div>
+          <button class="auth-google-btn" onclick="handleGoogleAuth()">
+            <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+          </button>
+        </div>
+
+        <!-- Reset password -->
+        <div id="panel-reset" style="display:none">
+          <button type="button" class="auth-back-btn" onclick="switchTab('signin')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <p class="auth-reset-hint">Enter your email and we'll send a reset link.</p>
+          <div class="auth-field">
+            <label>Email</label>
+            <input type="email" id="rp-email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <button class="auth-submit-btn" id="rp-btn" onclick="handleResetPassword()">Send reset link</button>
+        </div>
+
+      </div><!-- /logged-out -->
+
+      <!-- ── Logged-in state ── -->
+      <div id="auth-logged-in" style="display:none">
+        <div class="auth-user-header">
+          <div class="auth-avatar" id="auth-avatar"></div>
+          <div>
+            <div class="auth-user-email" id="auth-user-email"></div>
+            <div class="auth-user-since" id="auth-user-since"></div>
+          </div>
+        </div>
+        <div class="auth-menu">
+          <button class="auth-menu-item" onclick="closeAuthPanel()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            Dashboard
+          </button>
+          <button class="auth-menu-item" onclick="closeAuthPanel()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            Profile settings
+          </button>
+          <button class="auth-menu-item" onclick="closeAuthPanel()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            Agent Portfolios
+          </button>
+        </div>
+        <div class="auth-menu-divider"></div>
+        <button class="auth-menu-item auth-signout-btn" onclick="handleSignOut()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign out
+        </button>
+      </div><!-- /logged-in -->
+
+    </div><!-- /auth-panel-card -->
+  </div><!-- /auth-panel -->
+
+  </nav>
 
 <div class="page">
 
@@ -1087,102 +1198,230 @@
   function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 
-  /* ── Exchange Ticker Bar ── */
+  /* ══════════════════════════════════════════════════════
+     AUTH  — Supabase drop-down panel, no page gate
+  ══════════════════════════════════════════════════════ */
 
-  const EXCHANGES = [
-    { name: 'NYSE',    label: 'New York SE',      flag: '🇺🇸', tz: 'America/New_York',    open: '09:30', close: '16:00', index: '^NYA',     yTicker: 'IVV'  },
-    { name: 'NASDAQ',  label: 'Nasdaq',            flag: '🇺🇸', tz: 'America/New_York',    open: '09:30', close: '16:00', index: '^IXIC',    yTicker: 'QQQ'  },
-    { name: 'SSE',     label: 'Shanghai SE',       flag: '🇨🇳', tz: 'Asia/Shanghai',       open: '09:30', close: '15:00', index: '000001.SS', yTicker: '000001.SS' },
-    { name: 'TSE',     label: 'Tokyo SE',          flag: '🇯🇵', tz: 'Asia/Tokyo',          open: '09:00', close: '15:30', index: '^N225',    yTicker: '^N225' },
-    { name: 'Euronext',label: 'Euronext',          flag: '🇪🇺', tz: 'Europe/Paris',        open: '09:00', close: '17:30', index: '^N100',    yTicker: '^N100' },
-    { name: 'LSE',     label: 'London SE',         flag: '🇬🇧', tz: 'Europe/London',       open: '08:00', close: '16:30', index: '^FTSE',    yTicker: '^FTSE' },
-    { name: 'NSE',     label: 'National SE India', flag: '🇮🇳', tz: 'Asia/Kolkata',        open: '09:15', close: '15:30', index: '^NSEI',    yTicker: '^NSEI' },
-    { name: 'HKEX',    label: 'Hong Kong Exch.',   flag: '🇭🇰', tz: 'Asia/Hong_Kong',      open: '09:30', close: '16:00', index: '^HSI',     yTicker: '^HSI'  },
-    { name: 'SZSE',    label: 'Shenzhen SE',       flag: '🇨🇳', tz: 'Asia/Shanghai',       open: '09:30', close: '15:00', index: '399001.SZ',yTicker: '399001.SZ' },
-    { name: 'TMX',     label: 'Toronto SE',        flag: '🇨🇦', tz: 'America/Toronto',     open: '09:30', close: '16:00', index: '^GSPTSE',  yTicker: '^GSPTSE' },
-  ];
+  let currentUser = null;
+  let authPanelOpen = false;
 
-  function isExchangeOpen(exch) {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: exch.tz,
-      hour: '2-digit', minute: '2-digit', hour12: false,
-      weekday: 'short'
+  // ── Panel open / close ──────────────────────────────
+  function openAuthPanel() {
+    document.getElementById('auth-panel').classList.add('open');
+    authPanelOpen = true;
+  }
+  function closeAuthPanel() {
+    document.getElementById('auth-panel').classList.remove('open');
+    authPanelOpen = false;
+    clearAuthMessages();
+  }
+  function toggleAuthPanel() {
+    authPanelOpen ? closeAuthPanel() : openAuthPanel();
+  }
+
+  // Close on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeAuthPanel();
+  });
+
+  // ── Tab switcher ────────────────────────────────────
+  function switchTab(tab) {
+    clearAuthMessages();
+    const panels = ['signin', 'signup', 'reset'];
+    panels.forEach(p => {
+      document.getElementById('panel-' + p).style.display = p === tab ? 'block' : 'none';
     });
-    const parts = formatter.formatToParts(now);
-    const weekday = parts.find(p => p.type === 'weekday').value;
-    const hour    = parseInt(parts.find(p => p.type === 'hour').value);
-    const minute  = parseInt(parts.find(p => p.type === 'minute').value);
-
-    if (weekday === 'Sat' || weekday === 'Sun') return false;
-
-    const [oh, om] = exch.open.split(':').map(Number);
-    const [ch, cm] = exch.close.split(':').map(Number);
-    const nowMins  = hour * 60 + minute;
-    const openMins = oh * 60 + om;
-    const closeMins = ch * 60 + cm;
-    return nowMins >= openMins && nowMins < closeMins;
+    // Update tab bar active state (reset has no tab)
+    ['signin','signup'].forEach(t => {
+      document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
+    });
+    // Hide tab bar on reset view
+    document.getElementById('auth-tabs').style.display = tab === 'reset' ? 'none' : 'flex';
   }
 
-  function renderExchangeTicker(items) {
-    const track = $('exchange-ticker-track');
-    if (!track) return;
-
-    // Build items HTML — duplicate for seamless loop
-    const buildItem = (ex, data) => {
-      const open   = isExchangeOpen(ex);
-      const pos    = data && data.change >= 0;
-      const pct    = data ? (pos ? '+' : '') + data.change.toFixed(2) + '%' : '…';
-      const color  = data ? (pos ? 'var(--green)' : 'var(--red)') : 'var(--text-dim)';
-      const statusClass = open ? 'status-open' : 'status-closed';
-      const statusLabel = open ? 'OPEN' : 'CLOSED';
-      const dot = open
-        ? '<span class="live-dot" style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:livepulse 1.5s ease-in-out infinite;flex-shrink:0;"></span>'
-        : '';
-
-      return `<div class="exchange-item">
-        <span style="font-size:14px;line-height:1;">${ex.flag}</span>
-        <span class="exchange-name">${ex.name}</span>
-        <span class="exchange-location">${ex.label}</span>
-        <span class="exchange-change" style="color:${color}">${pct}</span>
-        <span class="exchange-status ${statusClass}">${dot}${open ? '&nbsp;' : ''}${statusLabel}</span>
-      </div>`;
-    };
-
-    let html = items.map(({ ex, data }) => buildItem(ex, data)).join('');
-    // Duplicate for seamless infinite scroll
-    track.innerHTML = html + html;
+  // ── Message helpers ─────────────────────────────────
+  function clearAuthMessages() {
+    const e = document.getElementById('auth-error');
+    const s = document.getElementById('auth-success');
+    if (e) { e.style.display = 'none'; e.textContent = ''; }
+    if (s) { s.style.display = 'none'; s.textContent = ''; }
+  }
+  function showAuthError(msg) {
+    const el = document.getElementById('auth-error');
+    if (!el) return;
+    el.textContent = msg; el.style.display = 'block';
+    document.getElementById('auth-success').style.display = 'none';
+  }
+  function showAuthSuccess(msg) {
+    const el = document.getElementById('auth-success');
+    if (!el) return;
+    el.textContent = msg; el.style.display = 'block';
+    document.getElementById('auth-error').style.display = 'none';
   }
 
-  async function loadExchangeTicker() {
-    // Render immediately with open/closed status, no data yet
-    const items = EXCHANGES.map(ex => ({ ex, data: null }));
-    renderExchangeTicker(items);
-
-    // Fetch data for each exchange via yahooFetch proxy
-    const results = await Promise.all(EXCHANGES.map(async (ex) => {
-      try {
-        const result = await yahooFetch(ex.yTicker, '5d', '1d');
-        if (!result) return { ex, data: null };
-        const closes = (result.indicators?.quote?.[0]?.close || []).filter(p => p != null);
-        if (closes.length < 2) return { ex, data: null };
-        const price  = closes[closes.length - 1];
-        const prev   = closes[closes.length - 2];
-        const change = ((price - prev) / prev) * 100;
-        return { ex, data: { price, change } };
-      } catch { return { ex, data: null }; }
-    }));
-
-    renderExchangeTicker(results);
-
-    // Refresh open/closed status every minute (prices stay until next full reload)
-    setInterval(() => {
-      // Only re-render open/closed badges without re-fetching prices
-      renderExchangeTicker(results);
-    }, 60000);
+  // ── Button spinner ──────────────────────────────────
+  function setBtnLoading(id, loading, label) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? '<span class="auth-spin"></span>'
+      : label;
   }
 
-  loadExchangeTicker();
+  // ── Show/hide password ──────────────────────────────
+  function togglePw(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    btn.innerHTML = show
+      ? '<svg class="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      : '<svg class="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  }
+
+  // ── Sign In ─────────────────────────────────────────
+  async function handleSignIn() {
+    const email = document.getElementById('si-email').value.trim();
+    const pw    = document.getElementById('si-password').value;
+    if (!email || !pw) { showAuthError('Please fill in all fields.'); return; }
+    clearAuthMessages();
+    setBtnLoading('si-btn', true, 'Sign in');
+    try {
+      const { error } = await db.auth.signInWithPassword({ email, password: pw });
+      if (error) throw error;
+      // onAuthStateChange handles UI update
+    } catch (err) {
+      showAuthError(err.message || 'Sign in failed.');
+      setBtnLoading('si-btn', false, 'Sign in');
+    }
+  }
+
+  // ── Sign Up ─────────────────────────────────────────
+  async function handleSignUp() {
+    const email   = document.getElementById('su-email').value.trim();
+    const pw      = document.getElementById('su-password').value;
+    const confirm = document.getElementById('su-confirm').value;
+    if (!email || !pw)  { showAuthError('Please fill in all fields.'); return; }
+    if (pw.length < 8)  { showAuthError('Password must be at least 8 characters.'); return; }
+    if (pw !== confirm) { showAuthError('Passwords do not match.'); return; }
+    clearAuthMessages();
+    setBtnLoading('su-btn', true, 'Create account');
+    try {
+      const { error } = await db.auth.signUp({ email, password: pw });
+      if (error) throw error;
+      showAuthSuccess('✓ Check your email to confirm your account, then sign in.');
+    } catch (err) {
+      showAuthError(err.message || 'Sign up failed.');
+    }
+    setBtnLoading('su-btn', false, 'Create account');
+  }
+
+  // ── Reset password ──────────────────────────────────
+  async function handleResetPassword() {
+    const email = document.getElementById('rp-email').value.trim();
+    if (!email) { showAuthError('Please enter your email.'); return; }
+    clearAuthMessages();
+    setBtnLoading('rp-btn', true, 'Send reset link');
+    try {
+      const { error } = await db.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href
+      });
+      if (error) throw error;
+      showAuthSuccess('✓ Reset link sent — check your inbox.');
+    } catch (err) {
+      showAuthError(err.message || 'Could not send reset email.');
+    }
+    setBtnLoading('rp-btn', false, 'Send reset link');
+  }
+
+  // ── Google OAuth ─────────────────────────────────────
+  async function handleGoogleAuth() {
+    clearAuthMessages();
+    const { error } = await db.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    });
+    if (error) showAuthError(error.message);
+  }
+
+  // ── Sign out ─────────────────────────────────────────
+  async function handleSignOut() {
+    closeAuthPanel();
+    await db.auth.signOut();
+  }
+
+  // ── Render the navbar icon/pill ───────────────────────
+  function renderAuthSlot(user) {
+    const slot = document.getElementById('auth-slot');
+    if (!slot) return;
+    if (!user) {
+      slot.innerHTML = `
+        <button class="navbar-account" title="Sign in / Create account"
+          onclick="toggleAuthPanel()" id="auth-trigger">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </button>`;
+    } else {
+      const initials = (user.email || 'U').slice(0, 2).toUpperCase();
+      slot.innerHTML = `
+        <button class="navbar-user-btn" title="My account"
+          onclick="toggleAuthPanel()" id="auth-trigger">
+          <span class="navbar-avatar">${initials}</span>
+        </button>`;
+    }
+  }
+
+  // ── Render the panel body ─────────────────────────────
+  function renderPanelBody(user) {
+    const lo = document.getElementById('auth-logged-out');
+    const li = document.getElementById('auth-logged-in');
+    if (!lo || !li) return;
+    if (!user) {
+      lo.style.display = 'block';
+      li.style.display = 'none';
+      switchTab('signin'); // reset to sign-in tab
+    } else {
+      lo.style.display = 'none';
+      li.style.display = 'block';
+      // Populate user info
+      const initials = (user.email || 'U').slice(0, 2).toUpperCase();
+      const av = document.getElementById('auth-avatar');
+      const em = document.getElementById('auth-user-email');
+      const si = document.getElementById('auth-user-since');
+      if (av) av.textContent = initials;
+      if (em) em.textContent = user.email;
+      if (si && user.created_at) {
+        const d = new Date(user.created_at);
+        si.textContent = 'Member since ' + d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      }
+    }
+  }
+
+  // ── Auth state listener ───────────────────────────────
+  db.auth.onAuthStateChange((event, session) => {
+    currentUser = session?.user ?? null;
+    renderAuthSlot(currentUser);
+    renderPanelBody(currentUser);
+    if (currentUser && event === 'SIGNED_IN') {
+      // Close panel briefly after sign-in so user sees the page
+      setTimeout(closeAuthPanel, 800);
+    }
+  });
+
+  // ── Enter key support ────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const active = document.activeElement?.id;
+    if (active === 'si-email' || active === 'si-password') handleSignIn();
+    if (active === 'su-email' || active === 'su-password' || active === 'su-confirm') handleSignUp();
+    if (active === 'rp-email') handleResetPassword();
+  });
+
+
   initSections();
 
   // Refresh movers every 5 minutes
