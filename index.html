@@ -17,6 +17,231 @@
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="config.js"></script>
+
+  <style id="auth-styles">
+  /* ── Auth trigger wrap ── */
+  .auth-trigger-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* ── Auth dropdown ── */
+  .auth-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 300px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.25);
+    z-index: 9999;
+    animation: adpIn 0.18s cubic-bezier(.22,.68,0,1.15) forwards;
+  }
+  .auth-dropdown.open { display: block; }
+
+  @keyframes adpIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  }
+
+  /* ── Header ── */
+  .adp-header { margin-bottom: 0.9rem; }
+  .adp-logo {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+
+  /* ── Tab bar ── */
+  .adp-tabs {
+    display: flex;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 3px; gap: 2px;
+    margin-bottom: 0.85rem;
+  }
+  .adp-tab {
+    flex: 1; padding: 6px 8px;
+    font-size: 12.5px; font-weight: 500;
+    border: none; border-radius: 6px;
+    background: transparent; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+    font-family: inherit;
+  }
+  .adp-tab.active {
+    background: var(--surface); color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .adp-tab:hover:not(.active) { color: var(--text); }
+
+  /* ── Messages ── */
+  .adp-msg {
+    display: none; border-radius: 7px;
+    padding: 8px 11px; font-size: 12px;
+    margin-bottom: 0.7rem; line-height: 1.45;
+  }
+  .adp-err { background: var(--red-bg); border: 1px solid rgba(239,68,68,.22); color: var(--red); }
+  .adp-ok  { background: var(--green-bg); border: 1px solid rgba(34,197,94,.22); color: var(--green); }
+
+  /* ── Fields ── */
+  .adp-field { margin-bottom: 0.65rem; }
+  .adp-field label {
+    display: block; font-size: 11px; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 4px;
+    letter-spacing: 0.03em;
+  }
+  .adp-field input {
+    width: 100%; height: 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 0 11px;
+    font-size: 13px; color: var(--text);
+    outline: none; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .adp-field input::placeholder { color: var(--text-dim); }
+  .adp-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,.13);
+  }
+
+  /* Password eye toggle */
+  .adp-pw { position: relative; }
+  .adp-pw input { padding-right: 36px; }
+  .adp-eye {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 36px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); display: flex; align-items: center; justify-content: center;
+    transition: color .15s;
+  }
+  .adp-eye:hover { color: var(--text-muted); }
+
+  /* Forgot */
+  .adp-forgot { text-align: right; margin: -2px 0 0.55rem; }
+  .adp-link {
+    background: none; border: none; padding: 0;
+    font-size: 11.5px; color: var(--text-dim);
+    cursor: pointer; transition: color .15s; font-family: inherit;
+  }
+  .adp-link:hover { color: var(--accent); }
+
+  /* Back button */
+  .adp-back {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: none; padding: 0;
+    font-size: 12px; color: var(--text-muted);
+    cursor: pointer; margin-bottom: 0.6rem;
+    transition: color .15s; font-family: inherit;
+  }
+  .adp-back:hover { color: var(--text); }
+  .adp-reset-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 0.65rem; line-height: 1.5; }
+
+  /* Submit button */
+  .adp-btn {
+    width: 100%; height: 40px; margin-top: 2px;
+    background: var(--accent); border: none; border-radius: 7px;
+    font-size: 13.5px; font-weight: 600; color: #fff;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity .15s, transform .1s; font-family: inherit;
+  }
+  .adp-btn:hover  { opacity: .88; }
+  .adp-btn:active { transform: scale(.98); }
+  .adp-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+  /* Spinner */
+  .adp-spin {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+
+  /* OR divider */
+  .adp-or {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10.5px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin: 0.7rem 0;
+  }
+  .adp-or::before, .adp-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Google */
+  .adp-google {
+    width: 100%; height: 38px;
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px;
+    font-size: 12.5px; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .15s; font-family: inherit;
+  }
+  .adp-google:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── Logged-in ── */
+  .adp-user-header {
+    display: flex; align-items: center; gap: 11px;
+    padding-bottom: 0.85rem; margin-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .adp-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .adp-user-email { font-size: 12.5px; font-weight: 500; color: var(--text); word-break: break-all; }
+  .adp-user-since { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Nav items */
+  .adp-nav { display: flex; flex-direction: column; gap: 1px; }
+  .adp-nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 9px; border: none; border-radius: 7px;
+    background: transparent; font-size: 12.5px; color: var(--text-muted);
+    cursor: pointer; width: 100%; text-align: left;
+    transition: all .12s; font-family: inherit;
+  }
+  .adp-nav-item:hover { background: var(--surface2); color: var(--text); }
+  .adp-nav-item svg { flex-shrink: 0; }
+  .adp-badge {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    background: var(--accent-dim); color: #a9a3ff;
+    border: 1px solid rgba(108,99,255,.25);
+    border-radius: 4px; padding: 1px 5px;
+  }
+  .adp-divider { height: 1px; background: var(--border); margin: 6px 0; }
+  .adp-signout:hover { background: var(--red-bg) !important; color: var(--red) !important; }
+
+  /* ── Logged-in avatar button in navbar ── */
+  .adp-user-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid var(--accent); background: var(--accent-dim);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .15s; padding: 0;
+    font-size: 11px; font-weight: 700; color: #a9a3ff;
+    font-family: inherit;
+  }
+  .adp-user-btn:hover { background: var(--accent); color: #fff; }
+
+  /* ── Mobile: full-width card below navbar ── */
+  @media (max-width: 520px) {
+    .auth-dropdown {
+      position: fixed;
+      top: 60px; left: 0; right: 0;
+      width: 100%; border-radius: 0 0 14px 14px;
+      border-left: none; border-right: none; border-top: none;
+      max-height: calc(100dvh - 60px);
+      overflow-y: auto;
+    }
+  }
+
+  /* Light mode */
+  body.light .auth-dropdown {
+    box-shadow: 0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.06);
+  }
+  </style>
+
 </head>
 
 <body>
@@ -40,131 +265,145 @@
           <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           <span id="theme-label">Light</span>
         </button>
-        <div id="auth-slot" style="position:relative;flex-shrink:0;"></div>
+        <div class="auth-trigger-wrap" id="auth-trigger-wrap">
+          <!-- Logged-out: person icon -->
+          <button class="navbar-account auth-trigger" id="auth-trigger-btn"
+                  onclick="toggleAuthPanel()" title="Sign in / Register"
+                  aria-haspopup="true" aria-expanded="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </button>
+
+          <!-- Auth dropdown panel -->
+          <div class="auth-dropdown" id="auth-dropdown" role="dialog" aria-label="Account">
+
+            <!-- ▸ LOGGED-OUT VIEW ◂ -->
+            <div id="auth-logged-out">
+              <div class="adp-header">
+                <div class="adp-logo">
+                  <svg width="18" height="18" viewBox="0 0 34 34" fill="none">
+                    <circle cx="17" cy="17" r="15.5" stroke="var(--accent)" stroke-width="2.5"/>
+                    <text x="17" y="22" text-anchor="middle" font-family="Inter,sans-serif"
+                          font-weight="700" font-size="12" fill="var(--accent)">eT</text>
+                  </svg>
+                  <span>Stock Advisor</span>
+                </div>
+              </div>
+
+              <div class="adp-tabs">
+                <button class="adp-tab active" id="tab-signin" onclick="adpTab('signin')">Sign in</button>
+                <button class="adp-tab" id="tab-signup" onclick="adpTab('signup')">Register</button>
+              </div>
+
+              <div class="adp-msg adp-err" id="adp-err"></div>
+              <div class="adp-msg adp-ok"  id="adp-ok"></div>
+
+              <!-- Sign-in -->
+              <div id="adp-signin">
+                <div class="adp-field">
+                  <label>Email</label>
+                  <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email"/>
+                </div>
+                <div class="adp-field">
+                  <label>Password</label>
+                  <div class="adp-pw">
+                    <input type="password" id="si-pw" placeholder="••••••••" autocomplete="current-password"/>
+                    <button type="button" class="adp-eye" onclick="adpTogglePw('si-pw',this)" tabindex="-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="adp-forgot">
+                  <button type="button" class="adp-link" onclick="adpTab('reset')">Forgot password?</button>
+                </div>
+                <button class="adp-btn" id="si-btn" onclick="adpSignIn()">Sign in</button>
+                <div class="adp-or"><span>or</span></div>
+                <button class="adp-google" onclick="adpGoogle()">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                  Continue with Google
+                </button>
+              </div>
+
+              <!-- Register -->
+              <div id="adp-signup" style="display:none">
+                <div class="adp-field">
+                  <label>Email</label>
+                  <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email"/>
+                </div>
+                <div class="adp-field">
+                  <label>Password</label>
+                  <div class="adp-pw">
+                    <input type="password" id="su-pw" placeholder="Min 8 characters" autocomplete="new-password"/>
+                    <button type="button" class="adp-eye" onclick="adpTogglePw('su-pw',this)" tabindex="-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="adp-field">
+                  <label>Confirm password</label>
+                  <input type="password" id="su-pw2" placeholder="Repeat password" autocomplete="new-password"/>
+                </div>
+                <button class="adp-btn" id="su-btn" onclick="adpSignUp()">Create account</button>
+                <div class="adp-or"><span>or</span></div>
+                <button class="adp-google" onclick="adpGoogle()">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                  Continue with Google
+                </button>
+              </div>
+
+              <!-- Reset password -->
+              <div id="adp-reset" style="display:none">
+                <button type="button" class="adp-back" onclick="adpTab('signin')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  Back to sign in
+                </button>
+                <p class="adp-reset-hint">We'll send a reset link to your inbox.</p>
+                <div class="adp-field">
+                  <label>Email</label>
+                  <input type="email" id="rp-email" placeholder="you@example.com" autocomplete="email"/>
+                </div>
+                <button class="adp-btn" id="rp-btn" onclick="adpResetPw()">Send reset link</button>
+              </div>
+            </div><!-- /logged-out -->
+
+            <!-- ▸ LOGGED-IN VIEW ◂ -->
+            <div id="auth-logged-in" style="display:none">
+              <div class="adp-user-header">
+                <div class="adp-avatar" id="adp-avatar"></div>
+                <div class="adp-user-info">
+                  <div class="adp-user-email" id="adp-user-email"></div>
+                  <div class="adp-user-since" id="adp-user-since"></div>
+                </div>
+              </div>
+              <nav class="adp-nav">
+                <button class="adp-nav-item" onclick="closeAuthPanel()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  Dashboard
+                </button>
+                <button class="adp-nav-item" onclick="closeAuthPanel()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  Profile settings
+                </button>
+                <button class="adp-nav-item" onclick="closeAuthPanel()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                  Agent Portfolios <span class="adp-badge">Soon</span>
+                </button>
+              </nav>
+              <div class="adp-divider"></div>
+              <button class="adp-nav-item adp-signout" onclick="adpSignOut()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign out
+              </button>
+            </div><!-- /logged-in -->
+
+          </div><!-- /auth-dropdown -->
+        </div><!-- /auth-trigger-wrap -->
       </div>
     </div>
-
-  <!-- ── Auth panel (slides down from navbar) ── -->
-  <div class="auth-panel" id="auth-panel" role="dialog" aria-modal="true" aria-label="Account">
-    <div class="auth-panel-backdrop" id="auth-backdrop" onclick="closeAuthPanel()"></div>
-    <div class="auth-panel-card" id="auth-card">
-
-      <!-- ── Logged-out state ── -->
-      <div id="auth-logged-out">
-
-        <!-- Tab bar -->
-        <div class="auth-tabs" id="auth-tabs">
-          <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign in</button>
-          <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Create account</button>
-        </div>
-
-        <div class="auth-messages">
-          <div class="auth-error" id="auth-error"></div>
-          <div class="auth-success" id="auth-success"></div>
-        </div>
-
-        <!-- Sign-in fields -->
-        <div id="panel-signin">
-          <div class="auth-field">
-            <label>Email</label>
-            <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email"/>
-          </div>
-          <div class="auth-field">
-            <label>Password</label>
-            <div class="auth-pw-wrap">
-              <input type="password" id="si-password" placeholder="••••••••" autocomplete="current-password"/>
-              <button type="button" class="auth-pw-eye" onclick="togglePw('si-password',this)" tabindex="-1">
-                <svg class="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="auth-forgot-row">
-            <button type="button" class="auth-link-btn" onclick="switchTab('reset')">Forgot password?</button>
-          </div>
-          <button class="auth-submit-btn" id="si-btn" onclick="handleSignIn()">Sign in</button>
-          <div class="auth-or"><span>or</span></div>
-          <button class="auth-google-btn" onclick="handleGoogleAuth()">
-            <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            Continue with Google
-          </button>
-        </div>
-
-        <!-- Sign-up fields -->
-        <div id="panel-signup" style="display:none">
-          <div class="auth-field">
-            <label>Email</label>
-            <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email"/>
-          </div>
-          <div class="auth-field">
-            <label>Password</label>
-            <div class="auth-pw-wrap">
-              <input type="password" id="su-password" placeholder="At least 8 characters" autocomplete="new-password"/>
-              <button type="button" class="auth-pw-eye" onclick="togglePw('su-password',this)" tabindex="-1">
-                <svg class="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="auth-field">
-            <label>Confirm password</label>
-            <input type="password" id="su-confirm" placeholder="Repeat password" autocomplete="new-password"/>
-          </div>
-          <button class="auth-submit-btn" id="su-btn" onclick="handleSignUp()">Create account</button>
-          <div class="auth-or"><span>or</span></div>
-          <button class="auth-google-btn" onclick="handleGoogleAuth()">
-            <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            Continue with Google
-          </button>
-        </div>
-
-        <!-- Reset password -->
-        <div id="panel-reset" style="display:none">
-          <button type="button" class="auth-back-btn" onclick="switchTab('signin')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Back
-          </button>
-          <p class="auth-reset-hint">Enter your email and we'll send a reset link.</p>
-          <div class="auth-field">
-            <label>Email</label>
-            <input type="email" id="rp-email" placeholder="you@example.com" autocomplete="email"/>
-          </div>
-          <button class="auth-submit-btn" id="rp-btn" onclick="handleResetPassword()">Send reset link</button>
-        </div>
-
-      </div><!-- /logged-out -->
-
-      <!-- ── Logged-in state ── -->
-      <div id="auth-logged-in" style="display:none">
-        <div class="auth-user-header">
-          <div class="auth-avatar" id="auth-avatar"></div>
-          <div>
-            <div class="auth-user-email" id="auth-user-email"></div>
-            <div class="auth-user-since" id="auth-user-since"></div>
-          </div>
-        </div>
-        <div class="auth-menu">
-          <button class="auth-menu-item" onclick="closeAuthPanel()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-            Dashboard
-          </button>
-          <button class="auth-menu-item" onclick="closeAuthPanel()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-            Profile settings
-          </button>
-          <button class="auth-menu-item" onclick="closeAuthPanel()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-            Agent Portfolios
-          </button>
-        </div>
-        <div class="auth-menu-divider"></div>
-        <button class="auth-menu-item auth-signout-btn" onclick="handleSignOut()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Sign out
-        </button>
-      </div><!-- /logged-in -->
-
-    </div><!-- /auth-panel-card -->
-  </div><!-- /auth-panel -->
-
   </nav>
 
 <div class="page">
@@ -1197,235 +1436,194 @@
 
   function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-
-  /* ══════════════════════════════════════════════════════
-     AUTH  — Supabase drop-down panel, no page gate
-  ══════════════════════════════════════════════════════ */
-
-  let currentUser = null;
-  let authPanelOpen = false;
-
-  // ── Panel open / close ──────────────────────────────
-  function openAuthPanel() {
-    document.getElementById('auth-panel').classList.add('open');
-    authPanelOpen = true;
-  }
-  function closeAuthPanel() {
-    document.getElementById('auth-panel').classList.remove('open');
-    authPanelOpen = false;
-    clearAuthMessages();
-  }
-  function toggleAuthPanel() {
-    authPanelOpen ? closeAuthPanel() : openAuthPanel();
-  }
-
-  // Close on Escape
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeAuthPanel();
-  });
-
-  // ── Tab switcher ────────────────────────────────────
-  function switchTab(tab) {
-    clearAuthMessages();
-    const panels = ['signin', 'signup', 'reset'];
-    panels.forEach(p => {
-      document.getElementById('panel-' + p).style.display = p === tab ? 'block' : 'none';
-    });
-    // Update tab bar active state (reset has no tab)
-    ['signin','signup'].forEach(t => {
-      document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
-    });
-    // Hide tab bar on reset view
-    document.getElementById('auth-tabs').style.display = tab === 'reset' ? 'none' : 'flex';
-  }
-
-  // ── Message helpers ─────────────────────────────────
-  function clearAuthMessages() {
-    const e = document.getElementById('auth-error');
-    const s = document.getElementById('auth-success');
-    if (e) { e.style.display = 'none'; e.textContent = ''; }
-    if (s) { s.style.display = 'none'; s.textContent = ''; }
-  }
-  function showAuthError(msg) {
-    const el = document.getElementById('auth-error');
-    if (!el) return;
-    el.textContent = msg; el.style.display = 'block';
-    document.getElementById('auth-success').style.display = 'none';
-  }
-  function showAuthSuccess(msg) {
-    const el = document.getElementById('auth-success');
-    if (!el) return;
-    el.textContent = msg; el.style.display = 'block';
-    document.getElementById('auth-error').style.display = 'none';
-  }
-
-  // ── Button spinner ──────────────────────────────────
-  function setBtnLoading(id, loading, label) {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.disabled = loading;
-    btn.innerHTML = loading
-      ? '<span class="auth-spin"></span>'
-      : label;
-  }
-
-  // ── Show/hide password ──────────────────────────────
-  function togglePw(inputId, btn) {
-    const inp = document.getElementById(inputId);
-    const show = inp.type === 'password';
-    inp.type = show ? 'text' : 'password';
-    btn.innerHTML = show
-      ? '<svg class="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
-      : '<svg class="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-  }
-
-  // ── Sign In ─────────────────────────────────────────
-  async function handleSignIn() {
-    const email = document.getElementById('si-email').value.trim();
-    const pw    = document.getElementById('si-password').value;
-    if (!email || !pw) { showAuthError('Please fill in all fields.'); return; }
-    clearAuthMessages();
-    setBtnLoading('si-btn', true, 'Sign in');
-    try {
-      const { error } = await db.auth.signInWithPassword({ email, password: pw });
-      if (error) throw error;
-      // onAuthStateChange handles UI update
-    } catch (err) {
-      showAuthError(err.message || 'Sign in failed.');
-      setBtnLoading('si-btn', false, 'Sign in');
-    }
-  }
-
-  // ── Sign Up ─────────────────────────────────────────
-  async function handleSignUp() {
-    const email   = document.getElementById('su-email').value.trim();
-    const pw      = document.getElementById('su-password').value;
-    const confirm = document.getElementById('su-confirm').value;
-    if (!email || !pw)  { showAuthError('Please fill in all fields.'); return; }
-    if (pw.length < 8)  { showAuthError('Password must be at least 8 characters.'); return; }
-    if (pw !== confirm) { showAuthError('Passwords do not match.'); return; }
-    clearAuthMessages();
-    setBtnLoading('su-btn', true, 'Create account');
-    try {
-      const { error } = await db.auth.signUp({ email, password: pw });
-      if (error) throw error;
-      showAuthSuccess('✓ Check your email to confirm your account, then sign in.');
-    } catch (err) {
-      showAuthError(err.message || 'Sign up failed.');
-    }
-    setBtnLoading('su-btn', false, 'Create account');
-  }
-
-  // ── Reset password ──────────────────────────────────
-  async function handleResetPassword() {
-    const email = document.getElementById('rp-email').value.trim();
-    if (!email) { showAuthError('Please enter your email.'); return; }
-    clearAuthMessages();
-    setBtnLoading('rp-btn', true, 'Send reset link');
-    try {
-      const { error } = await db.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.href
-      });
-      if (error) throw error;
-      showAuthSuccess('✓ Reset link sent — check your inbox.');
-    } catch (err) {
-      showAuthError(err.message || 'Could not send reset email.');
-    }
-    setBtnLoading('rp-btn', false, 'Send reset link');
-  }
-
-  // ── Google OAuth ─────────────────────────────────────
-  async function handleGoogleAuth() {
-    clearAuthMessages();
-    const { error } = await db.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.href }
-    });
-    if (error) showAuthError(error.message);
-  }
-
-  // ── Sign out ─────────────────────────────────────────
-  async function handleSignOut() {
-    closeAuthPanel();
-    await db.auth.signOut();
-  }
-
-  // ── Render the navbar icon/pill ───────────────────────
-  function renderAuthSlot(user) {
-    const slot = document.getElementById('auth-slot');
-    if (!slot) return;
-    if (!user) {
-      slot.innerHTML = `
-        <button class="navbar-account" title="Sign in / Create account"
-          onclick="toggleAuthPanel()" id="auth-trigger">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="4"/>
-            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-          </svg>
-        </button>`;
-    } else {
-      const initials = (user.email || 'U').slice(0, 2).toUpperCase();
-      slot.innerHTML = `
-        <button class="navbar-user-btn" title="My account"
-          onclick="toggleAuthPanel()" id="auth-trigger">
-          <span class="navbar-avatar">${initials}</span>
-        </button>`;
-    }
-  }
-
-  // ── Render the panel body ─────────────────────────────
-  function renderPanelBody(user) {
-    const lo = document.getElementById('auth-logged-out');
-    const li = document.getElementById('auth-logged-in');
-    if (!lo || !li) return;
-    if (!user) {
-      lo.style.display = 'block';
-      li.style.display = 'none';
-      switchTab('signin'); // reset to sign-in tab
-    } else {
-      lo.style.display = 'none';
-      li.style.display = 'block';
-      // Populate user info
-      const initials = (user.email || 'U').slice(0, 2).toUpperCase();
-      const av = document.getElementById('auth-avatar');
-      const em = document.getElementById('auth-user-email');
-      const si = document.getElementById('auth-user-since');
-      if (av) av.textContent = initials;
-      if (em) em.textContent = user.email;
-      if (si && user.created_at) {
-        const d = new Date(user.created_at);
-        si.textContent = 'Member since ' + d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-      }
-    }
-  }
-
-  // ── Auth state listener ───────────────────────────────
-  db.auth.onAuthStateChange((event, session) => {
-    currentUser = session?.user ?? null;
-    renderAuthSlot(currentUser);
-    renderPanelBody(currentUser);
-    if (currentUser && event === 'SIGNED_IN') {
-      // Close panel briefly after sign-in so user sees the page
-      setTimeout(closeAuthPanel, 800);
-    }
-  });
-
-  // ── Enter key support ────────────────────────────────
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
-    const active = document.activeElement?.id;
-    if (active === 'si-email' || active === 'si-password') handleSignIn();
-    if (active === 'su-email' || active === 'su-password' || active === 'su-confirm') handleSignUp();
-    if (active === 'rp-email') handleResetPassword();
-  });
-
-
   initSections();
 
   // Refresh movers every 5 minutes
   setInterval(loadMovers, 300000);
+  /* ═══════════════════════════════════════════════
+     AUTH DROPDOWN  — pure Supabase, no page gate
+  ═══════════════════════════════════════════════ */
+  let _currentUser = null;
+  let _panelOpen   = false;
+
+  // open / close
+  function toggleAuthPanel() {
+    _panelOpen ? closeAuthPanel() : openAuthPanel();
+  }
+  function openAuthPanel() {
+    document.getElementById('auth-dropdown').classList.add('open');
+    document.getElementById('auth-trigger-btn')?.setAttribute('aria-expanded','true');
+    _panelOpen = true;
+    // close on outside click
+    setTimeout(() => document.addEventListener('click', _outsideClick), 0);
+  }
+  function closeAuthPanel() {
+    document.getElementById('auth-dropdown').classList.remove('open');
+    document.getElementById('auth-trigger-btn')?.setAttribute('aria-expanded','false');
+    _panelOpen = false;
+    document.removeEventListener('click', _outsideClick);
+    adpClearMsg();
+  }
+  function _outsideClick(e) {
+    if (!e.target.closest('.auth-trigger-wrap')) closeAuthPanel();
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuthPanel(); });
+
+  // tabs
+  function adpTab(tab) {
+    adpClearMsg();
+    ['signin','signup','reset'].forEach(t => {
+      document.getElementById('adp-' + t).style.display = t === tab ? 'block' : 'none';
+    });
+    const tabBar = document.getElementById('adp-tabs-bar');
+    document.getElementById('adp-tabs')?.style.setProperty('display', tab === 'reset' ? 'none' : 'flex');
+    ['signin','signup'].forEach(t => {
+      document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
+    });
+  }
+
+  // messages
+  function adpClearMsg() {
+    const e = document.getElementById('adp-err');
+    const s = document.getElementById('adp-ok');
+    if(e){e.style.display='none';e.textContent='';}
+    if(s){s.style.display='none';s.textContent='';}
+  }
+  function adpErr(msg) {
+    const el=document.getElementById('adp-err');
+    if(!el)return; el.textContent=msg; el.style.display='block';
+    document.getElementById('adp-ok').style.display='none';
+  }
+  function adpOk(msg) {
+    const el=document.getElementById('adp-ok');
+    if(!el)return; el.textContent=msg; el.style.display='block';
+    document.getElementById('adp-err').style.display='none';
+  }
+
+  // button spinner
+  function adpSpin(id, loading, label) {
+    const b=document.getElementById(id); if(!b)return;
+    b.disabled=loading;
+    b.innerHTML=loading?'<span class="adp-spin"></span>':label;
+  }
+
+  // show/hide password
+  function adpTogglePw(id, btn) {
+    const inp=document.getElementById(id); const show=inp.type==='password';
+    inp.type=show?'text':'password';
+    btn.innerHTML=show
+      ?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      :'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  }
+
+  // sign in
+  async function adpSignIn() {
+    const email=document.getElementById('si-email')?.value.trim();
+    const pw=document.getElementById('si-pw')?.value;
+    if(!email||!pw){adpErr('Please fill in all fields.');return;}
+    adpClearMsg(); adpSpin('si-btn',true,'Sign in');
+    try {
+      const {error}=await db.auth.signInWithPassword({email,password:pw});
+      if(error) throw error;
+    } catch(e){ adpErr(e.message||'Sign in failed.'); adpSpin('si-btn',false,'Sign in'); }
+  }
+
+  // sign up
+  async function adpSignUp() {
+    const email=document.getElementById('su-email')?.value.trim();
+    const pw=document.getElementById('su-pw')?.value;
+    const pw2=document.getElementById('su-pw2')?.value;
+    if(!email||!pw){adpErr('Please fill in all fields.');return;}
+    if(pw.length<8){adpErr('Password must be at least 8 characters.');return;}
+    if(pw!==pw2){adpErr('Passwords do not match.');return;}
+    adpClearMsg(); adpSpin('su-btn',true,'Create account');
+    try {
+      const {error}=await db.auth.signUp({email,password:pw});
+      if(error) throw error;
+      adpOk('✓ Check your email to confirm, then sign in.');
+    } catch(e){ adpErr(e.message||'Sign up failed.'); }
+    adpSpin('su-btn',false,'Create account');
+  }
+
+  // reset password
+  async function adpResetPw() {
+    const email=document.getElementById('rp-email')?.value.trim();
+    if(!email){adpErr('Please enter your email.');return;}
+    adpClearMsg(); adpSpin('rp-btn',true,'Sending…');
+    try {
+      const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});
+      if(error) throw error;
+      adpOk('✓ Reset link sent — check your inbox.');
+    } catch(e){ adpErr(e.message||'Could not send reset email.'); }
+    adpSpin('rp-btn',false,'Send reset link');
+  }
+
+  // google
+  async function adpGoogle() {
+    adpClearMsg();
+    const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
+    if(error) adpErr(error.message);
+  }
+
+  // sign out
+  async function adpSignOut() {
+    closeAuthPanel();
+    await db.auth.signOut();
+  }
+
+  // render the navbar trigger button
+  function _renderTrigger(user) {
+    const wrap=document.getElementById('auth-trigger-btn');
+    if(!wrap) return;
+    if(!user) {
+      // person icon
+      wrap.className='navbar-account auth-trigger';
+      wrap.title='Sign in / Register';
+      wrap.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+    } else {
+      // avatar initials
+      const ini=(user.email||'U').slice(0,2).toUpperCase();
+      wrap.className='adp-user-btn';
+      wrap.title='My account';
+      wrap.innerHTML=ini;
+    }
+  }
+
+  // render logged-in panel body
+  function _renderLoggedIn(user) {
+    const lo=document.getElementById('auth-logged-out');
+    const li=document.getElementById('auth-logged-in');
+    if(!lo||!li) return;
+    if(!user){ lo.style.display='block'; li.style.display='none'; adpTab('signin'); return; }
+    lo.style.display='none'; li.style.display='block';
+    const ini=(user.email||'U').slice(0,2).toUpperCase();
+    const av=document.getElementById('adp-avatar');
+    const em=document.getElementById('adp-user-email');
+    const si=document.getElementById('adp-user-since');
+    if(av) av.textContent=ini;
+    if(em) em.textContent=user.email;
+    if(si&&user.created_at){
+      si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    }
+  }
+
+  // auth state listener
+  db.auth.onAuthStateChange((event, session) => {
+    _currentUser=session?.user??null;
+    _renderTrigger(_currentUser);
+    _renderLoggedIn(_currentUser);
+    if(_currentUser && event==='SIGNED_IN') setTimeout(closeAuthPanel, 700);
+  });
+
+  // enter key support
+  document.addEventListener('keydown', e => {
+    if(e.key!=='Enter') return;
+    const id=document.activeElement?.id;
+    if(id==='si-email'||id==='si-pw') adpSignIn();
+    else if(id==='su-email'||id==='su-pw'||id==='su-pw2') adpSignUp();
+    else if(id==='rp-email') adpResetPw();
+  });
+
 </script>
 </body>
 </html>
