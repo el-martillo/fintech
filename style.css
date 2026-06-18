@@ -1282,3 +1282,17 @@ body.light .hero-badge {
   padding-top: 0.5rem;
   border-top: 1px solid var(--border);
 }
+
+/* ── Rec eToro link ── */
+.rec-etoro-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #2bbc76;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.rec-etoro-link:hover { opacity: 0.75; }

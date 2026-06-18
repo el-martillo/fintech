@@ -664,14 +664,18 @@
       }
       $('investors-grid').innerHTML = investors.map(inv => {
         const pos = inv.gain.startsWith('+');
+        const url = `https://www.etoro.com/people/${inv.username || inv.name.toLowerCase().replace(/\s+/g,'')}`;
         return `
-          <div class="investor-card">
+          <div class="investor-card" onclick="window.open('${url}','_blank')" title="View on eToro" style="cursor:pointer;">
             <div class="investor-avatar">${inv.initials}</div>
             <div class="investor-info">
               <div class="investor-name">${inv.name}</div>
               <div class="investor-meta">${inv.copiers.toLocaleString()} copiers · ${inv.risk} risk</div>
             </div>
-            <div class="investor-gain ${pos ? 'pos' : 'neg'}">${inv.gain}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="investor-gain ${pos ? 'pos' : 'neg'}">${inv.gain}</div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </div>
           </div>`;
       }).join('');
     } catch (err) {
@@ -720,6 +724,7 @@
         const pos = r.change.startsWith('+');
         const sparkColor = pos ? 'var(--green)' : 'var(--red)';
         const sparkline = buildSparkline(r.weekData || [], pos);
+        const etoroUrl = `https://www.etoro.com/markets/${r.ticker.toLowerCase()}`;
         return `
           <div class="rec-card" onclick="setTicker('${r.ticker}')">
             <div class="rec-top">
@@ -732,6 +737,10 @@
             <div class="rec-price">$${r.price} <span class="${pos ? 'pos' : 'neg'}">${r.change}</span></div>
             <div class="rec-sparkline">${sparkline}</div>
             <div class="rec-reason">${r.reason}</div>
+            <a class="rec-etoro-link" href="${etoroUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Trade on eToro
+            </a>
           </div>`;
       }).join('');
     } catch(e) {
