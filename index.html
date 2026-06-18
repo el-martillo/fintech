@@ -101,7 +101,7 @@
       </section>
 
       <!-- Search -->
-      <div class="search-box">
+      <div class="search-box" id="market-analysis">
         <div class="search-box-title">
           <h2>Market Analysis</h2>
           <p>Enter a ticker to get an AI-powered trade recommendation.</p>
@@ -812,7 +812,7 @@
     // store live data so clicking the card uses real figures
     liveMarketData[r.ticker] = { price: r.price, change: r.change };
     return `
-      <div class="rec-card" onclick="setTickerFromMover('${r.ticker}','${r.price}','${r.change}')">
+      <div class="rec-card" onclick="setTickerFromMover('${r.ticker}','${r.price}','${r.change}');document.getElementById('market-analysis').scrollIntoView({behavior:'smooth',block:'start'});">
         <div class="rec-top">
           <div>
             <div class="rec-ticker">${r.ticker.replace('-USD','')}</div>
