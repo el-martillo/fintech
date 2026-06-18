@@ -855,8 +855,8 @@
       const data = await res.json();
       const picks = data.picks || [];
 
-      const stocks = picks.filter(r => !isCrypto(r.ticker));
-      const crypto = picks.filter(r =>  isCrypto(r.ticker));
+      const stocks = picks.filter(r => !isCrypto(r.ticker)).slice(0, 4);
+      const crypto = picks.filter(r =>  isCrypto(r.ticker)).slice(0, 4);
 
       // Render placeholders immediately
       const renderGrid = (gridId, items) => {
