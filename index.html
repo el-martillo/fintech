@@ -681,19 +681,18 @@
         } catch { return null; }
       }));
 
-      // Filter nulls, sort biggest movers first
-      const movers = quotes
-        .filter(Boolean)
-        .sort((a, b) => b.absPct - a.absPct);
+      const valid = quotes.filter(Boolean);
 
-      if (!movers.length) {
+      // Split into gainers and losers, each sorted by absolute % descending
+      const gainers = valid.filter(m =>  m.change.startsWith('+')).sort((a, b) => b.absPct - a.absPct).slice(0, 4);
+      const losers  = valid.filter(m => !m.change.startsWith('+')).sort((a, b) => b.absPct - a.absPct).slice(0, 4);
+
+      if (!gainers.length && !losers.length) {
         $('movers-grid').innerHTML = '<div class="movers-empty">No movers data available.</div>';
         return;
       }
 
-      const now = new Date();
-      $('movers-updated').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      $('movers-grid').innerHTML = movers.map(m => {
+      const renderRow = m => {
         const pos = m.change.startsWith('+');
         return `
           <div class="sidebar-mover-row" onclick="setTickerFromMover('${m.ticker}','${m.price}','${m.change}')">
@@ -706,7 +705,13 @@
               <span class="mover-price" title="Stock price">$${m.price}</span>
             </div>
           </div>`;
-      }).join('');
+      };
+
+      const now = new Date();
+      $('movers-updated').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      $('movers-grid').innerHTML =
+        (gainers.length ? `<div class="movers-divider pos">▲ Top gainers</div>` + gainers.map(renderRow).join('') : '') +
+        (losers.length  ? `<div class="movers-divider neg">▼ Top losers</div>`  + losers.map(renderRow).join('')  : '');
     } catch (err) {
       $('movers-grid').innerHTML = '<div class="movers-empty">Could not load movers.</div>';
     }

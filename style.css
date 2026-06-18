@@ -1315,3 +1315,16 @@ body.light .hero-badge {
   font-size: 11px;
   color: var(--text-dim);
 }
+
+/* ── Movers divider ── */
+.movers-divider {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 6px 0 4px;
+  margin-top: 4px;
+}
+.movers-divider:first-child { margin-top: 0; }
+.movers-divider.pos { color: var(--green); }
+.movers-divider.neg { color: var(--red); }
