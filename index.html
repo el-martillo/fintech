@@ -180,22 +180,6 @@
         </div>
       </div>
 
-      <!-- Top copy investors -->
-      <div class="movers-section">
-        <div class="movers-header">
-          <span class="movers-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Top copy investors
-          </span>
-          <a class="movers-link" href="https://www.etoro.com/discover/copy-trading" target="_blank" rel="noopener">View on eToro →</a>
-        </div>
-        <div class="investors-grid" id="investors-grid">
-          <div class="movers-loading">
-            <div class="spinner-sm"></div> Loading investors…
-          </div>
-        </div>
-      </div>
-
     </div><!-- /col-main -->
 
     <!-- ── Sidebar (1/3) ── -->
@@ -730,38 +714,7 @@ Be specific and data-informed. Keep each bullet under 15 words.`;
     }
   }
 
-  /* ── Top copy investors — curated list (eToro has no public API) ── */
-  const CURATED_INVESTORS = [
-    { name: 'Jaynemesis',    username: 'Jaynemesis',    initials: 'JN', gain: '+287%', copiers: 18420, risk: 'Medium' },
-    { name: 'TipRanks',      username: 'TipRanks',      initials: 'TR', gain: '+143%', copiers: 12305, risk: 'Low'    },
-    { name: 'Wesl3y',        username: 'Wesl3y',        initials: 'WS', gain: '+198%', copiers: 9870,  risk: 'Medium' },
-    { name: 'olivier01',     username: 'olivier01',     initials: 'OL', gain: '+112%', copiers: 21034, risk: 'Low'    },
-    { name: 'felixfischer',  username: 'felixfischer',  initials: 'FF', gain: '+165%', copiers: 7654,  risk: 'Medium' },
-    { name: 'CopyMe2023',    username: 'CopyMe2023',    initials: 'CM', gain: '+94%',  copiers: 5430,  risk: 'Low'    },
-  ];
 
-  function loadInvestors() {
-    const investors = [...CURATED_INVESTORS].sort((a, b) => {
-      const parse = g => parseFloat((g || '0').replace('%','').replace('+',''));
-      return parse(b.gain) - parse(a.gain);
-    });
-    $('investors-grid').innerHTML = investors.map(inv => {
-      const pos = inv.gain.startsWith('+');
-      const url = `https://www.etoro.com/people/${inv.username}`;
-      return `
-        <div class="investor-card" onclick="window.open('${url}','_blank')" title="View on eToro" style="cursor:pointer;">
-          <div class="investor-avatar">${inv.initials}</div>
-          <div class="investor-info">
-            <div class="investor-name">${inv.name}</div>
-            <div class="investor-meta">${inv.copiers.toLocaleString()} copiers · ${inv.risk} risk</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="investor-gain ${pos ? 'pos' : 'neg'}">${inv.gain}</div>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </div>
-        </div>`;
-    }).join('');
-  }
 
   /* ── Sparkline builder ── */
   function buildSparkline(data, isPos) {
@@ -1124,8 +1077,6 @@ Reply ONLY with a JSON object, no markdown:
     loadHistory();
     loadMovers();
     await delay(1000);
-    loadInvestors();
-    await delay(1200);
     loadRecommendations();
     await delay(1500);
     loadNews();
