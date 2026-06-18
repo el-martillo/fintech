@@ -1289,10 +1289,18 @@ body.light .hero-badge {
   align-items: center;
   gap: 5px;
   margin-top: 6px;
+  padding: 5px 10px;
+  background: rgba(43,188,118,0.12);
+  border: 1px solid rgba(43,188,118,0.3);
+  border-radius: 6px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: #2bbc76;
   text-decoration: none;
-  transition: opacity 0.15s;
+  transition: all 0.15s;
+  width: fit-content;
 }
-.rec-etoro-link:hover { opacity: 0.75; }
+.rec-etoro-link:hover {
+  background: rgba(43,188,118,0.22);
+  border-color: rgba(43,188,118,0.5);
+}
