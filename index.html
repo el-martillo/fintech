@@ -392,6 +392,12 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                   Agent Portfolios <span class="adp-badge">Soon</span>
                 </button>
+                <a class="adp-nav-item" id="adp-admin-link" href="admin.html"
+                   style="display:none;text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Admin Console
+                  <span class="adp-badge" style="margin-left:auto;background:rgba(239,68,68,0.12);color:var(--red);border-color:rgba(239,68,68,0.2);">Admin</span>
+                </a>
               </nav>
               <div class="adp-divider"></div>
               <button class="adp-nav-item adp-signout" onclick="adpSignOut()">
@@ -655,7 +661,12 @@
   /* ═══════════════════════════════════════════════════ */
 
   const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
+
+  const ADMIN_EMAILS = ['giacomo.medici@gmail.com'];
+  const isAdmin = () => ADMIN_EMAILS.includes(_currentUser?.email);
 
   /* ── UI helpers ── */
   const $  = id => document.getElementById(id);
@@ -771,25 +782,27 @@
 
   /* ── Save to Supabase ── */
   async function saveToSupabase(a) {
+    lsSave(a); // always save locally
+    if (!_currentUser) return; // not logged in — local only
     const { error } = await db.from('stock_analyses').insert({
-      ticker:       a.ticker,
-      company_name: a.companyName,
-      signal:       a.signal,
-      confidence:   a.confidence,
-      price:        a.price,
-      price_change: a.priceChange1d,
-      week_change:  a.weekChange,
-      pe_ratio:     a.peRatio,
-      market_cap:   a.marketCap,
-      sector:       a.sector,
-      pros:         a.pros,
-      cons:         a.cons,
-      neutral:      a.neutral,
+      ticker:        a.ticker,
+      company_name:  a.companyName,
+      signal:        a.signal,
+      confidence:    a.confidence,
+      price:         a.price,
+      price_change:  a.priceChange1d,
+      week_change:   a.weekChange,
+      pe_ratio:      a.peRatio,
+      market_cap:    a.marketCap,
+      sector:        a.sector,
+      pros:          a.pros,
+      cons:          a.cons,
+      neutral:       a.neutral,
       trade_summary: a.tradeSummary,
-      etoro_url:    a.etoroUrl
+      etoro_url:     a.etoroUrl,
+      user_id:       _currentUser.id
     });
-    // RLS may block insert — non-critical, localStorage handles history locally
-    lsSave(a); // always persist locally
+    if (error) console.warn('Supabase save failed:', error.message);
   }
 
   /* ── Render result ── */
@@ -863,8 +876,9 @@
     const { data, error } = await db
       .from('stock_analyses')
       .select('id, ticker, company_name, signal, confidence, created_at')
+      .eq('user_id', _currentUser.id)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(12);
 
     if (error || !data?.length) {
       $('history-grid').innerHTML = '<div class="history-empty">No analyses yet.</div>';
@@ -1641,8 +1655,20 @@
   // google
   async function adpGoogle() {
     adpClearMsg();
-    const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
-    if(error) adpErr(error.message);
+    try {
+      const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://el-martillo.github.io/fintech/',
+          queryParams: { access_type: 'offline', prompt: 'consent' }
+        }
+      });
+      if (error) {
+        if (error.message?.includes('provider is not enabled') || error.status === 400)
+          adpErr('Google sign-in not yet configured — use email/password for now.');
+        else adpErr(error.message);
+      }
+    } catch(e) { adpErr('Google sign-in unavailable — use email/password.'); }
   }
 
   // sign out
@@ -1685,14 +1711,39 @@
     if(si&&user.created_at){
       si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
     }
+    const adminLink = document.getElementById('adp-admin-link');
+    if(adminLink) adminLink.style.display = isAdmin() ? 'flex' : 'none';
   }
 
   // auth state listener
   db.auth.onAuthStateChange((event, session) => {
-    _currentUser=session?.user??null;
+    console.log('[Auth]', event, session?.user?.email ?? 'no user');
+    _currentUser = session?.user ?? null;
     _renderTrigger(_currentUser);
     _renderLoggedIn(_currentUser);
-    if(_currentUser && event==='SIGNED_IN') setTimeout(closeAuthPanel, 700);
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (_currentUser) {
+        if (window.location.hash.includes('access_token')) {
+          history.replaceState(null, '', window.location.pathname);
+        }
+        setTimeout(closeAuthPanel, 700);
+        setTimeout(loadHistory, 800);
+      }
+    }
+    if (event === 'SIGNED_OUT') loadHistory();
+  });
+
+  // belt-and-braces: check for existing session on load
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user && !_currentUser) {
+      _currentUser = session.user;
+      _renderTrigger(_currentUser);
+      _renderLoggedIn(_currentUser);
+      if (window.location.hash.includes('access_token')) {
+        history.replaceState(null, '', window.location.pathname);
+      }
+      loadHistory();
+    }
   });
 
   // enter key support
