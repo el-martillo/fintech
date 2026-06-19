@@ -700,8 +700,20 @@
   // google
   async function adpGoogle() {
     adpClearMsg();
-    const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
-    if(error) adpErr(error.message);
+    try {
+      const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://el-martillo.github.io/fintech/',
+          queryParams: { access_type: 'offline', prompt: 'consent' }
+        }
+      });
+      if (error) {
+        if (error.message?.includes('provider is not enabled') || error.status === 400)
+          adpErr('Google sign-in not yet configured — use email/password for now.');
+        else adpErr(error.message);
+      }
+    } catch(e) { adpErr('Google sign-in unavailable — use email/password.'); }
   }
 
   // sign out
