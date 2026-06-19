@@ -858,10 +858,16 @@
 
   function processUsers() { _filtered = [..._allUsers]; renderStats(); filterUsers(); }
 
+  function isGoogleUser(u) {
+    return u.app_metadata?.provider === 'google' ||
+           (u.app_metadata?.providers || []).includes('google') ||
+           (u.identities || []).some(i => i.provider === 'google');
+  }
+
   function renderStats() {
     document.getElementById('stat-total').textContent     = _allUsers.length;
     document.getElementById('stat-confirmed').textContent = _allUsers.filter(u=>u.email_confirmed_at).length || '—';
-    document.getElementById('stat-google').textContent    = _allUsers.filter(u=>(u.identities||[]).some(i=>i.provider==='google')).length || '—';
+    document.getElementById('stat-google').textContent    = _allUsers.filter(u=>isGoogleUser(u)).length || '—';
     document.getElementById('stat-analyses').textContent  = _allUsers.reduce((s,u)=>s+(u.analyses||0),0) || '—';
   }
 
@@ -896,7 +902,7 @@
     document.getElementById('users-table').style.display = 'table';
     document.getElementById('users-tbody').innerHTML = _filtered.slice(start,end).map(u => {
       const isAdm  = ADMIN_EMAILS.includes(u.email);
-      const isG    = (u.identities||[]).some(i=>i.provider==='google');
+      const isG    = isGoogleUser(u);
       const ini    = (u.email||'?').slice(0,2).toUpperCase();
       const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
       const seen   = u.last_sign_in_at ? timeAgo(new Date(u.last_sign_in_at)) : '—';
