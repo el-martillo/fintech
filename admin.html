@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Stock Advisor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+  <style>
+    /* ── Admin-specific styles ── */
+    .admin-gate {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 1rem;
+    }
+    .admin-gate-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      max-width: 360px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .admin-gate-icon {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--red-bg);
+      border: 1px solid rgba(239,68,68,0.3);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+    }
+    .admin-gate-title {
+      font-size: 1.1rem; font-weight: 600;
+      color: var(--text); margin-bottom: 0.4rem;
+    }
+    .admin-gate-sub {
+      font-size: 13px; color: var(--text-muted); line-height: 1.5;
+      margin-bottom: 1.25rem;
+    }
+    .admin-gate-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 20px;
+      background: var(--accent); border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: #fff;
+      cursor: pointer; text-decoration: none;
+      transition: opacity 0.15s; font-family: inherit;
+    }
+    .admin-gate-btn:hover { opacity: 0.85; }
+
+    /* ── Admin page layout ── */
+    .admin-page { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+    /* ── Stats row ── */
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.75rem;
+    }
+    .admin-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+    }
+    .admin-stat-label {
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .admin-stat-value {
+      font-size: 26px; font-weight: 700;
+      font-family: var(--mono); color: var(--text);
+    }
+    .admin-stat-sub {
+      font-size: 11px; color: var(--text-muted); margin-top: 3px;
+    }
+
+    /* ── Section header ── */
+    .admin-section-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.85rem;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .admin-section-title {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-dim);
+      display: flex; align-items: center; gap: 7px;
+    }
+    .admin-search {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 7px;
+      padding: 0 12px; height: 34px;
+      font-size: 13px; color: var(--text);
+      outline: none; font-family: inherit;
+      transition: border-color 0.15s;
+      min-width: 200px;
+    }
+    .admin-search::placeholder { color: var(--text-dim); }
+    .admin-search:focus { border-color: var(--accent); }
+
+    /* ── Users table ── */
+    .users-table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .users-table {
+      width: 100%; border-collapse: collapse;
+    }
+    .users-table th {
+      text-align: left;
+      font-size: 10.5px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--text-dim);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border2);
+      background: var(--surface2);
+      white-space: nowrap;
+    }
+    .users-table th.sortable { cursor: pointer; user-select: none; }
+    .users-table th.sortable:hover { color: var(--text); }
+    .users-table td {
+      padding: 11px 16px;
+      font-size: 13px; color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .users-table tr:last-child td { border-bottom: none; }
+    .users-table tr:hover td { background: var(--surface2); }
+
+    .user-email-cell {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .user-avatar-sm {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    .user-avatar-sm.google {
+      background: rgba(66,133,244,0.2);
+      border: 1px solid rgba(66,133,244,0.3);
+    }
+    .user-email-text { font-size: 13px; font-weight: 500; color: var(--text); }
+    .user-email-provider { font-size: 10.5px; color: var(--text-dim); margin-top: 1px; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 10.5px; font-weight: 600;
+    }
+    .badge-confirmed { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .badge-pending   { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+    .badge-admin     { background: var(--accent-dim); color: #a9a3ff; border: 1px solid rgba(108,99,255,0.25); }
+    .badge-google    { background: rgba(66,133,244,0.1); color: #4285F4; border: 1px solid rgba(66,133,244,0.2); }
+
+    .analyses-count {
+      font-family: var(--mono);
+      font-size: 13px; font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── Loading / empty states ── */
+    .admin-loading {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 3rem;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .admin-empty {
+      text-align: center; padding: 3rem;
+      font-size: 13px; color: var(--text-dim);
+    }
+
+    /* ── Refresh button ── */
+    .btn-refresh {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 34px; padding: 0 14px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 7px; font-size: 12px; font-weight: 500;
+      color: var(--text-muted); cursor: pointer;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .btn-refresh:hover { border-color: var(--accent); color: var(--text); }
+    .btn-refresh.spinning svg { animation: spin 1s linear infinite; }
+
+    /* ── Back link ── */
+    .admin-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--text-muted);
+      text-decoration: none; margin-bottom: 1.5rem;
+      transition: color 0.15s;
+    }
+    .admin-back:hover { color: var(--text); }
+
+    /* ── Pagination ── */
+    .admin-pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--text-dim);
+    }
+    .pagination-btns { display: flex; gap: 4px; }
+    .pagination-btn {
+      height: 28px; padding: 0 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; font-size: 12px; color: var(--text-muted);
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .pagination-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+    .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    @media (max-width: 640px) {
+      .users-table th:nth-child(4),
+      .users-table td:nth-child(4),
+      .users-table th:nth-child(5),
+      .users-table td:nth-child(5) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Access denied gate (shown while checking / if not admin) ── -->
+  <div id="admin-gate" class="admin-gate">
+    <div class="admin-gate-card">
+      <div class="admin-gate-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <div class="admin-gate-title" id="gate-title">Checking access…</div>
+      <div class="admin-gate-sub" id="gate-sub">Please wait</div>
+      <a href="index.html" class="admin-gate-btn" id="gate-btn" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to app
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Admin content (hidden until access confirmed) ── -->
+  <div id="admin-content" style="display:none">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="navbar-inner">
+        <div class="navbar-logo">
+          <svg width="28" height="28" viewBox="0 0 34 34" fill="none">
+            <circle cx="17" cy="17" r="15.5" stroke="#6c63ff" stroke-width="2.5"/>
+            <text x="17" y="22" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="11" fill="#6c63ff">eT</text>
+          </svg>
+        </div>
+        <div class="navbar-title">
+          <h1>Stock <span>Advisor</span></h1>
+          <p>ADMIN CONSOLE</p>
+        </div>
+        <div class="navbar-actions">
+          <div id="admin-user-pill" style="display:flex;align-items:center;gap:8px;">
+            <span class="badge badge-admin">ADMIN</span>
+            <div id="admin-avatar" style="width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid var(--accent);"></div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="admin-page">
+
+      <!-- Back link -->
+      <a href="index.html" class="admin-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to app
+      </a>
+
+      <!-- Hero banner -->
+      <div class="hero-banner" style="margin-bottom:1.75rem;">
+        <img src="images/dark_banner.jpg" alt="" class="hero-banner-img" />
+        <div class="hero-banner-overlay">
+          <div class="hero-banner-text">
+            <div class="hero-badge">Admin Console</div>
+            <h2>User Management</h2>
+            <p>Monitor registered users, activity, and subscription status.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="admin-stats" id="admin-stats">
+        <div class="admin-stat">
+          <div class="admin-stat-label">Total users</div>
+          <div class="admin-stat-value" id="stat-total">—</div>
+          <div class="admin-stat-sub">registered accounts</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-label">Confirmed</div>
+          <div class="admin-stat-value" id="stat-confirmed">—</div>
+          <div class="admin-stat-sub">email verified</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-label">Google OAuth</div>
+          <div class="admin-stat-value" id="stat-google">—</div>
+          <div class="admin-stat-sub">signed in with Google</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-label">Analyses run</div>
+          <div class="admin-stat-value" id="stat-analyses">—</div>
+          <div class="admin-stat-sub">total saved</div>
+        </div>
+      </div>
+
+      <!-- Users table -->
+      <div class="admin-section-header">
+        <div class="admin-section-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Registered users
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="search" class="admin-search" id="user-search"
+                 placeholder="Search email…" oninput="filterUsers()" />
+          <button class="btn-refresh" id="refresh-btn" onclick="loadUsers()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="users-table-wrap">
+        <div id="users-loading" class="admin-loading">
+          <div class="spinner"></div> Loading users…
+        </div>
+        <div id="users-empty" class="admin-empty" style="display:none">No users found.</div>
+        <table class="users-table" id="users-table" style="display:none">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th class="sortable" onclick="sortUsers('created_at')">Joined ↕</th>
+              <th class="sortable" onclick="sortUsers('last_sign_in_at')">Last sign in ↕</th>
+              <th>Status</th>
+              <th>Analyses</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+        <div class="admin-pagination" id="users-pagination" style="display:none">
+          <span id="pagination-info"></span>
+          <div class="pagination-btns" id="pagination-btns"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
+  const ADMIN_EMAILS      = ['giacomo.medici@gmail.com'];
+  const PAGE_SIZE         = 20;
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
+
+  let _allUsers    = [];
+  let _filtered    = [];
+  let _sortKey     = 'created_at';
+  let _sortAsc     = false;
+  let _page        = 0;
+
+  // ── Gate check ──
+  async function checkAccess() {
+    const { data: { session } } = await db.auth.getSession();
+    const user = session?.user;
+
+    if (!user) {
+      showGate('Not signed in', 'Please sign in to the app first, then return here.', true);
+      return;
+    }
+
+    if (!ADMIN_EMAILS.includes(user.email)) {
+      showGate('Access denied', `${user.email} does not have admin privileges.`, true);
+      return;
+    }
+
+    // Access granted
+    document.getElementById('admin-gate').style.display    = 'none';
+    document.getElementById('admin-content').style.display = 'block';
+
+    const ini = (user.email || 'A').slice(0, 2).toUpperCase();
+    document.getElementById('admin-avatar').textContent = ini;
+
+    loadUsers();
+  }
+
+  function showGate(title, sub, showBtn) {
+    document.getElementById('gate-title').textContent = title;
+    document.getElementById('gate-sub').textContent   = sub;
+    if (showBtn) document.getElementById('gate-btn').style.display = 'inline-flex';
+  }
+
+  // ── Load users via Supabase Edge Function ──
+  // Note: reading auth.users requires service-role key (server-side only).
+  // We use a dedicated Edge Function that holds the service-role key securely.
+  // Falls back to reading from stock_analyses if Edge Function not deployed.
+  async function loadUsers() {
+    setRefreshSpinning(true);
+    document.getElementById('users-loading').style.display = 'flex';
+    document.getElementById('users-table').style.display   = 'none';
+    document.getElementById('users-empty').style.display   = 'none';
+    document.getElementById('users-pagination').style.display = 'none';
+
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      const token = session?.access_token;
+
+      // Try the admin Edge Function first
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-users`, {
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        _allUsers = json.users || [];
+      } else {
+        // Edge Function not deployed yet — fall back to stock_analyses data
+        await loadUsersFallback(token);
+        return;
+      }
+    } catch(e) {
+      await loadUsersFallback();
+      return;
+    }
+
+    processUsers();
+    setRefreshSpinning(false);
+  }
+
+  // Fallback: derive users from stock_analyses (limited info but no Edge Function needed)
+  async function loadUsersFallback() {
+    try {
+      const { data, error } = await db
+        .from('stock_analyses')
+        .select('user_id, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Group by user_id
+      const map = {};
+      (data || []).forEach(row => {
+        if (!row.user_id) return;
+        if (!map[row.user_id]) {
+          map[row.user_id] = { id: row.user_id, email: row.user_id, created_at: row.created_at, analyses: 0, _fallback: true };
+        }
+        map[row.user_id].analyses++;
+      });
+      _allUsers = Object.values(map);
+    } catch(e) {
+      _allUsers = [];
+    }
+    processUsers();
+    setRefreshSpinning(false);
+  }
+
+  function processUsers() {
+    // Count analyses per user
+    _filtered = [..._allUsers];
+    renderStats();
+    filterUsers();
+  }
+
+  function renderStats() {
+    const total     = _allUsers.length;
+    const confirmed = _allUsers.filter(u => u.email_confirmed_at).length;
+    const google    = _allUsers.filter(u =>
+      u.app_metadata?.provider === 'google' ||
+      (u.identities||[]).some(i => i.provider === 'google')
+    ).length;
+    const analyses  = _allUsers.reduce((sum, u) => sum + (u.analyses || 0), 0);
+
+    document.getElementById('stat-total').textContent     = total;
+    document.getElementById('stat-confirmed').textContent = confirmed || '—';
+    document.getElementById('stat-google').textContent    = google    || '—';
+    document.getElementById('stat-analyses').textContent  = analyses  || '—';
+  }
+
+  function filterUsers() {
+    const q = (document.getElementById('user-search')?.value || '').toLowerCase();
+    _filtered = _allUsers.filter(u =>
+      !q || (u.email || '').toLowerCase().includes(q)
+    );
+    sortAndRender();
+  }
+
+  function sortUsers(key) {
+    if (_sortKey === key) _sortAsc = !_sortAsc;
+    else { _sortKey = key; _sortAsc = false; }
+    _page = 0;
+    sortAndRender();
+  }
+
+  function sortAndRender() {
+    _filtered.sort((a, b) => {
+      const av = a[_sortKey] || '';
+      const bv = b[_sortKey] || '';
+      return _sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    _page = 0;
+    renderPage();
+  }
+
+  function renderPage() {
+    const total  = _filtered.length;
+    const start  = _page * PAGE_SIZE;
+    const end    = Math.min(start + PAGE_SIZE, total);
+    const page   = _filtered.slice(start, end);
+
+    document.getElementById('users-loading').style.display = 'none';
+
+    if (!total) {
+      document.getElementById('users-empty').style.display = 'block';
+      document.getElementById('users-table').style.display = 'none';
+      document.getElementById('users-pagination').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('users-empty').style.display = 'none';
+    document.getElementById('users-table').style.display = 'table';
+
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = page.map(u => {
+      const isAdmin    = ADMIN_EMAILS.includes(u.email);
+      const isGoogle   = (u.app_metadata?.provider === 'google') ||
+                         (u.identities||[]).some(i => i.provider === 'google');
+      const confirmed  = !!u.email_confirmed_at;
+      const ini        = (u.email || '?').slice(0, 2).toUpperCase();
+      const joined     = u.created_at
+        ? new Date(u.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+        : '—';
+      const lastSeen   = u.last_sign_in_at
+        ? timeAgo(new Date(u.last_sign_in_at))
+        : '—';
+      const analyses   = u.analyses || 0;
+
+      return `<tr>
+        <td>
+          <div class="user-email-cell">
+            <div class="user-avatar-sm ${isGoogle ? 'google' : ''}">${isGoogle ? googleIcon() : ini}</div>
+            <div>
+              <div class="user-email-text">${u._fallback ? '(id) ' + (u.email||'').slice(0,8)+'…' : escHtml(u.email || '—')}</div>
+              <div class="user-email-provider">
+                ${isGoogle ? '<span class="badge badge-google">Google</span>' : 'Email'}
+                ${isAdmin  ? ' <span class="badge badge-admin">Admin</span>' : ''}
+              </div>
+            </div>
+          </div>
+        </td>
+        <td>${joined}</td>
+        <td>${lastSeen}</td>
+        <td>
+          ${confirmed
+            ? '<span class="badge badge-confirmed">✓ Confirmed</span>'
+            : '<span class="badge badge-pending">Pending</span>'}
+        </td>
+        <td><span class="analyses-count">${analyses}</span></td>
+      </tr>`;
+    }).join('');
+
+    // Pagination
+    const pages = Math.ceil(total / PAGE_SIZE);
+    const pgEl  = document.getElementById('users-pagination');
+    const infoEl = document.getElementById('pagination-info');
+    const btnsEl = document.getElementById('pagination-btns');
+
+    if (pages > 1) {
+      pgEl.style.display  = 'flex';
+      infoEl.textContent  = `${start + 1}–${end} of ${total} users`;
+      let btnsHtml = `<button class="pagination-btn" onclick="goPage(${_page-1})" ${_page===0?'disabled':''}>←</button>`;
+      for (let i = 0; i < pages; i++) {
+        btnsHtml += `<button class="pagination-btn ${i===_page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
+      }
+      btnsHtml += `<button class="pagination-btn" onclick="goPage(${_page+1})" ${_page>=pages-1?'disabled':''}>→</button>`;
+      btnsEl.innerHTML = btnsHtml;
+    } else {
+      pgEl.style.display  = 'flex';
+      infoEl.textContent  = `${total} user${total !== 1 ? 's' : ''}`;
+      btnsEl.innerHTML    = '';
+    }
+  }
+
+  function goPage(p) {
+    const pages = Math.ceil(_filtered.length / PAGE_SIZE);
+    _page = Math.max(0, Math.min(p, pages - 1));
+    renderPage();
+  }
+
+  // ── Helpers ──
+  function timeAgo(date) {
+    const secs = Math.floor((Date.now() - date) / 1000);
+    if (secs < 60)     return 'Just now';
+    if (secs < 3600)   return Math.floor(secs/60) + 'm ago';
+    if (secs < 86400)  return Math.floor(secs/3600) + 'h ago';
+    if (secs < 604800) return Math.floor(secs/86400) + 'd ago';
+    return date.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function googleIcon() {
+    return `<svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
+  }
+
+  function setRefreshSpinning(on) {
+    document.getElementById('refresh-btn')?.classList.toggle('spinning', on);
+  }
+
+  // ── Init ──
+  checkAccess();
+</script>
+</body>
+</html>

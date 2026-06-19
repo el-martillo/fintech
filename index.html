@@ -392,6 +392,11 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                   Agent Portfolios <span class="adp-badge">Soon</span>
                 </button>
+                <a class="adp-nav-item adp-admin-link" id="admin-nav-link"
+                   href="admin.html" style="display:none;text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Admin Console <span class="adp-badge" style="background:rgba(239,68,68,0.12);color:var(--red);border-color:rgba(239,68,68,0.2);">Admin</span>
+                </a>
               </nav>
               <div class="adp-divider"></div>
               <button class="adp-nav-item adp-signout" onclick="adpSignOut()">
@@ -655,13 +660,10 @@
   /* ═══════════════════════════════════════════════════ */
 
   const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      detectSessionInUrl: true,   // parse OAuth hash tokens on redirect
-      persistSession:     true,   // keep session in localStorage
-      autoRefreshToken:   true    // silently refresh before expiry
-    }
-  });
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const ADMIN_EMAILS = ['giacomo.medici@gmail.com'];
+  const isAdmin = () => ADMIN_EMAILS.includes(_currentUser?.email);
 
   /* ── UI helpers ── */
   const $  = id => document.getElementById(id);
@@ -1647,24 +1649,8 @@
   // google
   async function adpGoogle() {
     adpClearMsg();
-    try {
-      const { error } = await db.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo:  'https://el-martillo.github.io/fintech/',
-          queryParams: { access_type: 'offline', prompt: 'consent' }
-        }
-      });
-      if (error) {
-        if (error.message?.includes('provider is not enabled') || error.status === 400) {
-          adpErr('Google sign-in not yet configured — use email/password for now.');
-        } else {
-          adpErr(error.message);
-        }
-      }
-    } catch(e) {
-      adpErr('Google sign-in unavailable — use email/password.');
-    }
+    const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
+    if(error) adpErr(error.message);
   }
 
   // sign out
@@ -1707,47 +1693,17 @@
     if(si&&user.created_at){
       si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
     }
+    // Show admin link only for admin users
+    const adminLink = document.getElementById('admin-nav-link');
+    if (adminLink) adminLink.style.display = isAdmin() ? 'flex' : 'none';
   }
 
-  // ── Auth state handler ──
-  // Handles: page load (INITIAL_SESSION), email sign-in (SIGNED_IN),
-  // Google OAuth redirect (SIGNED_IN after hash parse), sign-out (SIGNED_OUT)
+  // auth state listener
   db.auth.onAuthStateChange((event, session) => {
-    console.log('[Auth]', event, session?.user?.email ?? 'no user');
-    _currentUser = session?.user ?? null;
+    _currentUser=session?.user??null;
     _renderTrigger(_currentUser);
     _renderLoggedIn(_currentUser);
-
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-      if (_currentUser) {
-        // Clean up OAuth hash from URL without triggering a reload
-        if (window.location.hash.includes('access_token')) {
-          history.replaceState(null, '', window.location.pathname);
-        }
-        setTimeout(closeAuthPanel, 700);
-        setTimeout(loadHistory, 800);
-      }
-    }
-
-    if (event === 'SIGNED_OUT') {
-      loadHistory();
-    }
-  });
-
-  // Belt-and-braces: also explicitly check for an existing session on load
-  // (catches cases where onAuthStateChange INITIAL_SESSION fires before
-  //  the DOM is fully ready, or the OAuth hash hasn't been parsed yet)
-  db.auth.getSession().then(({ data: { session } }) => {
-    if (session?.user && !_currentUser) {
-      console.log('[Auth] getSession fallback —', session.user.email);
-      _currentUser = session.user;
-      _renderTrigger(_currentUser);
-      _renderLoggedIn(_currentUser);
-      if (window.location.hash.includes('access_token')) {
-        history.replaceState(null, '', window.location.pathname);
-      }
-      loadHistory();
-    }
+    if(_currentUser && event==='SIGNED_IN') setTimeout(closeAuthPanel, 700);
   });
 
   // enter key support
