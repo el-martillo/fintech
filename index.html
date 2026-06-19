@@ -417,7 +417,7 @@
 
   <!-- ── Hero banner ── -->
   <div class="hero-banner">
-    <img src="images/dark_banner.jpg" alt="Market chart banner" class="hero-banner-img" />
+    <img src="dark_banner.jpg" alt="Market chart banner" class="hero-banner-img" />
     <div class="hero-banner-overlay">
       <div class="hero-banner-text">
         <span class="hero-badge">AI-powered · eToro ready</span>
@@ -655,7 +655,13 @@
   /* ═══════════════════════════════════════════════════ */
 
   const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      detectSessionInUrl: true,   // parse OAuth hash tokens on redirect
+      persistSession:     true,   // keep session in localStorage
+      autoRefreshToken:   true    // silently refresh before expiry
+    }
+  });
 
   /* ── UI helpers ── */
   const $  = id => document.getElementById(id);
@@ -1641,8 +1647,24 @@
   // google
   async function adpGoogle() {
     adpClearMsg();
-    const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
-    if(error) adpErr(error.message);
+    try {
+      const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo:  'https://el-martillo.github.io/fintech/',
+          queryParams: { access_type: 'offline', prompt: 'consent' }
+        }
+      });
+      if (error) {
+        if (error.message?.includes('provider is not enabled') || error.status === 400) {
+          adpErr('Google sign-in not yet configured — use email/password for now.');
+        } else {
+          adpErr(error.message);
+        }
+      }
+    } catch(e) {
+      adpErr('Google sign-in unavailable — use email/password.');
+    }
   }
 
   // sign out
@@ -1687,12 +1709,45 @@
     }
   }
 
-  // auth state listener
+  // ── Auth state handler ──
+  // Handles: page load (INITIAL_SESSION), email sign-in (SIGNED_IN),
+  // Google OAuth redirect (SIGNED_IN after hash parse), sign-out (SIGNED_OUT)
   db.auth.onAuthStateChange((event, session) => {
-    _currentUser=session?.user??null;
+    console.log('[Auth]', event, session?.user?.email ?? 'no user');
+    _currentUser = session?.user ?? null;
     _renderTrigger(_currentUser);
     _renderLoggedIn(_currentUser);
-    if(_currentUser && event==='SIGNED_IN') setTimeout(closeAuthPanel, 700);
+
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (_currentUser) {
+        // Clean up OAuth hash from URL without triggering a reload
+        if (window.location.hash.includes('access_token')) {
+          history.replaceState(null, '', window.location.pathname);
+        }
+        setTimeout(closeAuthPanel, 700);
+        setTimeout(loadHistory, 800);
+      }
+    }
+
+    if (event === 'SIGNED_OUT') {
+      loadHistory();
+    }
+  });
+
+  // Belt-and-braces: also explicitly check for an existing session on load
+  // (catches cases where onAuthStateChange INITIAL_SESSION fires before
+  //  the DOM is fully ready, or the OAuth hash hasn't been parsed yet)
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user && !_currentUser) {
+      console.log('[Auth] getSession fallback —', session.user.email);
+      _currentUser = session.user;
+      _renderTrigger(_currentUser);
+      _renderLoggedIn(_currentUser);
+      if (window.location.hash.includes('access_token')) {
+        history.replaceState(null, '', window.location.pathname);
+      }
+      loadHistory();
+    }
   });
 
   // enter key support

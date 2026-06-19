@@ -1112,7 +1112,7 @@ body.light .hero-banner-overlay {
 
 /* ── Light mode banner swap ── */
 body.light .hero-banner-img {
-  content: url('images/light_banner.jpg');
+  content: url('light_banner.jpg');
 }
 body.light .hero-banner-overlay {
   background: linear-gradient(90deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.35) 60%, rgba(255,255,255,0.0) 100%);
