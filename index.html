@@ -380,14 +380,14 @@
                 </div>
               </div>
               <nav class="adp-nav">
-                <button class="adp-nav-item" onclick="closeAuthPanel()">
+                <a class="adp-nav-item" href="index.html" style="text-decoration:none;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                   Dashboard
-                </button>
-                <button class="adp-nav-item" onclick="closeAuthPanel()">
+                </a>
+                <a class="adp-nav-item" href="profile.html" style="text-decoration:none;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                   Profile settings
-                </button>
+                </a>
                 <button class="adp-nav-item" onclick="closeAuthPanel()">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                   Agent Portfolios <span class="adp-badge">Soon</span>
@@ -1658,10 +1658,7 @@
     try {
       const { error } = await db.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: 'https://el-martillo.github.io/fintech/',
-          queryParams: { access_type: 'offline', prompt: 'consent' }
-        }
+        options: { redirectTo: 'https://el-martillo.github.io/fintech/', queryParams: { access_type: 'offline', prompt: 'consent' } }
       });
       if (error) {
         if (error.message?.includes('provider is not enabled') || error.status === 400)

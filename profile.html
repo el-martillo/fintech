@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — Stock Advisor</title>
+  <title>Profile — Stock Advisor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -236,108 +236,229 @@
   }
   </style>
 
-  <style id="admin-styles">
-    .admin-gate {
+  <style id="profile-styles">
+    .profile-gate {
       position: fixed; inset: 0; z-index: 1000;
       background: var(--bg);
       display: flex; align-items: center; justify-content: center;
     }
-    .admin-gate-card {
+    .profile-gate-card {
       background: var(--surface); border: 1px solid var(--border2);
       border-radius: 16px; padding: 2.5rem 2rem; text-align: center;
       max-width: 360px; width: 100%;
       box-shadow: 0 20px 60px rgba(0,0,0,0.4);
     }
-    .admin-gate-icon {
-      width: 52px; height: 52px; border-radius: 50%;
-      background: var(--red-bg); border: 1px solid rgba(239,68,68,0.3);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 1rem;
-    }
-    .admin-gate-title { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
-    .admin-gate-sub   { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem; }
-    .admin-gate-btn {
+    .profile-gate-title { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
+    .profile-gate-sub   { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem; }
+    .profile-gate-btn {
       display: inline-flex; align-items: center; gap: 7px; padding: 9px 20px;
       background: var(--accent); border: none; border-radius: 8px;
       font-size: 13px; font-weight: 600; color: #fff;
       cursor: pointer; text-decoration: none; transition: opacity 0.15s; font-family: inherit;
     }
-    .admin-gate-btn:hover { opacity: 0.85; }
+    .profile-gate-btn:hover { opacity: 0.85; }
 
-    .admin-page { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
-    .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 1.75rem; }
-    .admin-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; }
-    .admin-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 6px; }
-    .admin-stat-value { font-size: 26px; font-weight: 700; font-family: var(--mono); color: var(--text); }
-    .admin-stat-sub   { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .profile-page { max-width: 640px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
 
-    .admin-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 8px; }
-    .admin-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); display: flex; align-items: center; gap: 7px; }
-    .admin-search { background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; padding: 0 12px; height: 34px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; transition: border-color 0.15s; min-width: 200px; }
-    .admin-search::placeholder { color: var(--text-dim); }
-    .admin-search:focus { border-color: var(--accent); }
+    .profile-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--text-muted); text-decoration: none;
+      margin-bottom: 1.5rem; transition: color 0.15s;
+    }
+    .profile-back:hover { color: var(--text); }
 
-    .users-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-    .users-table { width: 100%; border-collapse: collapse; }
-    .users-table th { text-align: left; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); padding: 10px 16px; border-bottom: 1px solid var(--border2); background: var(--surface2); white-space: nowrap; }
-    .users-table th.sortable { cursor: pointer; user-select: none; }
-    .users-table th.sortable:hover { color: var(--text); }
-    .users-table td { padding: 11px 16px; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--border); vertical-align: middle; }
-    .users-table tr:last-child td { border-bottom: none; }
-    .users-table tr:hover td { background: var(--surface2); }
-    .user-email-cell { display: flex; align-items: center; gap: 10px; }
-    .user-avatar-sm { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
-    .user-avatar-sm.google { background: rgba(66,133,244,0.2); border: 1px solid rgba(66,133,244,0.3); }
-    .user-email-text { font-size: 13px; font-weight: 500; color: var(--text); }
-    .user-email-provider { font-size: 10.5px; color: var(--text-dim); margin-top: 1px; }
-    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 10.5px; font-weight: 600; }
+    .profile-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .profile-card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 7px;
+    }
+    .profile-card-title {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-dim);
+    }
+    .profile-card-body { padding: 1.5rem; }
+
+    /* Avatar section */
+    .profile-avatar-row {
+      display: flex; align-items: center; gap: 1.25rem;
+      margin-bottom: 1.5rem; padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .profile-avatar-lg {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700; color: #fff;
+      flex-shrink: 0; border: 3px solid var(--accent-dim);
+    }
+    .profile-avatar-info h2 {
+      font-size: 1rem; font-weight: 600; color: var(--text);
+      margin-bottom: 3px;
+    }
+    .profile-avatar-info p {
+      font-size: 12px; color: var(--text-dim);
+    }
+
+    /* Info rows */
+    .profile-info-row {
+      display: flex; align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .profile-info-row:last-child { border-bottom: none; }
+    .profile-info-label {
+      font-size: 12px; color: var(--text-dim);
+      width: 120px; flex-shrink: 0;
+    }
+    .profile-info-value {
+      font-size: 13px; color: var(--text);
+      font-weight: 500; flex: 1;
+    }
+    .profile-info-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 10.5px; font-weight: 600;
+    }
     .badge-confirmed { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
-    .badge-pending   { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
-    .badge-admin     { background: var(--accent-dim); color: #a9a3ff; border: 1px solid rgba(108,99,255,0.25); }
     .badge-google    { background: rgba(66,133,244,0.1); color: #4285F4; border: 1px solid rgba(66,133,244,0.2); }
-    .analyses-count { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
-    .admin-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 3rem; font-size: 13px; color: var(--text-muted); }
-    .admin-empty   { text-align: center; padding: 3rem; font-size: 13px; color: var(--text-dim); }
-    .btn-refresh { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
-    .btn-refresh:hover { border-color: var(--accent); color: var(--text); }
-    .btn-refresh.spinning svg { animation: spin 1s linear infinite; }
-    .admin-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); text-decoration: none; margin-bottom: 1.5rem; transition: color 0.15s; }
-    .admin-back:hover { color: var(--text); }
-    .admin-pagination { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); }
-    .pagination-btns { display: flex; gap: 4px; }
-    .pagination-btn { height: 28px; padding: 0 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
-    .pagination-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
-    .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .pagination-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    @media (max-width: 640px) {
-      .users-table th:nth-child(4), .users-table td:nth-child(4),
-      .users-table th:nth-child(5), .users-table td:nth-child(5) { display: none; }
+    .badge-email     { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border2); }
+    .badge-admin     { background: var(--accent-dim); color: #a9a3ff; border: 1px solid rgba(108,99,255,0.25); }
+
+    /* Form fields */
+    .profile-field { margin-bottom: 1rem; }
+    .profile-field label {
+      display: block; font-size: 12px; font-weight: 500;
+      color: var(--text-muted); margin-bottom: 5px;
+    }
+    .profile-field input {
+      width: 100%; height: 42px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 0 14px;
+      font-size: 14px; color: var(--text); outline: none;
+      font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .profile-field input::placeholder { color: var(--text-dim); }
+    .profile-field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+    }
+    .profile-field input:disabled {
+      opacity: 0.5; cursor: not-allowed;
+    }
+    .profile-hint {
+      font-size: 11.5px; color: var(--text-dim);
+      margin-top: 5px; line-height: 1.4;
+    }
+
+    /* Password strength */
+    .pw-strength {
+      height: 3px; border-radius: 2px;
+      background: var(--border2); margin-top: 6px;
+      overflow: hidden;
+    }
+    .pw-strength-bar {
+      height: 100%; border-radius: 2px;
+      transition: width 0.3s, background 0.3s;
+      width: 0%;
+    }
+    .pw-strength-label {
+      font-size: 11px; margin-top: 4px;
+      color: var(--text-dim);
+    }
+
+    /* Buttons */
+    .profile-btn {
+      height: 42px; padding: 0 20px;
+      background: var(--accent); border: none; border-radius: var(--radius);
+      font-size: 14px; font-weight: 600; color: #fff;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      transition: opacity 0.15s, transform 0.1s; font-family: inherit;
+    }
+    .profile-btn:hover  { opacity: 0.88; }
+    .profile-btn:active { transform: scale(0.98); }
+    .profile-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .profile-btn.secondary {
+      background: var(--surface2); color: var(--text-muted);
+      border: 1px solid var(--border2);
+    }
+    .profile-btn.secondary:hover { border-color: var(--accent); color: var(--text); }
+    .profile-btn.danger {
+      background: var(--red-bg); color: var(--red);
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+    .profile-btn.danger:hover { background: var(--red); color: #fff; }
+
+    .profile-btn-row {
+      display: flex; gap: 8px; margin-top: 1.25rem; flex-wrap: wrap;
+    }
+
+    /* Messages */
+    .profile-msg {
+      display: none; border-radius: var(--radius);
+      padding: 10px 14px; font-size: 13px;
+      margin-bottom: 1rem; line-height: 1.4;
+    }
+    .profile-msg.error {
+      background: var(--red-bg); border: 1px solid rgba(239,68,68,0.25); color: var(--red);
+    }
+    .profile-msg.success {
+      background: var(--green-bg); border: 1px solid rgba(34,197,94,0.25); color: var(--green);
+    }
+
+    /* Stats mini row */
+    .profile-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px; margin-bottom: 1rem;
+    }
+    .profile-stat {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.75rem 1rem; text-align: center;
+    }
+    .profile-stat-value { font-size: 20px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+    .profile-stat-label { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+    /* Spinner */
+    .profile-spin {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @media (max-width: 480px) {
+      .profile-info-label { width: 90px; }
+      .profile-stats { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ── Access gate ── -->
-  <div id="admin-gate" class="admin-gate">
-    <div class="admin-gate-card">
-      <div class="admin-gate-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
+  <!-- Gate — shown if not logged in -->
+  <div id="profile-gate" class="profile-gate">
+    <div class="profile-gate-card">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(108,99,255,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       </div>
-      <div class="admin-gate-title" id="gate-title">Checking access…</div>
-      <div class="admin-gate-sub"   id="gate-sub">Please wait</div>
-      <a href="index.html" class="admin-gate-btn" id="gate-btn" style="display:none">
+      <div class="profile-gate-title">Sign in required</div>
+      <div class="profile-gate-sub">Please sign in to view your profile.</div>
+      <a href="index.html" class="profile-gate-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         Back to app
       </a>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       MAIN PAGE (shown after access granted)
-  ══════════════════════════════════════ -->
-  <div id="admin-content" style="display:none">
+  <!-- Main content -->
+  <div id="profile-content" style="display:none">
 
     <nav class="navbar">
     <div class="navbar-inner">
@@ -349,7 +470,7 @@
       </div>
       <div class="navbar-title">
         <h1>Stock <span>Advisor</span></h1>
-        <p>AI-powered · eToro ready &nbsp;<span style="background:var(--accent-dim);color:#a9a3ff;border:1px solid rgba(108,99,255,0.25);border-radius:4px;font-size:9px;font-weight:700;letter-spacing:0.06em;padding:1px 6px;text-transform:uppercase;vertical-align:middle;">Admin</span></p>
+        <p>AI-powered · eToro ready</p>
       </div>
       <div class="navbar-actions">
         <button class="theme-toggle navbar-theme-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
@@ -497,67 +618,136 @@
     </div><!-- /navbar-inner -->
   </nav>
 
-    <div class="admin-page">
+    <div class="profile-page">
 
-      <a href="index.html" class="admin-back">
+      <a href="index.html" class="profile-back">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         Back to app
       </a>
 
-      <div class="hero-banner" style="margin-bottom:1.75rem;">
-        <img src="images/dark_banner.jpg" alt="" class="hero-banner-img" />
-        <div class="hero-banner-overlay">
-          <div class="hero-banner-text">
-            <div class="hero-badge">Admin Console</div>
-            <h2>User Management</h2>
-            <p>Monitor registered users, activity and subscription status.</p>
+      <!-- Avatar + name -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <div class="profile-card-title">Account details</div>
+        </div>
+        <div class="profile-card-body">
+          <div class="profile-avatar-row">
+            <div class="profile-avatar-lg" id="profile-avatar"></div>
+            <div class="profile-avatar-info">
+              <h2 id="profile-name"></h2>
+              <p id="profile-member-since"></p>
+            </div>
+          </div>
+
+          <div class="profile-info-row">
+            <div class="profile-info-label">Email</div>
+            <div class="profile-info-value" id="profile-email"></div>
+          </div>
+          <div class="profile-info-row">
+            <div class="profile-info-label">Sign-in method</div>
+            <div class="profile-info-value" id="profile-provider"></div>
+          </div>
+          <div class="profile-info-row">
+            <div class="profile-info-label">Status</div>
+            <div class="profile-info-value" id="profile-status"></div>
+          </div>
+          <div class="profile-info-row">
+            <div class="profile-info-label">Last sign in</div>
+            <div class="profile-info-value" id="profile-last-signin"></div>
+          </div>
+          <div class="profile-info-row">
+            <div class="profile-info-label">Role</div>
+            <div class="profile-info-value" id="profile-role"></div>
           </div>
         </div>
       </div>
 
-      <div class="admin-stats">
-        <div class="admin-stat"><div class="admin-stat-label">Total users</div><div class="admin-stat-value" id="stat-total">—</div><div class="admin-stat-sub">registered accounts</div></div>
-        <div class="admin-stat"><div class="admin-stat-label">Confirmed</div><div class="admin-stat-value" id="stat-confirmed">—</div><div class="admin-stat-sub">email verified</div></div>
-        <div class="admin-stat"><div class="admin-stat-label">Google OAuth</div><div class="admin-stat-value" id="stat-google">—</div><div class="admin-stat-sub">signed in with Google</div></div>
-        <div class="admin-stat"><div class="admin-stat-label">Analyses run</div><div class="admin-stat-value" id="stat-analyses">—</div><div class="admin-stat-sub">total saved</div></div>
+      <!-- Activity stats -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div class="profile-card-title">Activity</div>
+        </div>
+        <div class="profile-card-body" style="padding-top:1rem;">
+          <div class="profile-stats">
+            <div class="profile-stat">
+              <div class="profile-stat-value" id="stat-analyses">—</div>
+              <div class="profile-stat-label">Analyses run</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-value" id="stat-buys">—</div>
+              <div class="profile-stat-label">Buy signals</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-value" id="stat-sells">—</div>
+              <div class="profile-stat-label">Sell signals</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="admin-section-header">
-        <div class="admin-section-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Registered users
+      <!-- Change password -->
+      <div class="profile-card" id="pw-card">
+        <div class="profile-card-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <div class="profile-card-title">Change password</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input type="search" class="admin-search" id="user-search" placeholder="Search email…" oninput="filterUsers()" />
-          <button class="btn-refresh" id="refresh-btn" onclick="loadUsers()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            Refresh
+        <div class="profile-card-body">
+          <div class="profile-msg error"   id="pw-error"></div>
+          <div class="profile-msg success" id="pw-success"></div>
+
+          <div id="pw-google-note" style="display:none;font-size:13px;color:var(--text-muted);padding:0.5rem 0;">
+            You signed in with Google — password change is managed through your Google account.
+          </div>
+
+          <div id="pw-form">
+            <div class="profile-field">
+              <label>New password</label>
+              <div style="position:relative;">
+                <input type="password" id="pw-new" placeholder="At least 8 characters"
+                       autocomplete="new-password" oninput="checkPwStrength(this.value)" />
+                <button type="button" onclick="togglePwField('pw-new', this)"
+                  style="position:absolute;right:0;top:0;bottom:0;width:40px;background:none;border:none;cursor:pointer;color:var(--text-dim);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+              <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
+              <div class="pw-strength-label" id="pw-label"></div>
+            </div>
+            <div class="profile-field">
+              <label>Confirm new password</label>
+              <input type="password" id="pw-confirm" placeholder="Repeat password"
+                     autocomplete="new-password" />
+            </div>
+            <div class="profile-btn-row">
+              <button class="profile-btn" id="pw-btn" onclick="changePassword()">
+                Update password
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div class="profile-card-title" style="color:var(--red);">Danger zone</div>
+        </div>
+        <div class="profile-card-body">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;">
+            Signing out will end your current session on this device.
+          </p>
+          <div class="profile-msg error" id="signout-error"></div>
+          <button class="profile-btn danger" onclick="handleSignOutFromProfile()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
           </button>
         </div>
       </div>
 
-      <div class="users-table-wrap">
-        <div id="users-loading" class="admin-loading"><div class="spinner"></div> Loading users…</div>
-        <div id="users-empty" class="admin-empty" style="display:none">No users found.</div>
-        <table class="users-table" id="users-table" style="display:none">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th class="sortable" onclick="sortUsers('created_at')">Joined ↕</th>
-              <th class="sortable" onclick="sortUsers('last_sign_in_at')">Last sign in ↕</th>
-              <th>Status</th>
-              <th>Analyses</th>
-            </tr>
-          </thead>
-          <tbody id="users-tbody"></tbody>
-        </table>
-        <div class="admin-pagination" id="users-pagination" style="display:none">
-          <span id="pagination-info"></span>
-          <div class="pagination-btns" id="pagination-btns"></div>
-        </div>
-      </div>
-
-    </div><!-- /admin-page -->
+    </div><!-- /profile-page -->
 
     <footer class="site-footer">
       <span class="footer-left">
@@ -569,7 +759,7 @@
       </a>
     </footer>
 
-  </div><!-- /admin-content -->
+  </div><!-- /profile-content -->
 
 <script>
   const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
@@ -582,7 +772,7 @@
     auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
   });
 
-  /* ── Theme toggle ── */
+  /* ── Theme ── */
   function toggleTheme() {
     const isLight = document.body.classList.toggle('light');
     document.getElementById('theme-label').textContent = isLight ? 'Dark mode' : 'Light mode';
@@ -592,7 +782,7 @@
   }
   if (localStorage.getItem('theme') === 'light') toggleTheme();
 
-  /* ── Auth (full — gives working avatar + dropdown) ── */
+  /* ── Auth (full — gives working navbar avatar + dropdown) ── */
   let _currentUser = null;
   let _panelOpen   = false;
 
@@ -711,20 +901,8 @@
   // google
   async function adpGoogle() {
     adpClearMsg();
-    try {
-      const { error } = await db.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: 'https://el-martillo.github.io/fintech/',
-          queryParams: { access_type: 'offline', prompt: 'consent' }
-        }
-      });
-      if (error) {
-        if (error.message?.includes('provider is not enabled') || error.status === 400)
-          adpErr('Google sign-in not yet configured — use email/password for now.');
-        else adpErr(error.message);
-      }
-    } catch(e) { adpErr('Google sign-in unavailable — use email/password.'); }
+    const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
+    if(error) adpErr(error.message);
   }
 
   // sign out
@@ -786,158 +964,149 @@
     else if(id==='rp-email') adpResetPw();
   });
 
-  /* ════════════════════════════════════════
-     ADMIN LOGIC
-  ════════════════════════════════════════ */
-  const PAGE_SIZE = 20;
-  let _allUsers = [], _filtered = [], _sortKey = 'created_at', _sortAsc = false, _page = 0;
+  /* ════════════════════════════════════
+     PROFILE LOGIC
+  ════════════════════════════════════ */
 
-  async function checkAdminAccess() {
+  async function initProfile() {
     const { data: { session } } = await db.auth.getSession();
     const user = session?.user;
     if (!user) {
-      showGate('Not signed in', 'Please sign in to the main app first, then return here.', true);
+      document.getElementById('profile-gate').style.display    = 'flex';
+      document.getElementById('profile-content').style.display = 'none';
       return;
     }
-    if (!ADMIN_EMAILS.includes(user.email ?? '')) {
-      showGate('Access denied', user.email + ' does not have admin privileges.', true);
-      return;
+    document.getElementById('profile-gate').style.display    = 'none';
+    document.getElementById('profile-content').style.display = 'block';
+    renderProfile(user);
+    loadStats(user);
+  }
+
+  function renderProfile(user) {
+    const email    = user.email || '';
+    const ini      = email.slice(0, 2).toUpperCase();
+    const isGoogle = user.app_metadata?.provider === 'google' ||
+                     (user.identities||[]).some(i => i.provider === 'google');
+    const joined   = user.created_at
+      ? new Date(user.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})
+      : '—';
+    const lastSeen = user.last_sign_in_at
+      ? new Date(user.last_sign_in_at).toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '—';
+
+    document.getElementById('profile-avatar').textContent       = ini;
+    document.getElementById('profile-name').textContent         = user.user_metadata?.full_name || email;
+    document.getElementById('profile-member-since').textContent = 'Member since ' + joined;
+    document.getElementById('profile-email').textContent        = email;
+    document.getElementById('profile-last-signin').textContent  = lastSeen;
+
+    document.getElementById('profile-provider').innerHTML = isGoogle
+      ? '<span class="profile-info-badge badge-google">Google OAuth</span>'
+      : '<span class="profile-info-badge badge-email">Email / Password</span>';
+
+    document.getElementById('profile-status').innerHTML = user.email_confirmed_at
+      ? '<span class="profile-info-badge badge-confirmed">✓ Confirmed</span>'
+      : '<span class="profile-info-badge" style="background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,0.2);">Pending confirmation</span>';
+
+    document.getElementById('profile-role').innerHTML = isAdmin()
+      ? '<span class="profile-info-badge badge-admin">Admin</span>'
+      : '<span class="profile-info-badge badge-email">User</span>';
+
+    // Hide password form for Google users
+    if (isGoogle) {
+      document.getElementById('pw-form').style.display        = 'none';
+      document.getElementById('pw-google-note').style.display = 'block';
     }
-    document.getElementById('admin-gate').style.display    = 'none';
-    document.getElementById('admin-content').style.display = 'block';
-    loadUsers();
   }
 
-  function showGate(title, sub, showBtn) {
-    document.getElementById('gate-title').textContent = title;
-    document.getElementById('gate-sub').textContent   = sub;
-    if (showBtn) document.getElementById('gate-btn').style.display = 'inline-flex';
+  async function loadStats(user) {
+    const { data } = await db
+      .from('stock_analyses')
+      .select('signal')
+      .eq('user_id', user.id);
+
+    const rows  = data || [];
+    const buys  = rows.filter(r => r.signal === 'BUY').length;
+    const sells = rows.filter(r => r.signal === 'SELL').length;
+
+    document.getElementById('stat-analyses').textContent = rows.length;
+    document.getElementById('stat-buys').textContent     = buys;
+    document.getElementById('stat-sells').textContent    = sells;
   }
 
-  async function loadUsers() {
-    setRefreshSpinning(true);
-    document.getElementById('users-loading').style.display    = 'flex';
-    document.getElementById('users-table').style.display      = 'none';
-    document.getElementById('users-empty').style.display      = 'none';
-    document.getElementById('users-pagination').style.display = 'none';
-    try {
-      const { data: { session } } = await db.auth.getSession();
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-users`, {
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` }
-      });
-      if (res.ok) {
-        const json = await res.json();
-        _allUsers = json.users || [];
-      } else {
-        await loadUsersFallback();
-        return;
-      }
-    } catch(e) {
-      await loadUsersFallback();
-      return;
+  /* ── Password strength ── */
+  function checkPwStrength(pw) {
+    const bar   = document.getElementById('pw-bar');
+    const label = document.getElementById('pw-label');
+    if (!pw) { bar.style.width='0%'; label.textContent=''; return; }
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const levels = [
+      { w:'20%', c:'var(--red)',   t:'Too weak' },
+      { w:'40%', c:'var(--red)',   t:'Weak' },
+      { w:'60%', c:'var(--amber)', t:'Fair' },
+      { w:'80%', c:'var(--amber)', t:'Good' },
+      { w:'100%',c:'var(--green)', t:'Strong' },
+    ];
+    const l = levels[Math.min(score, 4)];
+    bar.style.width      = l.w;
+    bar.style.background = l.c;
+    label.style.color    = l.c;
+    label.textContent    = l.t;
+  }
+
+  function togglePwField(id, btn) {
+    const inp = document.getElementById(id);
+    inp.type  = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  /* ── Change password ── */
+  async function changePassword() {
+    const pw      = document.getElementById('pw-new').value;
+    const confirm = document.getElementById('pw-confirm').value;
+    const errEl   = document.getElementById('pw-error');
+    const okEl    = document.getElementById('pw-success');
+
+    errEl.style.display = 'none';
+    okEl.style.display  = 'none';
+
+    if (!pw)          { errEl.textContent='Please enter a new password.'; errEl.style.display='block'; return; }
+    if (pw.length<8)  { errEl.textContent='Password must be at least 8 characters.'; errEl.style.display='block'; return; }
+    if (pw !== confirm){ errEl.textContent='Passwords do not match.'; errEl.style.display='block'; return; }
+
+    const btn = document.getElementById('pw-btn');
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="profile-spin"></span>';
+
+    const { error } = await db.auth.updateUser({ password: pw });
+    btn.disabled  = false;
+    btn.innerHTML = 'Update password';
+
+    if (error) {
+      errEl.textContent    = error.message;
+      errEl.style.display  = 'block';
+    } else {
+      okEl.textContent    = '✓ Password updated successfully.';
+      okEl.style.display  = 'block';
+      document.getElementById('pw-new').value     = '';
+      document.getElementById('pw-confirm').value = '';
+      document.getElementById('pw-bar').style.width = '0%';
+      document.getElementById('pw-label').textContent = '';
     }
-    processUsers();
-    setRefreshSpinning(false);
   }
 
-  async function loadUsersFallback() {
-    try {
-      const { data, error } = await db.from('stock_analyses').select('user_id, created_at').order('created_at', { ascending: false });
-      if (error) throw error;
-      const map = {};
-      (data||[]).forEach(r => {
-        if (!r.user_id) return;
-        if (!map[r.user_id]) map[r.user_id] = { id: r.user_id, email: '(id) '+r.user_id.slice(0,8)+'…', created_at: r.created_at, analyses: 0, _fallback: true };
-        map[r.user_id].analyses++;
-      });
-      _allUsers = Object.values(map);
-    } catch(e) { _allUsers = []; }
-    processUsers();
-    setRefreshSpinning(false);
+  /* ── Sign out ── */
+  async function handleSignOutFromProfile() {
+    await db.auth.signOut();
+    window.location.href = 'index.html';
   }
 
-  function processUsers() { _filtered = [..._allUsers]; renderStats(); filterUsers(); }
-
-  function renderStats() {
-    document.getElementById('stat-total').textContent     = _allUsers.length;
-    document.getElementById('stat-confirmed').textContent = _allUsers.filter(u=>u.email_confirmed_at).length || '—';
-    document.getElementById('stat-google').textContent    = _allUsers.filter(u=>(u.identities||[]).some(i=>i.provider==='google')).length || '—';
-    document.getElementById('stat-analyses').textContent  = _allUsers.reduce((s,u)=>s+(u.analyses||0),0) || '—';
-  }
-
-  function filterUsers() {
-    const q = (document.getElementById('user-search')?.value||'').toLowerCase();
-    _filtered = _allUsers.filter(u => !q || (u.email||'').toLowerCase().includes(q));
-    _page = 0; sortAndRender();
-  }
-
-  function sortUsers(key) {
-    _sortAsc = _sortKey === key ? !_sortAsc : false; _sortKey = key; _page = 0; sortAndRender();
-  }
-
-  function sortAndRender() {
-    _filtered.sort((a,b) => {
-      const av=a[_sortKey]||'', bv=b[_sortKey]||'';
-      return _sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
-    });
-    renderPage();
-  }
-
-  function renderPage() {
-    const total=_filtered.length, start=_page*PAGE_SIZE, end=Math.min(start+PAGE_SIZE,total);
-    document.getElementById('users-loading').style.display = 'none';
-    if (!total) {
-      document.getElementById('users-empty').style.display = 'block';
-      document.getElementById('users-table').style.display = 'none';
-      document.getElementById('users-pagination').style.display = 'none';
-      return;
-    }
-    document.getElementById('users-empty').style.display = 'none';
-    document.getElementById('users-table').style.display = 'table';
-    document.getElementById('users-tbody').innerHTML = _filtered.slice(start,end).map(u => {
-      const isAdm  = ADMIN_EMAILS.includes(u.email);
-      const isG    = (u.identities||[]).some(i=>i.provider==='google');
-      const ini    = (u.email||'?').slice(0,2).toUpperCase();
-      const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
-      const seen   = u.last_sign_in_at ? timeAgo(new Date(u.last_sign_in_at)) : '—';
-      return `<tr>
-        <td><div class="user-email-cell">
-          <div class="user-avatar-sm ${isG?'google':''}">${isG?gIcon():ini}</div>
-          <div>
-            <div class="user-email-text">${esc(u.email||'—')}</div>
-            <div class="user-email-provider">${isG?'<span class="badge badge-google">Google</span>':'Email'}${isAdm?' <span class="badge badge-admin">Admin</span>':''}</div>
-          </div>
-        </div></td>
-        <td>${joined}</td><td>${seen}</td>
-        <td>${u.email_confirmed_at?'<span class="badge badge-confirmed">✓ Confirmed</span>':'<span class="badge badge-pending">Pending</span>'}</td>
-        <td><span class="analyses-count">${u.analyses||0}</span></td>
-      </tr>`;
-    }).join('');
-
-    const pages = Math.ceil(total/PAGE_SIZE);
-    const pgEl  = document.getElementById('users-pagination');
-    pgEl.style.display = 'flex';
-    document.getElementById('pagination-info').textContent = pages>1 ? `${start+1}–${end} of ${total} users` : `${total} user${total!==1?'s':''}`;
-    if (pages > 1) {
-      let h = `<button class="pagination-btn" onclick="goPage(${_page-1})" ${_page===0?'disabled':''}>←</button>`;
-      for (let i=0;i<pages;i++) h+=`<button class="pagination-btn ${i===_page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
-      h += `<button class="pagination-btn" onclick="goPage(${_page+1})" ${_page>=pages-1?'disabled':''}>→</button>`;
-      document.getElementById('pagination-btns').innerHTML = h;
-    } else { document.getElementById('pagination-btns').innerHTML = ''; }
-  }
-
-  function goPage(p) { _page=Math.max(0,Math.min(p,Math.ceil(_filtered.length/PAGE_SIZE)-1)); renderPage(); }
-  function timeAgo(d) {
-    const s=Math.floor((Date.now()-d)/1000);
-    if(s<60) return 'Just now'; if(s<3600) return Math.floor(s/60)+'m ago';
-    if(s<86400) return Math.floor(s/3600)+'h ago'; if(s<604800) return Math.floor(s/86400)+'d ago';
-    return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  }
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function gIcon() { return `<svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`; }
-  function setRefreshSpinning(on) { document.getElementById('refresh-btn')?.classList.toggle('spinning',on); }
-
-  checkAdminAccess();
+  /* ── Init ── */
+  initProfile();
 </script>
 </body>
 </html>
