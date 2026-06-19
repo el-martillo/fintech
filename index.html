@@ -558,7 +558,7 @@
       <!-- History -->
       <div class="history-section">
         <div class="history-title">
-          Recent analyses
+          <span id="history-label">Recent analyses</span>
           <span style="display:flex;align-items:center;gap:8px;">
             <span id="history-count"></span>
             <button onclick="clearHistory()" id="history-clear-btn" title="Clear history" style="display:none;background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 6px;border-radius:4px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">Clear</button>
@@ -771,25 +771,27 @@
 
   /* ── Save to Supabase ── */
   async function saveToSupabase(a) {
+    lsSave(a); // always persist locally regardless of auth state
+    if (!_currentUser) return; // not logged in — local only
     const { error } = await db.from('stock_analyses').insert({
-      ticker:       a.ticker,
-      company_name: a.companyName,
-      signal:       a.signal,
-      confidence:   a.confidence,
-      price:        a.price,
-      price_change: a.priceChange1d,
-      week_change:  a.weekChange,
-      pe_ratio:     a.peRatio,
-      market_cap:   a.marketCap,
-      sector:       a.sector,
-      pros:         a.pros,
-      cons:         a.cons,
-      neutral:      a.neutral,
+      ticker:        a.ticker,
+      company_name:  a.companyName,
+      signal:        a.signal,
+      confidence:    a.confidence,
+      price:         a.price,
+      price_change:  a.priceChange1d,
+      week_change:   a.weekChange,
+      pe_ratio:      a.peRatio,
+      market_cap:    a.marketCap,
+      sector:        a.sector,
+      pros:          a.pros,
+      cons:          a.cons,
+      neutral:       a.neutral,
       trade_summary: a.tradeSummary,
-      etoro_url:    a.etoroUrl
+      etoro_url:     a.etoroUrl,
+      user_id:       _currentUser.id
     });
-    // RLS may block insert — non-critical, localStorage handles history locally
-    lsSave(a); // always persist locally
+    if (error) console.warn('Supabase save failed:', error.message);
   }
 
   /* ── Render result ── */
@@ -845,33 +847,42 @@
 
   /* ── Load history — localStorage primary, Supabase fallback ── */
   async function loadHistory() {
+    // Logged in → Supabase (cloud, all devices, RLS-filtered to this user)
+    // Logged out → localStorage (this device only)
+    if (_currentUser) {
+      const { data, error } = await db
+        .from('stock_analyses')
+        .select('id, ticker, company_name, signal, confidence, created_at')
+        .eq('user_id', _currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(12);
+
+      if (error || !data?.length) {
+        $('history-grid').innerHTML = '<div class="history-empty">No analyses saved yet.</div>';
+        $('history-count').textContent = '';
+        $('history-clear-btn').style.display = 'none';
+        return;
+      }
+      renderHistory(data);
+      return;
+    }
+
+    // Not logged in — use localStorage
     const local = lsLoad();
-
-    if (local.length) {
-      renderHistory(local.map(h => ({
-        ticker:       h.ticker,
-        company_name: h.companyName,
-        signal:       h.signal,
-        confidence:   h.confidence,
-        created_at:   h.savedAt,
-        _local:       h
-      })));
-      return;
-    }
-
-    // Fallback: Supabase if localStorage is empty
-    const { data, error } = await db
-      .from('stock_analyses')
-      .select('id, ticker, company_name, signal, confidence, created_at')
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (error || !data?.length) {
-      $('history-grid').innerHTML = '<div class="history-empty">No analyses yet.</div>';
+    if (!local.length) {
+      $('history-grid').innerHTML = '<div class="history-empty">No analyses yet. <a href="#" onclick="openAuthPanel();return false;" style="color:var(--accent);text-decoration:none;">Sign in</a> to sync across devices.</div>';
       $('history-count').textContent = '';
+      $('history-clear-btn').style.display = 'none';
       return;
     }
-    renderHistory(data);
+    renderHistory(local.map(h => ({
+      ticker:       h.ticker,
+      company_name: h.companyName,
+      signal:       h.signal,
+      confidence:   h.confidence,
+      created_at:   h.savedAt,
+      _local:       h
+    })));
   }
 
   function renderHistory(rows) {
@@ -892,8 +903,13 @@
     }).join('');
   }
 
-  function clearHistory() {
+  async function clearHistory() {
     try { localStorage.removeItem(LS_KEY); } catch(e) {}
+    if (_currentUser) {
+      await db.from('stock_analyses')
+        .delete()
+        .eq('user_id', _currentUser.id);
+    }
     $('history-grid').innerHTML = '<div class="history-empty">No analyses yet. Search a ticker above.</div>';
     $('history-count').textContent = '';
     $('history-clear-btn').style.display = 'none';
@@ -910,10 +926,12 @@
   }
 
   async function loadFromHistory(id) {
+    if (!_currentUser) { showError('Please sign in to load saved analyses.'); return; }
     const { data, error } = await db
       .from('stock_analyses')
       .select('*')
       .eq('id', id)
+      .eq('user_id', _currentUser.id)  // RLS enforces this too, but belt-and-braces
       .single();
 
     if (error || !data) { showError('Could not load saved analysis.'); return; }
@@ -1641,21 +1659,8 @@
   // google
   async function adpGoogle() {
     adpClearMsg();
-    try {
-      const {error}=await db.auth.signInWithOAuth({
-        provider:'google',
-        options:{redirectTo: 'https://el-martillo.github.io/fintech/'}
-      });
-      if(error) {
-        if(error.message?.includes('provider is not enabled') || error.status===400) {
-          adpErr('Google sign-in is being configured — please use email/password for now.');
-        } else {
-          adpErr(error.message);
-        }
-      }
-    } catch(e) {
-      adpErr('Google sign-in unavailable — please use email/password.');
-    }
+    const {error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
+    if(error) adpErr(error.message);
   }
 
   // sign out
@@ -1665,7 +1670,21 @@
   }
 
   // render the navbar trigger button
+  function _updateHistoryLabel(user) {
+    const hint  = document.getElementById('history-auth-hint');
+    const label = document.getElementById('history-label');
+    if (!hint || !label) return;
+    if (user) {
+      hint.style.display  = 'none';
+      label.textContent   = 'Your analyses';
+    } else {
+      hint.style.display  = 'inline';
+      label.textContent   = 'Recent analyses';
+    }
+  }
+
   function _renderTrigger(user) {
+    _updateHistoryLabel(user);
     const wrap=document.getElementById('auth-trigger-btn');
     if(!wrap) return;
     if(!user) {
@@ -1705,7 +1724,13 @@
     _currentUser=session?.user??null;
     _renderTrigger(_currentUser);
     _renderLoggedIn(_currentUser);
-    if(_currentUser && event==='SIGNED_IN') setTimeout(closeAuthPanel, 700);
+    if(_currentUser && event==='SIGNED_IN') {
+      setTimeout(closeAuthPanel, 700);
+      setTimeout(loadHistory, 800); // reload history from Supabase after sign-in
+    }
+    if(event==='SIGNED_OUT') {
+      loadHistory(); // switch back to localStorage view
+    }
   });
 
   // enter key support
