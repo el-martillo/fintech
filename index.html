@@ -423,7 +423,7 @@
 
   <!-- ── Hero banner ── -->
   <div class="hero-banner">
-    <img src="dark_banner.jpg" alt="Market chart banner" class="hero-banner-img" />
+    <img src="images/dark_banner.jpg" alt="Market chart banner" class="hero-banner-img" />
     <div class="hero-banner-overlay">
       <div class="hero-banner-text">
         <span class="hero-badge">AI-powered · eToro ready</span>
@@ -782,8 +782,8 @@
 
   /* ── Save to Supabase ── */
   async function saveToSupabase(a) {
-    lsSave(a); // always save locally
-    if (!_currentUser) return; // not logged in — local only
+    lsSave(a);
+    if (!_currentUser) return;
     const { error } = await db.from('stock_analyses').insert({
       ticker:        a.ticker,
       company_name:  a.companyName,
@@ -1723,9 +1723,8 @@
     _renderLoggedIn(_currentUser);
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
       if (_currentUser) {
-        if (window.location.hash.includes('access_token')) {
+        if (window.location.hash.includes('access_token'))
           history.replaceState(null, '', window.location.pathname);
-        }
         setTimeout(closeAuthPanel, 700);
         setTimeout(loadHistory, 800);
       }
@@ -1733,15 +1732,13 @@
     if (event === 'SIGNED_OUT') loadHistory();
   });
 
-  // belt-and-braces: check for existing session on load
   db.auth.getSession().then(({ data: { session } }) => {
     if (session?.user && !_currentUser) {
       _currentUser = session.user;
       _renderTrigger(_currentUser);
       _renderLoggedIn(_currentUser);
-      if (window.location.hash.includes('access_token')) {
+      if (window.location.hash.includes('access_token'))
         history.replaceState(null, '', window.location.pathname);
-      }
       loadHistory();
     }
   });
