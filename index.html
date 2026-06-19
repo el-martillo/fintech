@@ -1723,10 +1723,10 @@
         if (window.location.hash.includes('access_token'))
           history.replaceState(null, '', window.location.pathname);
         setTimeout(closeAuthPanel, 700);
-        setTimeout(loadHistory, 800);
+        setTimeout(typeof loadHistory === 'function' ? loadHistory : ()=>{}, 800);
       }
     }
-    if (event === 'SIGNED_OUT') loadHistory();
+    if (event === 'SIGNED_OUT') typeof loadHistory === 'function' && loadHistory();
   });
 
   db.auth.getSession().then(({ data: { session } }) => {
@@ -1736,7 +1736,7 @@
       _renderLoggedIn(_currentUser);
       if (window.location.hash.includes('access_token'))
         history.replaceState(null, '', window.location.pathname);
-      loadHistory();
+      typeof loadHistory === 'function' && loadHistory();
     }
   });
 

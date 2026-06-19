@@ -484,6 +484,12 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                   Agent Portfolios <span class="adp-badge">Soon</span>
                 </button>
+                <a class="adp-nav-item" id="adp-admin-link" href="admin.html"
+                   style="display:none;text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Admin Console
+                  <span class="adp-badge" style="margin-left:auto;background:rgba(239,68,68,0.12);color:var(--red);border-color:rgba(239,68,68,0.2);">Admin</span>
+                </a>
               </nav>
               <div class="adp-divider"></div>
               <button class="adp-nav-item adp-signout" onclick="adpSignOut()">
@@ -767,14 +773,36 @@
     if(si&&user.created_at){
       si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
     }
+    const adminLink = document.getElementById('adp-admin-link');
+    if(adminLink) adminLink.style.display = isAdmin() ? 'flex' : 'none';
   }
 
   // auth state listener
   db.auth.onAuthStateChange((event, session) => {
-    _currentUser=session?.user??null;
+    console.log('[Auth]', event, session?.user?.email ?? 'no user');
+    _currentUser = session?.user ?? null;
     _renderTrigger(_currentUser);
     _renderLoggedIn(_currentUser);
-    if(_currentUser && event==='SIGNED_IN') setTimeout(closeAuthPanel, 700);
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (_currentUser) {
+        if (window.location.hash.includes('access_token'))
+          history.replaceState(null, '', window.location.pathname);
+        setTimeout(closeAuthPanel, 700);
+        setTimeout(typeof loadHistory === 'function' ? loadHistory : ()=>{}, 800);
+      }
+    }
+    if (event === 'SIGNED_OUT') typeof loadHistory === 'function' && loadHistory();
+  });
+
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user && !_currentUser) {
+      _currentUser = session.user;
+      _renderTrigger(_currentUser);
+      _renderLoggedIn(_currentUser);
+      if (window.location.hash.includes('access_token'))
+        history.replaceState(null, '', window.location.pathname);
+      typeof loadHistory === 'function' && loadHistory();
+    }
   });
 
   // enter key support

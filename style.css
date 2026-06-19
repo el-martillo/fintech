@@ -373,10 +373,10 @@ body {
   backdrop-filter: blur(12px);
 }
 .navbar-inner {
-  max-width: 760px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 0 1.25rem;
-  height: 60px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1332,7 +1332,7 @@ body.light .hero-badge {
 /* ── Exchange ticker bar ── */
 .exchange-ticker-bar {
   position: sticky;
-  top: 60px;
+  top: 72px;
   z-index: 90;
   background: var(--surface);
   border-bottom: 1px solid var(--border2);
