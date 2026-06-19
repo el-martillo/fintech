@@ -392,11 +392,6 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                   Agent Portfolios <span class="adp-badge">Soon</span>
                 </button>
-                <a class="adp-nav-item adp-admin-link" id="admin-nav-link"
-                   href="admin.html" style="display:none;text-decoration:none;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  Admin Console <span class="adp-badge" style="background:rgba(239,68,68,0.12);color:var(--red);border-color:rgba(239,68,68,0.2);">Admin</span>
-                </a>
               </nav>
               <div class="adp-divider"></div>
               <button class="adp-nav-item adp-signout" onclick="adpSignOut()">
@@ -661,9 +656,6 @@
 
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  const ADMIN_EMAILS = ['giacomo.medici@gmail.com'];
-  const isAdmin = () => ADMIN_EMAILS.includes(_currentUser?.email);
 
   /* ── UI helpers ── */
   const $  = id => document.getElementById(id);
@@ -1693,9 +1685,6 @@
     if(si&&user.created_at){
       si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
     }
-    // Show admin link only for admin users
-    const adminLink = document.getElementById('admin-nav-link');
-    if (adminLink) adminLink.style.display = isAdmin() ? 'flex' : 'none';
   }
 
   // auth state listener
