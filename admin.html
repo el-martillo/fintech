@@ -237,148 +237,78 @@
   </style>
 
   <style id="admin-styles">
-    /* ── Admin-specific styles ── */
     .admin-gate {
       position: fixed; inset: 0; z-index: 1000;
       background: var(--bg);
       display: flex; align-items: center; justify-content: center;
-      flex-direction: column; gap: 1rem;
     }
     .admin-gate-card {
-      background: var(--surface);
-      border: 1px solid var(--border2);
-      border-radius: 16px;
-      padding: 2.5rem 2rem;
-      text-align: center;
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 16px; padding: 2.5rem 2rem; text-align: center;
       max-width: 360px; width: 100%;
       box-shadow: 0 20px 60px rgba(0,0,0,0.4);
     }
     .admin-gate-icon {
       width: 52px; height: 52px; border-radius: 50%;
-      background: var(--red-bg);
-      border: 1px solid rgba(239,68,68,0.3);
+      background: var(--red-bg); border: 1px solid rgba(239,68,68,0.3);
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 1rem;
     }
     .admin-gate-title { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; }
     .admin-gate-sub   { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem; }
     .admin-gate-btn {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 9px 20px; background: var(--accent);
-      border: none; border-radius: 8px;
+      display: inline-flex; align-items: center; gap: 7px; padding: 9px 20px;
+      background: var(--accent); border: none; border-radius: 8px;
       font-size: 13px; font-weight: 600; color: #fff;
       cursor: pointer; text-decoration: none; transition: opacity 0.15s; font-family: inherit;
     }
     .admin-gate-btn:hover { opacity: 0.85; }
 
     .admin-page { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
-
-    .admin-stats {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 10px; margin-bottom: 1.75rem;
-    }
+    .admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 1.75rem; }
     .admin-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; }
     .admin-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); margin-bottom: 6px; }
     .admin-stat-value { font-size: 26px; font-weight: 700; font-family: var(--mono); color: var(--text); }
     .admin-stat-sub   { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
 
-    .admin-section-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 0.85rem; flex-wrap: wrap; gap: 8px;
-    }
-    .admin-section-title {
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-dim);
-      display: flex; align-items: center; gap: 7px;
-    }
-    .admin-search {
-      background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px;
-      padding: 0 12px; height: 34px; font-size: 13px; color: var(--text);
-      outline: none; font-family: inherit; transition: border-color 0.15s; min-width: 200px;
-    }
+    .admin-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 8px; }
+    .admin-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); display: flex; align-items: center; gap: 7px; }
+    .admin-search { background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; padding: 0 12px; height: 34px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; transition: border-color 0.15s; min-width: 200px; }
     .admin-search::placeholder { color: var(--text-dim); }
     .admin-search:focus { border-color: var(--accent); }
 
     .users-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
     .users-table { width: 100%; border-collapse: collapse; }
-    .users-table th {
-      text-align: left; font-size: 10.5px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim);
-      padding: 10px 16px; border-bottom: 1px solid var(--border2);
-      background: var(--surface2); white-space: nowrap;
-    }
+    .users-table th { text-align: left; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); padding: 10px 16px; border-bottom: 1px solid var(--border2); background: var(--surface2); white-space: nowrap; }
     .users-table th.sortable { cursor: pointer; user-select: none; }
     .users-table th.sortable:hover { color: var(--text); }
-    .users-table td {
-      padding: 11px 16px; font-size: 13px; color: var(--text-muted);
-      border-bottom: 1px solid var(--border); vertical-align: middle;
-    }
+    .users-table td { padding: 11px 16px; font-size: 13px; color: var(--text-muted); border-bottom: 1px solid var(--border); vertical-align: middle; }
     .users-table tr:last-child td { border-bottom: none; }
     .users-table tr:hover td { background: var(--surface2); }
-
     .user-email-cell { display: flex; align-items: center; gap: 10px; }
-    .user-avatar-sm {
-      width: 30px; height: 30px; border-radius: 50%; background: var(--accent);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
-    }
+    .user-avatar-sm { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
     .user-avatar-sm.google { background: rgba(66,133,244,0.2); border: 1px solid rgba(66,133,244,0.3); }
-    .user-email-text     { font-size: 13px; font-weight: 500; color: var(--text); }
+    .user-email-text { font-size: 13px; font-weight: 500; color: var(--text); }
     .user-email-provider { font-size: 10.5px; color: var(--text-dim); margin-top: 1px; }
-
     .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 10.5px; font-weight: 600; }
     .badge-confirmed { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
     .badge-pending   { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
     .badge-admin     { background: var(--accent-dim); color: #a9a3ff; border: 1px solid rgba(108,99,255,0.25); }
     .badge-google    { background: rgba(66,133,244,0.1); color: #4285F4; border: 1px solid rgba(66,133,244,0.2); }
-
     .analyses-count { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
-
     .admin-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 3rem; font-size: 13px; color: var(--text-muted); }
     .admin-empty   { text-align: center; padding: 3rem; font-size: 13px; color: var(--text-dim); }
-
-    .btn-refresh {
-      display: inline-flex; align-items: center; gap: 6px;
-      height: 34px; padding: 0 14px; background: var(--surface2);
-      border: 1px solid var(--border2); border-radius: 7px;
-      font-size: 12px; font-weight: 500; color: var(--text-muted);
-      cursor: pointer; transition: all 0.15s; font-family: inherit;
-    }
+    .btn-refresh { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
     .btn-refresh:hover { border-color: var(--accent); color: var(--text); }
     .btn-refresh.spinning svg { animation: spin 1s linear infinite; }
-
-    .admin-back {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 13px; color: var(--text-muted); text-decoration: none;
-      margin-bottom: 1.5rem; transition: color 0.15s;
-    }
+    .admin-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); text-decoration: none; margin-bottom: 1.5rem; transition: color 0.15s; }
     .admin-back:hover { color: var(--text); }
-
-    .admin-pagination {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px; border-top: 1px solid var(--border);
-      font-size: 12px; color: var(--text-dim);
-    }
+    .admin-pagination { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); }
     .pagination-btns { display: flex; gap: 4px; }
-    .pagination-btn {
-      height: 28px; padding: 0 10px; background: var(--surface2);
-      border: 1px solid var(--border); border-radius: 6px;
-      font-size: 12px; color: var(--text-muted); cursor: pointer;
-      transition: all 0.15s; font-family: inherit;
-    }
+    .pagination-btn { height: 28px; padding: 0 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
     .pagination-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
     .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .pagination-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-    /* Admin badge in navbar subtitle */
-    .admin-nav-label {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em;
-    }
-    .admin-nav-label .badge-admin {
-      font-size: 9px; padding: 1px 5px;
-    }
-
     @media (max-width: 640px) {
       .users-table th:nth-child(4), .users-table td:nth-child(4),
       .users-table th:nth-child(5), .users-table td:nth-child(5) { display: none; }
@@ -387,7 +317,7 @@
 </head>
 <body>
 
-  <!-- ── Access denied gate ── -->
+  <!-- ── Access gate ── -->
   <div id="admin-gate" class="admin-gate">
     <div class="admin-gate-card">
       <div class="admin-gate-icon">
@@ -404,11 +334,12 @@
     </div>
   </div>
 
-  <!-- ── Admin content ── -->
+  <!-- ══════════════════════════════════════
+       MAIN PAGE (shown after access granted)
+  ══════════════════════════════════════ -->
   <div id="admin-content" style="display:none">
 
-  <!-- Top navbar -->
-  <nav class="navbar">
+    <nav class="navbar">
     <div class="navbar-inner">
       <div class="navbar-logo">
         <svg class="etoro-spin" width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -562,7 +493,6 @@
         Back to app
       </a>
 
-      <!-- Hero banner -->
       <div class="hero-banner" style="margin-bottom:1.75rem;">
         <img src="images/dark_banner.jpg" alt="" class="hero-banner-img" />
         <div class="hero-banner-overlay">
@@ -574,31 +504,13 @@
         </div>
       </div>
 
-      <!-- Stats -->
       <div class="admin-stats">
-        <div class="admin-stat">
-          <div class="admin-stat-label">Total users</div>
-          <div class="admin-stat-value" id="stat-total">—</div>
-          <div class="admin-stat-sub">registered accounts</div>
-        </div>
-        <div class="admin-stat">
-          <div class="admin-stat-label">Confirmed</div>
-          <div class="admin-stat-value" id="stat-confirmed">—</div>
-          <div class="admin-stat-sub">email verified</div>
-        </div>
-        <div class="admin-stat">
-          <div class="admin-stat-label">Google OAuth</div>
-          <div class="admin-stat-value" id="stat-google">—</div>
-          <div class="admin-stat-sub">signed in with Google</div>
-        </div>
-        <div class="admin-stat">
-          <div class="admin-stat-label">Analyses run</div>
-          <div class="admin-stat-value" id="stat-analyses">—</div>
-          <div class="admin-stat-sub">total saved</div>
-        </div>
+        <div class="admin-stat"><div class="admin-stat-label">Total users</div><div class="admin-stat-value" id="stat-total">—</div><div class="admin-stat-sub">registered accounts</div></div>
+        <div class="admin-stat"><div class="admin-stat-label">Confirmed</div><div class="admin-stat-value" id="stat-confirmed">—</div><div class="admin-stat-sub">email verified</div></div>
+        <div class="admin-stat"><div class="admin-stat-label">Google OAuth</div><div class="admin-stat-value" id="stat-google">—</div><div class="admin-stat-sub">signed in with Google</div></div>
+        <div class="admin-stat"><div class="admin-stat-label">Analyses run</div><div class="admin-stat-value" id="stat-analyses">—</div><div class="admin-stat-sub">total saved</div></div>
       </div>
 
-      <!-- Users table -->
       <div class="admin-section-header">
         <div class="admin-section-title">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -634,33 +546,32 @@
         </div>
       </div>
 
-    </div>
+    </div><!-- /admin-page -->
+
+    <footer class="site-footer">
+      <span class="footer-left">
+        © 2025 eToro Stock Advisor · Data via Yahoo Finance · AI by Anthropic
+      </span>
+      <a class="footer-top-btn" href="#" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        Top
+      </a>
+    </footer>
+
   </div><!-- /admin-content -->
 
-  <footer class="site-footer">
-    <span class="footer-left">
-      © 2025 eToro Stock Advisor · Data via Yahoo Finance · AI by Anthropic
-    </span>
-    <a class="footer-top-btn" href="#" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-      Top
-    </a>
-  </footer>
-
 <script>
-
   const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
-
-  const ADMIN_EMAILS = ['giacomo.medici@gmail.com'];
-  const isAdmin = () => ADMIN_EMAILS.includes(_currentUser?.email);
+  const ADMIN_EMAILS      = ['giacomo.medici@gmail.com'];
+  const isAdmin           = () => ADMIN_EMAILS.includes(_currentUser?.email);
 
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
   });
 
-  /* ── Theme toggle (same as index) ── */
+  /* ── Theme toggle ── */
   function toggleTheme() {
     const isLight = document.body.classList.toggle('light');
     document.getElementById('theme-label').textContent = isLight ? 'Dark mode' : 'Light mode';
@@ -670,7 +581,7 @@
   }
   if (localStorage.getItem('theme') === 'light') toggleTheme();
 
-  /* ── Auth (full copy from index — gives working avatar + dropdown) ── */
+  /* ── Auth (full — gives working avatar + dropdown) ── */
   let _currentUser = null;
   let _panelOpen   = false;
 
@@ -852,17 +763,15 @@
     else if(id==='rp-email') adpResetPw();
   });
 
-  /* ════════════════════════════════════════════
+  /* ════════════════════════════════════════
      ADMIN LOGIC
-  ════════════════════════════════════════════ */
+  ════════════════════════════════════════ */
   const PAGE_SIZE = 20;
   let _allUsers = [], _filtered = [], _sortKey = 'created_at', _sortAsc = false, _page = 0;
 
   async function checkAdminAccess() {
-    // Wait for auth to resolve
     const { data: { session } } = await db.auth.getSession();
     const user = session?.user;
-
     if (!user) {
       showGate('Not signed in', 'Please sign in to the main app first, then return here.', true);
       return;
@@ -871,8 +780,6 @@
       showGate('Access denied', user.email + ' does not have admin privileges.', true);
       return;
     }
-
-    // Granted — show the page
     document.getElementById('admin-gate').style.display    = 'none';
     document.getElementById('admin-content').style.display = 'block';
     loadUsers();
@@ -886,19 +793,15 @@
 
   async function loadUsers() {
     setRefreshSpinning(true);
-    document.getElementById('users-loading').style.display  = 'flex';
-    document.getElementById('users-table').style.display    = 'none';
-    document.getElementById('users-empty').style.display    = 'none';
+    document.getElementById('users-loading').style.display    = 'flex';
+    document.getElementById('users-table').style.display      = 'none';
+    document.getElementById('users-empty').style.display      = 'none';
     document.getElementById('users-pagination').style.display = 'none';
-
     try {
       const { data: { session } } = await db.auth.getSession();
-      const token = session?.access_token;
-
       const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-users`, {
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` }
       });
-
       if (res.ok) {
         const json = await res.json();
         _allUsers = json.users || [];
@@ -910,23 +813,19 @@
       await loadUsersFallback();
       return;
     }
-
     processUsers();
     setRefreshSpinning(false);
   }
 
   async function loadUsersFallback() {
     try {
-      const { data, error } = await db
-        .from('stock_analyses')
-        .select('user_id, created_at')
-        .order('created_at', { ascending: false });
+      const { data, error } = await db.from('stock_analyses').select('user_id, created_at').order('created_at', { ascending: false });
       if (error) throw error;
       const map = {};
-      (data || []).forEach(row => {
-        if (!row.user_id) return;
-        if (!map[row.user_id]) map[row.user_id] = { id: row.user_id, email: '(id) ' + row.user_id.slice(0,8) + '…', created_at: row.created_at, analyses: 0, _fallback: true };
-        map[row.user_id].analyses++;
+      (data||[]).forEach(r => {
+        if (!r.user_id) return;
+        if (!map[r.user_id]) map[r.user_id] = { id: r.user_id, email: '(id) '+r.user_id.slice(0,8)+'…', created_at: r.created_at, analyses: 0, _fallback: true };
+        map[r.user_id].analyses++;
       });
       _allUsers = Object.values(map);
     } catch(e) { _allUsers = []; }
@@ -937,39 +836,32 @@
   function processUsers() { _filtered = [..._allUsers]; renderStats(); filterUsers(); }
 
   function renderStats() {
-    const total     = _allUsers.length;
-    const confirmed = _allUsers.filter(u => u.email_confirmed_at).length;
-    const google    = _allUsers.filter(u => (u.identities||[]).some(i => i.provider === 'google')).length;
-    const analyses  = _allUsers.reduce((s,u) => s + (u.analyses||0), 0);
-    document.getElementById('stat-total').textContent     = total;
-    document.getElementById('stat-confirmed').textContent = confirmed || '—';
-    document.getElementById('stat-google').textContent    = google    || '—';
-    document.getElementById('stat-analyses').textContent  = analyses  || '—';
+    document.getElementById('stat-total').textContent     = _allUsers.length;
+    document.getElementById('stat-confirmed').textContent = _allUsers.filter(u=>u.email_confirmed_at).length || '—';
+    document.getElementById('stat-google').textContent    = _allUsers.filter(u=>(u.identities||[]).some(i=>i.provider==='google')).length || '—';
+    document.getElementById('stat-analyses').textContent  = _allUsers.reduce((s,u)=>s+(u.analyses||0),0) || '—';
   }
 
   function filterUsers() {
-    const q = (document.getElementById('user-search')?.value || '').toLowerCase();
+    const q = (document.getElementById('user-search')?.value||'').toLowerCase();
     _filtered = _allUsers.filter(u => !q || (u.email||'').toLowerCase().includes(q));
-    _page = 0;
-    sortAndRender();
+    _page = 0; sortAndRender();
   }
 
   function sortUsers(key) {
-    _sortKey = key; _sortAsc = _sortKey === key ? !_sortAsc : false; _page = 0; sortAndRender();
+    _sortAsc = _sortKey === key ? !_sortAsc : false; _sortKey = key; _page = 0; sortAndRender();
   }
 
   function sortAndRender() {
     _filtered.sort((a,b) => {
-      const av = a[_sortKey]||'', bv = b[_sortKey]||'';
+      const av=a[_sortKey]||'', bv=b[_sortKey]||'';
       return _sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
     });
     renderPage();
   }
 
   function renderPage() {
-    const total = _filtered.length, start = _page * PAGE_SIZE, end = Math.min(start + PAGE_SIZE, total);
-    const page  = _filtered.slice(start, end);
-
+    const total=_filtered.length, start=_page*PAGE_SIZE, end=Math.min(start+PAGE_SIZE,total);
     document.getElementById('users-loading').style.display = 'none';
     if (!total) {
       document.getElementById('users-empty').style.display = 'block';
@@ -979,69 +871,49 @@
     }
     document.getElementById('users-empty').style.display = 'none';
     document.getElementById('users-table').style.display = 'table';
-
-    document.getElementById('users-tbody').innerHTML = page.map(u => {
-      const isAdmin   = ADMIN_EMAILS.includes(u.email);
-      const isGoogle  = (u.identities||[]).some(i => i.provider === 'google');
-      const confirmed = !!u.email_confirmed_at;
-      const ini       = (u.email||'?').slice(0,2).toUpperCase();
-      const joined    = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
-      const lastSeen  = u.last_sign_in_at ? timeAgo(new Date(u.last_sign_in_at)) : '—';
+    document.getElementById('users-tbody').innerHTML = _filtered.slice(start,end).map(u => {
+      const isAdm  = ADMIN_EMAILS.includes(u.email);
+      const isG    = (u.identities||[]).some(i=>i.provider==='google');
+      const ini    = (u.email||'?').slice(0,2).toUpperCase();
+      const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      const seen   = u.last_sign_in_at ? timeAgo(new Date(u.last_sign_in_at)) : '—';
       return `<tr>
         <td><div class="user-email-cell">
-          <div class="user-avatar-sm ${isGoogle?'google':''}">${isGoogle?googleIcon():ini}</div>
+          <div class="user-avatar-sm ${isG?'google':''}">${isG?gIcon():ini}</div>
           <div>
-            <div class="user-email-text">${escHtml(u.email||'—')}</div>
-            <div class="user-email-provider">
-              ${isGoogle?'<span class="badge badge-google">Google</span>':'Email'}
-              ${isAdmin?' <span class="badge badge-admin">Admin</span>':''}
-            </div>
+            <div class="user-email-text">${esc(u.email||'—')}</div>
+            <div class="user-email-provider">${isG?'<span class="badge badge-google">Google</span>':'Email'}${isAdm?' <span class="badge badge-admin">Admin</span>':''}</div>
           </div>
         </div></td>
-        <td>${joined}</td>
-        <td>${lastSeen}</td>
-        <td>${confirmed?'<span class="badge badge-confirmed">✓ Confirmed</span>':'<span class="badge badge-pending">Pending</span>'}</td>
+        <td>${joined}</td><td>${seen}</td>
+        <td>${u.email_confirmed_at?'<span class="badge badge-confirmed">✓ Confirmed</span>':'<span class="badge badge-pending">Pending</span>'}</td>
         <td><span class="analyses-count">${u.analyses||0}</span></td>
       </tr>`;
     }).join('');
 
-    const pages = Math.ceil(total / PAGE_SIZE);
+    const pages = Math.ceil(total/PAGE_SIZE);
     const pgEl  = document.getElementById('users-pagination');
     pgEl.style.display = 'flex';
-    document.getElementById('pagination-info').textContent = pages > 1 ? `${start+1}–${end} of ${total} users` : `${total} user${total!==1?'s':''}`;
+    document.getElementById('pagination-info').textContent = pages>1 ? `${start+1}–${end} of ${total} users` : `${total} user${total!==1?'s':''}`;
     if (pages > 1) {
       let h = `<button class="pagination-btn" onclick="goPage(${_page-1})" ${_page===0?'disabled':''}>←</button>`;
       for (let i=0;i<pages;i++) h+=`<button class="pagination-btn ${i===_page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
       h += `<button class="pagination-btn" onclick="goPage(${_page+1})" ${_page>=pages-1?'disabled':''}>→</button>`;
       document.getElementById('pagination-btns').innerHTML = h;
-    } else {
-      document.getElementById('pagination-btns').innerHTML = '';
-    }
+    } else { document.getElementById('pagination-btns').innerHTML = ''; }
   }
 
-  function goPage(p) {
-    _page = Math.max(0, Math.min(p, Math.ceil(_filtered.length/PAGE_SIZE)-1));
-    renderPage();
+  function goPage(p) { _page=Math.max(0,Math.min(p,Math.ceil(_filtered.length/PAGE_SIZE)-1)); renderPage(); }
+  function timeAgo(d) {
+    const s=Math.floor((Date.now()-d)/1000);
+    if(s<60) return 'Just now'; if(s<3600) return Math.floor(s/60)+'m ago';
+    if(s<86400) return Math.floor(s/3600)+'h ago'; if(s<604800) return Math.floor(s/86400)+'d ago';
+    return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
   }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function gIcon() { return `<svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`; }
+  function setRefreshSpinning(on) { document.getElementById('refresh-btn')?.classList.toggle('spinning',on); }
 
-  function timeAgo(date) {
-    const s = Math.floor((Date.now()-date)/1000);
-    if (s<60) return 'Just now';
-    if (s<3600) return Math.floor(s/60)+'m ago';
-    if (s<86400) return Math.floor(s/3600)+'h ago';
-    if (s<604800) return Math.floor(s/86400)+'d ago';
-    return date.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  }
-
-  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-  function googleIcon() {
-    return `<svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
-  }
-
-  function setRefreshSpinning(on) { document.getElementById('refresh-btn')?.classList.toggle('spinning', on); }
-
-  // ── Init ──
   checkAdminAccess();
 </script>
 </body>
