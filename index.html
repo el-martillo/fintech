@@ -392,8 +392,7 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                   Agent Portfolios <span class="adp-badge">Soon</span>
                 </button>
-                <a class="adp-nav-item" id="adp-admin-link" href="admin.html"
-                   style="display:none;text-decoration:none;">
+                <a class="adp-nav-item" id="adp-admin-link" href="admin.html" style="display:none;text-decoration:none;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   Admin Console
                   <span class="adp-badge" style="margin-left:auto;background:rgba(239,68,68,0.12);color:var(--red);border-color:rgba(239,68,68,0.2);">Admin</span>
@@ -622,6 +621,99 @@
 
   </div><!-- /layout -->
 
+
+  <!-- ── Chart Analysis ── -->
+  <section class="chart-analysis-section" id="chart-analysis-section">
+    <div class="recs-header" style="margin-bottom:1rem;">
+      <span class="recs-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Chart Analysis
+      </span>
+      <span class="recs-sub">Upload a candlestick chart for AI technical analysis</span>
+    </div>
+
+    <div class="chart-upload-area" id="chart-upload-area">
+      <input type="file" id="chart-file-input" accept="image/*" style="display:none" onchange="handleChartFile(event)" />
+
+      <!-- Drop zone -->
+      <div class="chart-dropzone" id="chart-dropzone"
+           onclick="document.getElementById('chart-file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleChartDrop(event)">
+        <div class="chart-dropzone-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3 9 4-4 4 4 4-4 4 4"/><path d="M3 15h18"/></svg>
+        </div>
+        <div class="chart-dropzone-label">Drop chart image here or <span>click to upload</span></div>
+        <div class="chart-dropzone-hint">PNG, JPG or screenshot · Any timeframe · Any broker</div>
+      </div>
+
+      <!-- Preview + controls -->
+      <div class="chart-preview-wrap" id="chart-preview-wrap" style="display:none">
+        <div class="chart-preview-img-wrap">
+          <img id="chart-preview-img" src="" alt="Chart preview" class="chart-preview-img" />
+          <button class="chart-clear-btn" onclick="clearChart()" title="Remove chart">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="chart-meta-row">
+          <div class="chart-meta-field">
+            <label>Ticker <span style="color:var(--text-dim)">(optional)</span></label>
+            <input type="text" id="chart-ticker-input" placeholder="e.g. AAPL, TSLA…"
+                   style="text-transform:uppercase" autocomplete="off" />
+          </div>
+          <div class="chart-meta-field">
+            <label>Timeframe <span style="color:var(--text-dim)">(optional)</span></label>
+            <select id="chart-timeframe-select">
+              <option value="">Unknown</option>
+              <option value="1m">1 minute</option>
+              <option value="5m">5 minutes</option>
+              <option value="15m">15 minutes</option>
+              <option value="1h">1 hour</option>
+              <option value="4h">4 hours</option>
+              <option value="1D">Daily</option>
+              <option value="1W">Weekly</option>
+              <option value="1M">Monthly</option>
+            </select>
+          </div>
+          <div class="chart-meta-field" style="flex:2">
+            <label>Question <span style="color:var(--text-dim)">(optional)</span></label>
+            <input type="text" id="chart-question-input"
+                   placeholder="e.g. Is this a bullish reversal? Where's support?" />
+          </div>
+        </div>
+        <button class="chart-analyze-btn" id="chart-analyze-btn" onclick="analyzeChart()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Analyse chart
+        </button>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="chart-result" id="chart-result" style="display:none">
+      <div class="chart-result-header">
+        <div class="chart-result-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Technical Analysis
+        </div>
+        <button class="chart-new-btn" onclick="clearChart()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New chart
+        </button>
+      </div>
+      <div class="chart-result-body" id="chart-result-body"></div>
+    </div>
+
+    <!-- Loading -->
+    <div class="chart-loading" id="chart-loading" style="display:none">
+      <div class="spinner"></div>
+      Analysing chart…
+    </div>
+
+    <!-- Error -->
+    <div class="chart-error" id="chart-error" style="display:none"></div>
+  </section>
+
   <!-- ── Financial news ── -->
   <section class="news-section">
     <div class="recs-header">
@@ -664,7 +756,6 @@
   const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
   });
-
   const ADMIN_EMAILS = ['giacomo.medici@gmail.com'];
   const isAdmin = () => ADMIN_EMAILS.includes(_currentUser?.email);
 
@@ -785,22 +876,11 @@
     lsSave(a);
     if (!_currentUser) return;
     const { error } = await db.from('stock_analyses').insert({
-      ticker:        a.ticker,
-      company_name:  a.companyName,
-      signal:        a.signal,
-      confidence:    a.confidence,
-      price:         a.price,
-      price_change:  a.priceChange1d,
-      week_change:   a.weekChange,
-      pe_ratio:      a.peRatio,
-      market_cap:    a.marketCap,
-      sector:        a.sector,
-      pros:          a.pros,
-      cons:          a.cons,
-      neutral:       a.neutral,
-      trade_summary: a.tradeSummary,
-      etoro_url:     a.etoroUrl,
-      user_id:       _currentUser.id
+      ticker:        a.ticker, company_name: a.companyName, signal: a.signal,
+      confidence:    a.confidence, price: a.price, price_change: a.priceChange1d,
+      week_change:   a.weekChange, pe_ratio: a.peRatio, market_cap: a.marketCap,
+      sector:        a.sector, pros: a.pros, cons: a.cons, neutral: a.neutral,
+      trade_summary: a.tradeSummary, etoro_url: a.etoroUrl, user_id: _currentUser.id
     });
     if (error) console.warn('Supabase save failed:', error.message);
   }
@@ -1530,6 +1610,159 @@
 
 
   loadExchangeTicker();
+
+  /* ════════════════════════════════════════════════
+     CHART ANALYSIS — image upload + Claude vision
+  ════════════════════════════════════════════════ */
+
+  let _chartBase64 = null;
+  let _chartMime   = 'image/png';
+
+  function handleChartFile(event) {
+    const file = event.target.files[0];
+    if (file) loadChartFile(file);
+  }
+
+  function handleChartDrop(event) {
+    event.preventDefault();
+    document.getElementById('chart-dropzone').classList.remove('dragover');
+    const file = event.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) loadChartFile(file);
+  }
+
+  function loadChartFile(file) {
+    _chartMime = file.type || 'image/png';
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      _chartBase64 = dataUrl.split(',')[1];
+      document.getElementById('chart-preview-img').src = dataUrl;
+      document.getElementById('chart-dropzone').style.display    = 'none';
+      document.getElementById('chart-preview-wrap').style.display = 'block';
+      document.getElementById('chart-result').style.display       = 'none';
+      document.getElementById('chart-error').style.display        = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearChart() {
+    _chartBase64 = null;
+    document.getElementById('chart-file-input').value     = '';
+    document.getElementById('chart-preview-img').src      = '';
+    document.getElementById('chart-dropzone').style.display     = 'block';
+    document.getElementById('chart-preview-wrap').style.display = 'none';
+    document.getElementById('chart-result').style.display       = 'none';
+    document.getElementById('chart-error').style.display        = 'none';
+    document.getElementById('chart-loading').style.display      = 'none';
+    document.getElementById('chart-ticker-input').value         = '';
+    document.getElementById('chart-timeframe-select').value     = '';
+    document.getElementById('chart-question-input').value       = '';
+  }
+
+  async function analyzeChart() {
+    if (!_chartBase64) return;
+
+    const ticker    = document.getElementById('chart-ticker-input').value.trim().toUpperCase();
+    const timeframe = document.getElementById('chart-timeframe-select').value;
+    const question  = document.getElementById('chart-question-input').value.trim();
+
+    document.getElementById('chart-result').style.display  = 'none';
+    document.getElementById('chart-error').style.display   = 'none';
+    document.getElementById('chart-loading').style.display = 'flex';
+
+    const btn = document.getElementById('chart-analyze-btn');
+    btn.disabled = true;
+
+    const contextParts = [];
+    if (ticker)    contextParts.push(`Ticker: ${ticker}`);
+    if (timeframe) contextParts.push(`Timeframe: ${timeframe}`);
+    if (question)  contextParts.push(`User question: ${question}`);
+    const context = contextParts.length ? contextParts.join(' | ') : 'No additional context provided.';
+
+    const prompt = `You are an expert technical analyst. Analyse this candlestick chart for a retail trader on eToro.
+
+Context: ${context}
+
+Provide a structured technical analysis covering:
+
+1. **Trend** — Overall direction (uptrend/downtrend/sideways), strength, and momentum
+2. **Key levels** — Support and resistance levels visible on the chart
+3. **Candlestick patterns** — Any significant patterns you can identify (name them)
+4. **Chart patterns** — Broader formations (head & shoulders, flags, wedges, triangles etc.)
+5. **Signal** — Your overall read: Bullish / Bearish / Neutral with brief reasoning
+6. **eToro trade idea** — Specific actionable suggestion with entry zone, target, and where to consider a stop loss
+
+Be specific about price levels if visible. Keep each section concise. End with a one-line summary verdict.`;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          ticker:     '__chart__',
+          chartImage: _chartBase64,
+          chartMime:  _chartMime,
+          chartPrompt: prompt
+        })
+      });
+
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
+      renderChartResult(data.analysis || data.text || data);
+    } catch (err) {
+      document.getElementById('chart-loading').style.display = 'none';
+      const errEl = document.getElementById('chart-error');
+      errEl.textContent = err.message || 'Analysis failed. Please try again.';
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function renderChartResult(text) {
+    document.getElementById('chart-loading').style.display = 'none';
+
+    // Convert markdown to HTML safely without regex escape issues
+    let out = '';
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      // Bold **text**
+      line = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      // Numbered section headings: "1. **Title**"
+      const secMatch = line.match(/^(\d+)\.\s+\*\*(.+?)\*\*\s*(.*)$/);
+      if (secMatch) {
+        out += '<div class="chart-section"><div class="chart-section-title">' + secMatch[2] + '</div>';
+        const body = secMatch[3] ? secMatch[3].replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') : '';
+        out += '<div class="chart-section-body">' + (body || '&nbsp;') + '</div></div>';
+        continue;
+      }
+      // H3/H4 headings: "### Title"
+      const hMatch = line.match(/^#{1,4}\s+(.+)$/);
+      if (hMatch) {
+        out += '<h4 style="color:var(--text);font-size:13px;font-weight:600;margin:0.75rem 0 0.25rem;">' + hMatch[1] + '</h4>';
+        continue;
+      }
+      // Blank lines → paragraph break
+      if (line.trim() === '') {
+        out += '<br>';
+        continue;
+      }
+      out += line + '<br>';
+    }
+
+    document.getElementById('chart-result-body').innerHTML = out;
+    document.getElementById('chart-result').style.display = 'block';
+    document.getElementById('chart-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+
   initSections();
 
   // Refresh movers every 5 minutes
@@ -1712,9 +1945,7 @@
     if(adminLink) adminLink.style.display = isAdmin() ? 'flex' : 'none';
   }
 
-  // auth state listener
   db.auth.onAuthStateChange((event, session) => {
-    console.log('[Auth]', event, session?.user?.email ?? 'no user');
     _currentUser = session?.user ?? null;
     _renderTrigger(_currentUser);
     _renderLoggedIn(_currentUser);
@@ -1723,20 +1954,17 @@
         if (window.location.hash.includes('access_token'))
           history.replaceState(null, '', window.location.pathname);
         setTimeout(closeAuthPanel, 700);
-        setTimeout(typeof loadHistory === 'function' ? loadHistory : ()=>{}, 800);
+        setTimeout(loadHistory, 800);
       }
     }
-    if (event === 'SIGNED_OUT') typeof loadHistory === 'function' && loadHistory();
+    if (event === 'SIGNED_OUT') loadHistory();
   });
-
   db.auth.getSession().then(({ data: { session } }) => {
     if (session?.user && !_currentUser) {
       _currentUser = session.user;
       _renderTrigger(_currentUser);
       _renderLoggedIn(_currentUser);
-      if (window.location.hash.includes('access_token'))
-        history.replaceState(null, '', window.location.pathname);
-      typeof loadHistory === 'function' && loadHistory();
+      loadHistory();
     }
   });
 
