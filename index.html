@@ -387,10 +387,6 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                   Dashboard
                 </a>
-                <a class="adp-nav-item" href="recommendations.html" style="text-decoration:none;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  Recommendations
-                </a>
                 <a class="adp-nav-item" href="profile.html" style="text-decoration:none;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                   Profile settings
@@ -444,7 +440,40 @@
     <!-- ── Main column (2/3) ── -->
     <div class="col-main">
 
-      <!-- Recommendations moved to recommendations.html -->
+      <!-- ── Recommendations ── -->
+      <section class="recs-section">
+        <div class="recs-header">
+          <span class="recs-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Recommendations
+          </span>
+          <span class="recs-sub">2-day momentum · AI signals</span>
+        </div>
+
+        <!-- Stocks (shortable) -->
+        <div class="recs-sub-header">
+          <span class="recs-sub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>
+            Stocks &amp; ETFs
+          </span>
+          <span class="recs-sub-note">Long &amp; short available</span>
+        </div>
+        <div class="recs-grid" id="recs-grid-stocks">
+          <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
+        </div>
+
+        <!-- Crypto (long only) -->
+        <div class="recs-sub-header" style="margin-top:1.25rem;">
+          <span class="recs-sub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5h3a2 2 0 0 1 0 4h-3v-4zm0 4h3.5a2 2 0 0 1 0 4H9.5v-4z"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="18" x2="12" y2="20"/></svg>
+            Crypto
+          </span>
+          <span class="recs-sub-note">Long only · cannot be shorted on eToro</span>
+        </div>
+        <div class="recs-grid" id="recs-grid-crypto">
+          <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
+        </div>
+      </section>
 
       <!-- Search -->
       <div class="search-box" id="market-analysis">
@@ -644,44 +673,6 @@
         </div>
       </div>
 
-      <!-- Chart Image Analysis -->
-      <div class="panel chart-upload-panel" id="chart-upload-panel" style="margin-top:0.75rem;">
-        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between;">
-          <span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:5px;"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="3 9 9 9 9 3"/><polyline points="15 3 21 3 21 9"/><polyline points="21 15 21 21 15 21"/><polyline points="9 21 3 21 3 15"/></svg>
-            Chart Image Analysis
-          </span>
-          <span style="font-size:11px;color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0;">Upload a chart screenshot for AI analysis</span>
-        </div>
-        <div id="chart-drop-zone" onclick="document.getElementById('chart-file-input').click()"
-          style="border:2px dashed var(--border2);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.15s,background 0.15s;"
-          ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-dim)';"
-          ondragleave="this.style.borderColor='';this.style.background='';"
-          ondrop="handleChartDrop(event)">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Drop chart image here or <span style="color:var(--accent);font-weight:500;">click to browse</span></div>
-          <div style="font-size:11px;color:var(--text-dim);">PNG, JPG, WEBP · Max 5MB</div>
-          <input type="file" id="chart-file-input" accept="image/*" style="display:none" onchange="handleChartFile(this.files[0])">
-        </div>
-        <div id="chart-preview-wrap" style="display:none;margin-top:0.75rem;">
-          <div style="position:relative;display:inline-block;width:100%;">
-            <img id="chart-preview-img" src="" alt="Chart preview" style="width:100%;max-height:220px;object-fit:contain;border-radius:var(--radius);border:1px solid var(--border2);">
-            <button onclick="clearChartUpload()" title="Remove" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <button class="btn-analyze" onclick="analyzeChartImage()" id="chart-analyze-btn" style="width:100%;margin-top:0.6rem;justify-content:center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <span id="chart-analyze-label">Analyse Chart</span>
-          </button>
-        </div>
-        <div id="chart-vision-loading" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);padding:0.75rem 0;">
-          <div class="spinner-sm"></div> Analysing chart image…
-        </div>
-        <div id="chart-vision-result" style="display:none;margin-top:0.75rem;padding:1rem;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:13.5px;color:var(--text-muted);line-height:1.7;white-space:pre-wrap;"></div>
-        <div id="chart-vision-error" style="display:none;margin-top:0.5rem;font-size:13px;color:var(--red);"></div>
-      </div>
-
       <!-- History -->
       <div class="history-section">
         <div class="history-title">
@@ -737,7 +728,41 @@
         <div class="lookup-results" id="lookup-results"></div>
       </div>
 
-
+      <!-- Chart Image Analysis -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="3 9 9 9 9 3"/><polyline points="15 3 21 3 21 9"/><polyline points="21 15 21 21 15 21"/><polyline points="9 21 3 21 3 15"/></svg>
+          Chart Image Analysis
+        </div>
+        <p class="sidebar-hint">Upload a chart screenshot for AI technical analysis.</p>
+        <div id="chart-drop-zone" onclick="document.getElementById('chart-file-input').click()"
+          style="border:2px dashed var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;transition:border-color 0.15s,background 0.15s;"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-dim)';"
+          ondragleave="this.style.borderColor='';this.style.background='';"
+          ondrop="handleChartDrop(event)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Drop chart image here or <span style="color:var(--accent);font-weight:500;">click to browse</span></div>
+          <div style="font-size:11px;color:var(--text-dim);">PNG, JPG, WEBP · Max 5MB</div>
+          <input type="file" id="chart-file-input" accept="image/*" style="display:none" onchange="handleChartFile(this.files[0])">
+        </div>
+        <div id="chart-preview-wrap" style="display:none;margin-top:0.75rem;">
+          <div style="position:relative;display:inline-block;width:100%;">
+            <img id="chart-preview-img" src="" alt="Chart preview" style="width:100%;max-height:220px;object-fit:contain;border-radius:var(--radius);border:1px solid var(--border2);">
+            <button onclick="clearChartUpload()" title="Remove" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn-analyze" onclick="analyzeChartImage()" id="chart-analyze-btn" style="width:100%;margin-top:0.6rem;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span id="chart-analyze-label">Analyse Chart</span>
+          </button>
+        </div>
+        <div id="chart-vision-loading" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);padding:0.75rem 0;">
+          <div class="spinner-sm"></div> Analysing chart image…
+        </div>
+        <div id="chart-vision-result" style="display:none;margin-top:0.75rem;padding:1rem;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:13.5px;color:var(--text-muted);line-height:1.7;white-space:pre-wrap;"></div>
+        <div id="chart-vision-error" style="display:none;margin-top:0.5rem;font-size:13px;color:var(--red);"></div>
+      </div>
 
     </aside><!-- /col-sidebar -->
 
@@ -1279,6 +1304,112 @@
     };
   }
 
+  async function fetchAISignal(ticker, price, change, name, direction, weekTrend, weekPct) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price, change, name, direction, weekTrend, weekPct })
+      });
+      if (!res.ok) return { signal: 'HOLD', reason: 'Signal unavailable.' };
+      const data = await res.json();
+      return { signal: data.signal || 'HOLD', reason: data.reason || '' };
+    } catch { return { signal: 'HOLD', reason: 'Signal unavailable.' }; }
+  }
+
+  function renderRecCard(r, ai) {
+    const signal   = ai.signal || 'HOLD';
+    const reason   = ai.reason || '';
+    const sigClass = signal === 'BUY' ? 'signal-BUY' : signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
+    const pos      = r.change.startsWith('+');
+    const sparkline = buildSparkline(r.weekData, pos);
+    const etoroTicker = r.ticker.replace('-USD','').toLowerCase();
+    const etoroUrl = `https://www.etoro.com/markets/${etoroTicker}`;
+    // store live data so clicking the card uses real figures
+    liveMarketData[r.ticker] = { price: r.price, change: r.change };
+    return `
+      <div class="rec-card" onclick="setTickerFromMover('${r.ticker}','${r.price}','${r.change}');document.getElementById('market-analysis').scrollIntoView({behavior:'smooth',block:'start'});">
+        <div class="rec-top">
+          <div>
+            <div class="rec-ticker">${r.ticker.replace('-USD','')}</div>
+            <div class="rec-name">${r.name}</div>
+          </div>
+          <span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>
+        </div>
+        <div class="rec-price">$${r.price} <span class="${pos ? 'pos' : 'neg'}">${r.change}</span></div>
+        <div class="rec-sparkline">${sparkline}</div>
+        <div class="rec-reason">${reason}</div>
+        <a class="rec-etoro-link" href="${etoroUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Trade on eToro
+        </a>
+      </div>`;
+  }
+
+  const CRYPTO_TICKERS = new Set(['BTC-USD','ETH-USD','SOL-USD','BNB-USD','XRP-USD','DOGE-USD','ADA-USD','AVAX-USD','DOT-USD','MATIC-USD','COIN']);
+
+  function isCrypto(ticker) {
+    return ticker.endsWith('-USD') || CRYPTO_TICKERS.has(ticker);
+  }
+
+  function setGridEmpty(gridId, msg) {
+    $(gridId).innerHTML = `<div class="movers-empty" style="grid-column:1/-1">${msg}</div>`;
+  }
+
+  async function loadRecommendations() {
+    $('recs-grid-stocks').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>';
+    $('recs-grid-crypto').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>';
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__trending__', _t: Date.now() })
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      const picks = data.picks || [];
+
+      const stocks = picks.filter(r => !isCrypto(r.ticker)).slice(0, 4);
+      const crypto = picks.filter(r =>  isCrypto(r.ticker)).slice(0, 4);
+
+      // Render placeholders immediately
+      const renderGrid = (gridId, items) => {
+        if (!items.length) { setGridEmpty(gridId, 'No momentum picks right now.'); return; }
+        $(gridId).innerHTML = items.map(r => {
+          const placeholder = { signal: r.direction === 'up' ? 'BUY' : 'SELL', reason: 'Loading AI analysis…' };
+          return renderRecCard(r, placeholder);
+        }).join('');
+      };
+      renderGrid('recs-grid-stocks', stocks);
+      renderGrid('recs-grid-crypto', crypto);
+
+      // Enrich with AI signals sequentially to avoid overwhelming the Edge Function
+      const enrichGrid = async (gridId, items) => {
+        for (let i = 0; i < items.length; i++) {
+          const r  = items[i];
+          const ai = await fetchAISignal(r.ticker, r.price, r.change, r.name, r.direction, r.weekTrend, r.weekPct);
+          const tmp = document.createElement('div');
+          tmp.innerHTML = renderRecCard(r, ai);
+          $(gridId).children[i]?.replaceWith(tmp.firstElementChild);
+        }
+      };
+
+      // Run stocks then crypto sequentially
+      await enrichGrid('recs-grid-stocks', stocks);
+      await enrichGrid('recs-grid-crypto', crypto);
+
+    } catch(e) {
+      const errHtml = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">
+        Could not load recommendations.
+        <button onclick="loadRecommendations()" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);">Retry</button>
+      </div>`;
+      $('recs-grid-stocks').innerHTML = errHtml;
+      $('recs-grid-crypto').innerHTML = '';
+    }
+  }
 
   /* ── Financial news — via Edge Function proxy ── */
   async function loadNews() {
@@ -1607,6 +1738,8 @@
     loadHistory();
     loadMovers();
     await delay(1000);
+    loadRecommendations();
+    await delay(1500);
     loadNews();
   }
 
