@@ -1455,8 +1455,19 @@
     const timeUnit = period === '1D' ? 'hour' : ['5D','1M'].includes(period) ? 'day' : 'week';
     const maxVol = candles.reduce((m,x) => Math.max(m, x.v), 0);
 
-    // Candlestick bar width: narrower for more candles, wider for fewer
-    const barPct = candles.length > 100 ? 0.6 : candles.length > 30 ? 0.7 : 0.75;
+    // ── Price axis: tight range around actual H/L with 2% padding ──
+    const allHigh = candles.map(x => x.h).filter(Boolean);
+    const allLow  = candles.map(x => x.l).filter(Boolean);
+    const priceMax = Math.max(...allHigh);
+    const priceMin = Math.min(...allLow);
+    const pricePad = (priceMax - priceMin) * 0.08;
+    const yMin = priceMin - pricePad;
+    const yMax = priceMax + pricePad;
+
+    // ── Volume axis: bars occupy bottom ~22% of chart ──
+    // vol max is set so that maxVol maps to 22% of the price axis height
+    const priceRange = yMax - yMin;
+    const volMax = maxVol / 0.22 * (priceRange / yMax) * yMax;
 
     priceChart = new Chart(canvas, {
       data: { datasets: [
@@ -1467,29 +1478,27 @@
           color: { up: '#22c55e', down: '#ef4444', unchanged: '#8b90a0' },
           borderColor: { up: '#22c55e', down: '#ef4444', unchanged: '#8b90a0' },
           borderWidth: 1,
-          barPercentage: barPct,
-          categoryPercentage: 0.8,
           yAxisID: 'y',
         },
         {
           type: 'line', label: 'MA20',
           data: _calcMA(candles, 20),
-          borderColor: 'rgba(108,99,255,0.8)', borderWidth: 1.5,
+          borderColor: 'rgba(108,99,255,0.85)', borderWidth: 1.5,
           pointRadius: 0, tension: 0.3, yAxisID: 'y',
         },
         {
           type: 'bar', label: 'Volume',
           data: candles.map(x => ({ x: x.t, y: x.v })),
-          backgroundColor: candles.map(x => x.c >= x.o ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'),
+          backgroundColor: candles.map(x => x.c >= x.o ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'),
           yAxisID: 'vol', order: 10,
-          barPercentage: 0.9, categoryPercentage: 0.9,
+          barPercentage: 0.85, categoryPercentage: 0.9,
         },
       ]},
       options: {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { intersect: false, mode: 'index' },
-        layout: { padding: { top: 8, right: 4, bottom: 0, left: 0 } },
+        layout: { padding: { top: 12, right: 8, bottom: 0, left: 0 } },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -1527,16 +1536,22 @@
           },
           y: {
             position: 'right',
+            min: yMin,
+            max: yMax,
             grid: { color: c.grid },
             border: { display: false },
-            ticks: { color: c.tick, font: { size: 10 }, callback: v => '$' + v.toLocaleString() },
+            ticks: {
+              color: c.tick, font: { size: 10 },
+              callback: v => '$' + v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }),
+            },
           },
           vol: {
             position: 'left',
+            min: 0,
+            max: volMax,
             grid: { display: false },
             border: { display: false },
             ticks: { display: false },
-            max: maxVol * 5,
           },
         }
       }
