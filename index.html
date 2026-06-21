@@ -263,10 +263,6 @@
         <p>AI-powered · eToro ready</p>
       </div>
       <div class="navbar-actions">
-        <button class="navbar-theme-btn" id="chart-ai-btn" onclick="toggleChartBar()" title="Chart Image Analysis">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/><polyline points="5 16 8 13 11 15 14 12 19 17"/></svg>
-          Chart AI
-        </button>
         <button class="theme-toggle navbar-theme-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
           <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -418,49 +414,7 @@
     </div>
   </nav>
 
-  <!-- ── Chart Analysis Toolbar ── -->
-  <div id="chart-analysis-bar" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease,opacity 0.25s ease;opacity:0;background:var(--surface2);border-bottom:1px solid var(--border2);position:sticky;top:60px;z-index:89;">
-    <div style="max-width:900px;margin:0 auto;padding:1rem 1.5rem 1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;">
-
-      <!-- Left: drop zone / preview -->
-      <div>
-        <div id="chart-drop-zone" onclick="document.getElementById('chart-file-input').click()"
-          style="border:2px dashed var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;transition:border-color 0.15s,background 0.15s;background:var(--surface);"
-          ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-dim)';"
-          ondragleave="this.style.borderColor='';this.style.background='';"
-          ondrop="handleChartDrop(event)">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Drop chart image here or <span style="color:var(--accent);font-weight:500;">click to browse</span></div>
-          <div style="font-size:11px;color:var(--text-dim);">PNG, JPG, WEBP · Max 5MB</div>
-          <input type="file" id="chart-file-input" accept="image/*" style="display:none" onchange="handleChartFile(this.files[0])">
-        </div>
-        <div id="chart-preview-wrap" style="display:none;margin-top:0.75rem;">
-          <div style="position:relative;display:inline-block;width:100%;">
-            <img id="chart-preview-img" src="" alt="Chart preview" style="width:100%;max-height:180px;object-fit:contain;border-radius:var(--radius);border:1px solid var(--border2);">
-            <button onclick="clearChartUpload()" title="Remove" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <button class="btn-analyze" onclick="analyzeChartImage()" id="chart-analyze-btn" style="width:100%;margin-top:0.6rem;justify-content:center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <span id="chart-analyze-label">Analyse Chart</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Right: result area -->
-      <div style="display:flex;flex-direction:column;gap:0.6rem;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;">AI Analysis Result</div>
-        <div id="chart-vision-loading" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);padding:0.5rem 0;">
-          <div class="spinner-sm"></div> Analysing chart image…
-        </div>
-        <div id="chart-vision-result" style="display:none;padding:0.9rem 1rem;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);font-size:13px;color:var(--text-muted);line-height:1.7;white-space:pre-wrap;max-height:240px;overflow-y:auto;"></div>
-        <div id="chart-vision-error" style="display:none;font-size:13px;color:var(--red);"></div>
-        <div id="chart-vision-empty" style="font-size:12px;color:var(--text-dim);font-style:italic;">Upload a chart screenshot to get AI technical analysis.</div>
-      </div>
-
-    </div>
-  </div>
+  <!-- ── Exchange ticker bar ── -->
   <div class="exchange-ticker-bar">
     <div class="exchange-ticker-track" id="exchange-ticker-track">
       <div class="exchange-ticker-loading">Loading exchange data…</div>
@@ -772,6 +726,42 @@
           <div class="spinner-sm"></div> Searching…
         </div>
         <div class="lookup-results" id="lookup-results"></div>
+      </div>
+
+      <!-- Chart Image Analysis -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="3 9 9 9 9 3"/><polyline points="15 3 21 3 21 9"/><polyline points="21 15 21 21 15 21"/><polyline points="9 21 3 21 3 15"/></svg>
+          Chart Image Analysis
+        </div>
+        <p class="sidebar-hint">Upload a chart screenshot for AI technical analysis.</p>
+        <div id="chart-drop-zone" onclick="document.getElementById('chart-file-input').click()"
+          style="border:2px dashed var(--border2);border-radius:var(--radius);padding:1.25rem;text-align:center;cursor:pointer;transition:border-color 0.15s,background 0.15s;"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-dim)';"
+          ondragleave="this.style.borderColor='';this.style.background='';"
+          ondrop="handleChartDrop(event)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Drop chart image here or <span style="color:var(--accent);font-weight:500;">click to browse</span></div>
+          <div style="font-size:11px;color:var(--text-dim);">PNG, JPG, WEBP · Max 5MB</div>
+          <input type="file" id="chart-file-input" accept="image/*" style="display:none" onchange="handleChartFile(this.files[0])">
+        </div>
+        <div id="chart-preview-wrap" style="display:none;margin-top:0.75rem;">
+          <div style="position:relative;display:inline-block;width:100%;">
+            <img id="chart-preview-img" src="" alt="Chart preview" style="width:100%;max-height:220px;object-fit:contain;border-radius:var(--radius);border:1px solid var(--border2);">
+            <button onclick="clearChartUpload()" title="Remove" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn-analyze" onclick="analyzeChartImage()" id="chart-analyze-btn" style="width:100%;margin-top:0.6rem;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span id="chart-analyze-label">Analyse Chart</span>
+          </button>
+        </div>
+        <div id="chart-vision-loading" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);padding:0.75rem 0;">
+          <div class="spinner-sm"></div> Analysing chart image…
+        </div>
+        <div id="chart-vision-result" style="display:none;margin-top:0.75rem;padding:1rem;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:13.5px;color:var(--text-muted);line-height:1.7;white-space:pre-wrap;"></div>
+        <div id="chart-vision-error" style="display:none;margin-top:0.5rem;font-size:13px;color:var(--red);"></div>
       </div>
 
 
@@ -2331,7 +2321,6 @@
     }
     $('chart-vision-error').style.display = 'none';
     $('chart-vision-result').style.display = 'none';
-    $('chart-vision-empty').style.display = 'none';
     chartFileMime = file.type || 'image/png';
     const reader = new FileReader();
     reader.onload = e => {
@@ -2361,26 +2350,6 @@
     $('chart-drop-zone').style.display = 'block';
     $('chart-vision-result').style.display = 'none';
     $('chart-vision-error').style.display = 'none';
-    $('chart-vision-empty').style.display = 'block';
-  }
-
-  function toggleChartBar() {
-    const bar = $('chart-analysis-bar');
-    const btn = $('chart-ai-btn');
-    const isOpen = bar.style.maxHeight !== '0px' && bar.style.maxHeight !== '';
-    if (isOpen) {
-      bar.style.maxHeight = '0';
-      bar.style.opacity = '0';
-      btn.style.color = '';
-      btn.style.borderColor = '';
-      btn.style.background = '';
-    } else {
-      bar.style.maxHeight = '600px';
-      bar.style.opacity = '1';
-      btn.style.color = 'var(--accent)';
-      btn.style.borderColor = 'var(--accent)';
-      btn.style.background = 'var(--accent-dim)';
-    }
   }
 
   async function analyzeChartImage() {
