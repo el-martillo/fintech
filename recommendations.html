@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recommendations · eToro Stock Advisor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+
+  <style id="auth-styles">
+  /* ── Auth trigger wrap ── */
+  .auth-trigger-wrap { position: relative; flex-shrink: 0; }
+  .auth-dropdown {
+    display: none; position: absolute; top: calc(100% + 10px); right: 0;
+    width: 280px; background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 14px; padding: 16px; z-index: 200;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.2);
+  }
+  .auth-dropdown.open { display: block; }
+  .adp-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .adp-logo { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text); }
+  .adp-tabs { display: flex; gap: 4px; margin-bottom: 14px; }
+  .adp-tab { flex: 1; padding: 7px; border: 1px solid var(--border2); border-radius: 8px; background: transparent; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all .15s; font-family: inherit; }
+  .adp-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .adp-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+  .adp-field label { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; }
+  .adp-field input { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--text); outline: none; transition: border-color .15s; font-family: inherit; }
+  .adp-field input:focus { border-color: var(--accent); }
+  .adp-field input::placeholder { color: var(--text-dim); }
+  .adp-pw { position: relative; }
+  .adp-pw input { width: 100%; padding-right: 36px; }
+  .adp-eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 2px; display: flex; align-items: center; }
+  .adp-btn { width: 100%; padding: 9px; background: var(--accent); border: none; border-radius: 8px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; transition: opacity .15s; font-family: inherit; }
+  .adp-btn:hover { opacity: .85; }
+  .adp-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .adp-or { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 11px; color: var(--text-dim); }
+  .adp-or::before, .adp-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .adp-google { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all .15s; font-family: inherit; }
+  .adp-google:hover { border-color: var(--border2); color: var(--text); }
+  .adp-forgot { text-align: right; margin: -4px 0 8px; }
+  .adp-link { background: none; border: none; color: var(--accent); font-size: 11px; cursor: pointer; font-family: inherit; }
+  .adp-msg { font-size: 12px; border-radius: 7px; padding: 7px 10px; margin-bottom: 10px; display: none; }
+  .adp-err { background: rgba(239,68,68,.1); color: var(--red); border: 1px solid rgba(239,68,68,.2); }
+  .adp-ok  { background: rgba(34,197,94,.1); color: var(--green); border: 1px solid rgba(34,197,94,.2); }
+  .adp-back { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; padding: 0 0 10px; font-family: inherit; }
+  .adp-reset-hint { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; }
+  .adp-spin { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; display: inline-block; animation: spin .7s linear infinite; }
+  .adp-user-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .adp-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .adp-user-email { font-size: 12px; font-weight: 600; color: var(--text); }
+  .adp-user-since { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+  .adp-nav { display: flex; flex-direction: column; gap: 1px; }
+  .adp-nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 9px; border: none; border-radius: 7px; background: transparent; font-size: 12.5px; color: var(--text-muted); cursor: pointer; width: 100%; text-align: left; transition: all .12s; font-family: inherit; }
+  .adp-nav-item:hover { background: var(--surface2); color: var(--text); }
+  .adp-nav-item svg { flex-shrink: 0; }
+  .adp-badge { margin-left: auto; font-size: 10px; font-weight: 600; background: var(--accent-dim); color: #a9a3ff; border: 1px solid rgba(108,99,255,.25); border-radius: 4px; padding: 1px 5px; }
+  .adp-divider { height: 1px; background: var(--border); margin: 6px 0; }
+  .adp-signout:hover { background: var(--red-bg) !important; color: var(--red) !important; }
+  .adp-user-btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--accent); background: var(--accent-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; padding: 0; font-size: 11px; font-weight: 700; color: #a9a3ff; font-family: inherit; }
+  .adp-user-btn:hover { background: var(--accent); color: #fff; }
+  @media (max-width: 520px) {
+    .auth-dropdown { position: fixed; top: 60px; left: 0; right: 0; width: 100%; border-radius: 0 0 14px 14px; border-left: none; border-right: none; border-top: none; max-height: calc(100dvh - 60px); overflow-y: auto; }
+  }
+  body.light .auth-dropdown { box-shadow: 0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.06); }
+  </style>
+
+  <style>
+  /* ── Recommendations page layout ── */
+  .recs-page { max-width: 1200px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .recs-page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.75rem; flex-wrap: wrap; gap: 0.75rem;
+  }
+  .recs-page-title {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .recs-page-title h2 {
+    font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.02em;
+  }
+  .recs-page-title p { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .recs-refresh-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 8px; font-size: 12px; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .recs-refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .recs-refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .recs-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 900px) { .recs-3col { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .recs-3col { grid-template-columns: 1fr; } }
+
+  /* Auth gate overlay */
+  .auth-gate {
+    position: fixed; inset: 0; z-index: 300;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1.25rem; text-align: center; padding: 2rem;
+  }
+  .auth-gate-icon { color: var(--accent); margin-bottom: 0.5rem; }
+  .auth-gate h2 { font-size: 22px; font-weight: 600; color: var(--text); }
+  .auth-gate p { font-size: 14px; color: var(--text-muted); max-width: 320px; line-height: 1.6; }
+  .auth-gate-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 24px; background: var(--accent); border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; color: #fff; cursor: pointer;
+    text-decoration: none; transition: opacity 0.15s; font-family: inherit;
+  }
+  .auth-gate-btn:hover { opacity: 0.85; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Auth gate overlay (shown until login confirmed) ── -->
+  <div class="auth-gate" id="auth-gate">
+    <div class="auth-gate-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <h2>Sign in to view Recommendations</h2>
+    <p>This page is only available to registered users. Sign in or create a free account to access AI-powered trade recommendations.</p>
+    <a class="auth-gate-btn" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Go to sign in
+    </a>
+  </div>
+
+  <!-- ── Navbar ── -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-logo">
+        <a href="index.html" style="display:flex;align-items:center;text-decoration:none;">
+          <svg class="etoro-spin" width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="17" cy="17" r="15.5" stroke="#2bbc76" stroke-width="2.5"/>
+            <text x="17" y="22" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="12" fill="#2bbc76">eT</text>
+          </svg>
+        </a>
+      </div>
+      <div class="navbar-title">
+        <h1>Stock <span>Advisor</span></h1>
+        <p>AI-powered · eToro ready</p>
+      </div>
+      <div class="navbar-actions">
+        <button class="theme-toggle navbar-theme-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+          <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span id="theme-label">Light</span>
+        </button>
+        <div class="auth-trigger-wrap" id="auth-trigger-wrap">
+          <button class="navbar-account auth-trigger" id="auth-trigger-btn"
+                  onclick="toggleAuthPanel()" title="Sign in / Register"
+                  aria-haspopup="true" aria-expanded="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </button>
+          <div class="auth-dropdown" id="auth-dropdown" role="dialog" aria-label="Account">
+
+            <!-- Logged-out -->
+            <div id="auth-logged-out">
+              <div class="adp-header">
+                <div class="adp-logo">
+                  <svg width="18" height="18" viewBox="0 0 34 34" fill="none"><circle cx="17" cy="17" r="15.5" stroke="var(--accent)" stroke-width="2.5"/><text x="17" y="22" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="12" fill="var(--accent)">eT</text></svg>
+                  <span>Stock Advisor</span>
+                </div>
+              </div>
+              <div class="adp-tabs">
+                <button class="adp-tab active" id="tab-signin" onclick="adpTab('signin')">Sign in</button>
+                <button class="adp-tab" id="tab-signup" onclick="adpTab('signup')">Register</button>
+              </div>
+              <div class="adp-msg adp-err" id="adp-err"></div>
+              <div class="adp-msg adp-ok"  id="adp-ok"></div>
+              <div id="adp-signin">
+                <div class="adp-field"><label>Email</label><input type="email" id="si-email" placeholder="you@example.com" autocomplete="email"/></div>
+                <div class="adp-field"><label>Password</label><div class="adp-pw"><input type="password" id="si-pw" placeholder="••••••••" autocomplete="current-password"/><button type="button" class="adp-eye" onclick="adpTogglePw('si-pw',this)" tabindex="-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+                <div class="adp-forgot"><button type="button" class="adp-link" onclick="adpTab('reset')">Forgot password?</button></div>
+                <button class="adp-btn" id="si-btn" onclick="adpSignIn()">Sign in</button>
+                <div class="adp-or"><span>or</span></div>
+                <button class="adp-google" onclick="adpGoogle()"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Continue with Google</button>
+              </div>
+              <div id="adp-signup" style="display:none">
+                <div class="adp-field"><label>Email</label><input type="email" id="su-email" placeholder="you@example.com" autocomplete="email"/></div>
+                <div class="adp-field"><label>Password</label><div class="adp-pw"><input type="password" id="su-pw" placeholder="Min 8 characters" autocomplete="new-password"/><button type="button" class="adp-eye" onclick="adpTogglePw('su-pw',this)" tabindex="-1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+                <div class="adp-field"><label>Confirm password</label><input type="password" id="su-pw2" placeholder="Repeat password" autocomplete="new-password"/></div>
+                <button class="adp-btn" id="su-btn" onclick="adpSignUp()">Create account</button>
+                <div class="adp-or"><span>or</span></div>
+                <button class="adp-google" onclick="adpGoogle()"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Continue with Google</button>
+              </div>
+              <div id="adp-reset" style="display:none">
+                <button type="button" class="adp-back" onclick="adpTab('signin')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Back to sign in</button>
+                <p class="adp-reset-hint">We'll send a reset link to your inbox.</p>
+                <div class="adp-field"><label>Email</label><input type="email" id="rp-email" placeholder="you@example.com" autocomplete="email"/></div>
+                <button class="adp-btn" id="rp-btn" onclick="adpResetPw()">Send reset link</button>
+              </div>
+            </div><!-- /logged-out -->
+
+            <!-- Logged-in -->
+            <div id="auth-logged-in" style="display:none">
+              <div class="adp-user-header">
+                <div class="adp-avatar" id="adp-avatar"></div>
+                <div class="adp-user-info">
+                  <div class="adp-user-email" id="adp-user-email"></div>
+                  <div class="adp-user-since" id="adp-user-since"></div>
+                </div>
+              </div>
+              <nav class="adp-nav">
+                <a class="adp-nav-item" href="index.html" style="text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  Dashboard
+                </a>
+                <a class="adp-nav-item" href="recommendations.html" style="text-decoration:none;color:var(--accent);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  Recommendations
+                </a>
+                <a class="adp-nav-item" href="profile.html" style="text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  Profile settings
+                </a>
+                <button class="adp-nav-item" onclick="closeAuthPanel()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                  Agent Portfolios <span class="adp-badge">Soon</span>
+                </button>
+                <a class="adp-nav-item" id="adp-admin-link" href="admin.html" style="display:none;text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Admin Console
+                  <span class="adp-badge" style="margin-left:auto;background:rgba(239,68,68,0.12);color:var(--red);border-color:rgba(239,68,68,0.2);">Admin</span>
+                </a>
+              </nav>
+              <div class="adp-divider"></div>
+              <button class="adp-nav-item adp-signout" onclick="adpSignOut()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign out
+              </button>
+            </div><!-- /logged-in -->
+
+          </div><!-- /auth-dropdown -->
+        </div><!-- /auth-trigger-wrap -->
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Exchange ticker bar ── -->
+  <div class="exchange-ticker-bar">
+    <div class="exchange-ticker-track" id="exchange-ticker-track">
+      <div class="exchange-ticker-loading">Loading exchange data…</div>
+    </div>
+  </div>
+
+  <div class="recs-page" id="recs-page" style="display:none;">
+
+    <div class="recs-page-header">
+      <div class="recs-page-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <div>
+          <h2>AI Recommendations</h2>
+          <p>Multi-factor model · entry &amp; size guidance · refreshes on demand</p>
+        </div>
+      </div>
+      <button class="recs-refresh-btn" id="recs-refresh-btn" onclick="refreshRecs()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Refresh
+      </button>
+    </div>
+
+    <!-- Stocks -->
+    <div class="recs-sub-header">
+      <span class="recs-sub-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 1 18"/><polyline points="16 7 22 7 22 13"/></svg>
+        Stocks &amp; ETFs
+      </span>
+      <span class="recs-sub-note">Long &amp; short available on eToro</span>
+    </div>
+    <div class="recs-3col" id="recs-grid-stocks">
+      <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
+    </div>
+
+    <!-- Crypto -->
+    <div class="recs-sub-header" style="margin-top:1.5rem;">
+      <span class="recs-sub-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5h3a2 2 0 0 1 0 4h-3v-4zm0 4h3.5a2 2 0 0 1 0 4H9.5v-4z"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="18" x2="12" y2="20"/></svg>
+        Crypto
+      </span>
+      <span class="recs-sub-note">Long only · cannot be shorted on eToro</span>
+    </div>
+    <div class="recs-3col" id="recs-grid-crypto">
+      <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
+    </div>
+
+    <div class="disclaimer" style="margin-top:2rem;">
+      ⚠️ For informational purposes only — not financial advice. CFDs and stock trading involve risk of loss. Always do your own research before trading.
+    </div>
+
+    <footer class="site-footer">
+      <span class="footer-left">© 2025 eToro Stock Advisor · Data via Yahoo Finance · AI by Anthropic</span>
+      <a class="footer-top-btn" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        Top
+      </a>
+    </footer>
+
+  </div><!-- /recs-page -->
+
+<script>
+  const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
+  const ADMIN_EMAILS = ['giacomo.medici@gmail.com'];
+  const $ = id => document.getElementById(id);
+
+  let _currentUser = null;
+  let _panelOpen   = false;
+  const liveMarketData = {};
+
+  /* ── Theme ── */
+  function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    $('icon-moon').style.display = isLight ? 'none'  : '';
+    $('icon-sun').style.display  = isLight ? ''      : 'none';
+    $('theme-label').textContent = isLight ? 'Dark'  : 'Light';
+  }
+  (function initTheme() {
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light');
+      if ($('icon-moon')) $('icon-moon').style.display = 'none';
+      if ($('icon-sun'))  $('icon-sun').style.display  = '';
+      if ($('theme-label')) $('theme-label').textContent = 'Dark';
+    }
+  })();
+
+  /* ── Auth panel ── */
+  function toggleAuthPanel() { _panelOpen ? closeAuthPanel() : openAuthPanel(); }
+  function openAuthPanel() {
+    $('auth-dropdown').classList.add('open');
+    $('auth-trigger-btn')?.setAttribute('aria-expanded','true');
+    _panelOpen = true;
+    setTimeout(() => document.addEventListener('click', _outsideClick), 0);
+  }
+  function closeAuthPanel() {
+    $('auth-dropdown').classList.remove('open');
+    $('auth-trigger-btn')?.setAttribute('aria-expanded','false');
+    _panelOpen = false;
+    document.removeEventListener('click', _outsideClick);
+    adpClearMsg();
+  }
+  function _outsideClick(e) { if (!e.target.closest('.auth-trigger-wrap')) closeAuthPanel(); }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuthPanel(); });
+
+  function adpTab(tab) {
+    adpClearMsg();
+    ['signin','signup','reset'].forEach(t => { $(('adp-' + t)).style.display = t === tab ? 'block' : 'none'; });
+    $('adp-tabs')?.style.setProperty('display', tab === 'reset' ? 'none' : 'flex');
+    ['signin','signup'].forEach(t => { $('tab-' + t)?.classList.toggle('active', t === tab); });
+  }
+  function adpClearMsg() {
+    const e=$('adp-err'),s=$('adp-ok');
+    if(e){e.style.display='none';e.textContent='';}
+    if(s){s.style.display='none';s.textContent='';}
+  }
+  function adpErr(msg){const el=$('adp-err');if(!el)return;el.textContent=msg;el.style.display='block';$('adp-ok').style.display='none';}
+  function adpOk(msg){const el=$('adp-ok');if(!el)return;el.textContent=msg;el.style.display='block';$('adp-err').style.display='none';}
+  function adpSpin(id,loading,label){const b=$(id);if(!b)return;b.disabled=loading;b.innerHTML=loading?'<span class="adp-spin"></span>':label;}
+  function adpTogglePw(id,btn){const inp=$(id);const show=inp.type==='password';inp.type=show?'text':'password';btn.innerHTML=show?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';}
+
+  async function adpSignIn(){const email=$('si-email')?.value.trim(),pw=$('si-pw')?.value;if(!email||!pw){adpErr('Please fill in all fields.');return;}adpClearMsg();adpSpin('si-btn',true,'Sign in');try{const{error}=await db.auth.signInWithPassword({email,password:pw});if(error)throw error;}catch(e){adpErr(e.message||'Sign in failed.');adpSpin('si-btn',false,'Sign in');}}
+  async function adpSignUp(){const email=$('su-email')?.value.trim(),pw=$('su-pw')?.value,pw2=$('su-pw2')?.value;if(!email||!pw){adpErr('Please fill in all fields.');return;}if(pw.length<8){adpErr('Password must be at least 8 characters.');return;}if(pw!==pw2){adpErr('Passwords do not match.');return;}adpClearMsg();adpSpin('su-btn',true,'Create account');try{const{error}=await db.auth.signUp({email,password:pw});if(error)throw error;adpOk('✓ Check your email to confirm, then sign in.');}catch(e){adpErr(e.message||'Sign up failed.');}adpSpin('su-btn',false,'Create account');}
+  async function adpResetPw(){const email=$('rp-email')?.value.trim();if(!email){adpErr('Please enter your email.');return;}adpClearMsg();adpSpin('rp-btn',true,'Sending…');try{const{error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});if(error)throw error;adpOk('✓ Reset link sent — check your inbox.');}catch(e){adpErr(e.message||'Could not send reset email.');}adpSpin('rp-btn',false,'Send reset link');}
+  async function adpGoogle(){adpClearMsg();try{const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://el-martillo.github.io/fintech/',queryParams:{access_type:'offline',prompt:'consent'}}});if(error){if(error.message?.includes('provider is not enabled')||error.status===400)adpErr('Google sign-in not yet configured — use email/password for now.');else adpErr(error.message);}}catch(e){adpErr('Google sign-in unavailable — use email/password.');}}
+  async function adpSignOut(){closeAuthPanel();await db.auth.signOut();}
+
+  function _renderTrigger(user) {
+    const wrap=$('auth-trigger-btn');if(!wrap)return;
+    if(!user){wrap.className='navbar-account auth-trigger';wrap.title='Sign in / Register';wrap.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;}
+    else{const ini=(user.email||'U').slice(0,2).toUpperCase();wrap.className='adp-user-btn';wrap.title='My account';wrap.innerHTML=ini;}
+  }
+  function _renderLoggedIn(user) {
+    const lo=$('auth-logged-out'),li=$('auth-logged-in');if(!lo||!li)return;
+    if(!user){lo.style.display='block';li.style.display='none';adpTab('signin');return;}
+    lo.style.display='none';li.style.display='block';
+    const ini=(user.email||'U').slice(0,2).toUpperCase();
+    const av=$('adp-avatar'),em=$('adp-user-email'),si=$('adp-user-since');
+    if(av)av.textContent=ini;if(em)em.textContent=user.email;
+    if(si&&user.created_at)si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    const adminLink=$('adp-admin-link');
+    if(adminLink)adminLink.style.display=ADMIN_EMAILS.includes(user.email)?'flex':'none';
+  }
+
+  document.addEventListener('keydown', e => {
+    if(e.key!=='Enter')return;
+    const id=document.activeElement?.id;
+    if(id==='si-email'||id==='si-pw')adpSignIn();
+    else if(id==='su-email'||id==='su-pw'||id==='su-pw2')adpSignUp();
+    else if(id==='rp-email')adpResetPw();
+  });
+
+  /* ── Auth gate ── */
+  function showPage() {
+    $('auth-gate').style.display = 'none';
+    $('recs-page').style.display = 'block';
+    loadRecommendations();
+    loadExchangeTicker();
+  }
+
+  db.auth.onAuthStateChange((event, session) => {
+    _currentUser = session?.user ?? null;
+    _renderTrigger(_currentUser);
+    _renderLoggedIn(_currentUser);
+    if (_currentUser) {
+      showPage();
+      if (window.location.hash.includes('access_token'))
+        history.replaceState(null, '', window.location.pathname);
+      setTimeout(closeAuthPanel, 700);
+    }
+  });
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      _currentUser = session.user;
+      _renderTrigger(_currentUser);
+      _renderLoggedIn(_currentUser);
+      showPage();
+    }
+  });
+
+  /* ── Sparklines ── */
+  function buildSparkline(data, isPos) {
+    if (!data || data.length < 2) return '';
+    const w=120,h=36,pad=2,min=Math.min(...data),max=Math.max(...data),range=max-min||1;
+    const pts=data.map((v,i)=>{const x=pad+(i/(data.length-1))*(w-pad*2);const y=h-pad-((v-min)/range)*(h-pad*2);return `${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ');
+    const color=isPos?'var(--green)':'var(--red)';
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:${h}px;"><defs><linearGradient id="sg${isPos?'p':'n'}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.18"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  /* ── Recommendations ── */
+  const CRYPTO_TICKERS = new Set(['BTC-USD','ETH-USD','SOL-USD','BNB-USD','XRP-USD','DOGE-USD','ADA-USD','AVAX-USD','DOT-USD','MATIC-USD','COIN']);
+  function isCrypto(t) { return t.endsWith('-USD') || CRYPTO_TICKERS.has(t); }
+
+  async function fetchAISignal(ticker, price, change, name, metrics) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price, change, name, metrics })
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch { return null; }
+  }
+
+  function renderRecCard(r, ai) {
+    const signal    = (ai && ai.signal)       || (r.direction === 'up' ? 'BUY' : 'SELL');
+    const conf      = (ai && ai.confidence)   || '';
+    const rationale = (ai && ai.rationale)    || 'Loading analysis…';
+    const action    = (ai && ai.action)       || '';
+    const entry     = (ai && ai.entry)        || '';
+    const stopLoss  = (ai && ai.stopLoss)     || '';
+    const posSize   = (ai && ai.positionSize) || '';
+    const loading   = !ai;
+
+    const sigClass  = signal === 'BUY' ? 'signal-BUY' : signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
+    const pos       = r.change.startsWith('+');
+    const sparkline = buildSparkline(r.weekData, pos);
+    const etoroTicker = r.ticker.replace('-USD','').toLowerCase();
+    const etoroUrl  = `https://www.etoro.com/markets/${etoroTicker}`;
+    liveMarketData[r.ticker] = { price: r.price, change: r.change };
+
+    const volRatio = r.volRatio || 1;
+    const volPct   = Math.min(100, Math.round((volRatio / 3) * 100));
+    const volLabel = volRatio >= 2 ? 'High' : volRatio >= 1.2 ? 'Above avg' : volRatio < 0.7 ? 'Low' : 'Normal';
+    const volColor = volRatio >= 1.5 ? 'var(--accent)' : volRatio < 0.7 ? 'var(--text-dim)' : 'var(--text-muted)';
+    const rsi      = r.rsi || 50;
+    const rsiColor = rsi >= 70 ? 'var(--red)' : rsi <= 30 ? 'var(--green)' : 'var(--text-muted)';
+    const rsiLabel = rsi >= 70 ? 'Overbought' : rsi <= 30 ? 'Oversold' : 'Neutral';
+
+    const actionHtml = action ? `
+      <div class="rec-action-box rec-action-${signal}">
+        <div class="rec-action-label">Recommendation</div>
+        <div class="rec-action-text">${action}</div>
+        ${(entry || stopLoss || posSize) ? `
+        <div class="rec-action-levels">
+          ${entry    ? `<span class="rec-level"><span class="rec-level-key">Entry</span> ${entry}</span>` : ''}
+          ${stopLoss ? `<span class="rec-level rec-level-stop"><span class="rec-level-key">Stop</span> ${stopLoss}</span>` : ''}
+          ${posSize  ? `<span class="rec-level"><span class="rec-level-key">Size</span> ${posSize}</span>` : ''}
+        </div>` : ''}
+      </div>` : '';
+
+    return `
+      <div class="rec-card">
+        <div class="rec-top">
+          <div>
+            <div class="rec-ticker">${r.ticker.replace('-USD','')}</div>
+            <div class="rec-name">${r.name}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+            <span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>
+            ${conf ? `<span style="font-size:10px;color:var(--text-dim);">${conf} confidence</span>` : ''}
+          </div>
+        </div>
+        <div class="rec-price">$${r.price} <span class="${pos ? 'pos' : 'neg'}">${r.change} today</span></div>
+        <div class="rec-sparkline">${sparkline}</div>
+        <div style="display:flex;gap:8px;margin:2px 0;">
+          <div style="flex:1;background:var(--surface2);border-radius:6px;padding:5px 8px;">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:3px;">RSI(5)</div>
+            <div style="font-size:12px;font-family:var(--mono);color:${rsiColor};">${rsi} <span style="font-size:10px;font-family:inherit;">${rsiLabel}</span></div>
+          </div>
+          <div style="flex:1;background:var(--surface2);border-radius:6px;padding:5px 8px;">
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:3px;">Volume</div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <div style="flex:1;height:4px;background:var(--border2);border-radius:2px;"><div style="width:${volPct}%;height:100%;background:${volColor};border-radius:2px;transition:width 0.4s;"></div></div>
+              <span style="font-size:10px;color:${volColor};">${volLabel}</span>
+            </div>
+          </div>
+        </div>
+        <div class="rec-reason${loading ? ' rec-loading' : ''}">${rationale}</div>
+        ${actionHtml}
+        <a class="rec-etoro-link" href="${etoroUrl}" target="_blank" rel="noopener">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Trade on eToro
+        </a>
+      </div>`;
+  }
+
+  async function loadRecommendations() {
+    $('recs-grid-stocks').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening markets…</div>';
+    $('recs-grid-crypto').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening crypto…</div>';
+    const btn = $('recs-refresh-btn');
+    if (btn) btn.disabled = true;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__trending__', _t: Date.now() })
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      const picks = data.picks || [];
+      const stocks = picks.filter(r => !isCrypto(r.ticker)).slice(0, 6);
+      const crypto = picks.filter(r =>  isCrypto(r.ticker)).slice(0, 6);
+
+      // Placeholders
+      const renderGrid = (gridId, items) => {
+        if (!items.length) { $(gridId).innerHTML = `<div class="movers-empty" style="grid-column:1/-1">No momentum picks right now.</div>`; return; }
+        $(gridId).innerHTML = items.map(r => renderRecCard(r, null)).join('');
+      };
+      renderGrid('recs-grid-stocks', stocks);
+      renderGrid('recs-grid-crypto', crypto);
+
+      // Enrich sequentially
+      const enrichGrid = async (gridId, items) => {
+        for (let i = 0; i < items.length; i++) {
+          const r = items[i];
+          const metrics = { rsi: r.rsi, volRatio: r.volRatio, rangePct: r.rangePct, streak: r.streak, weekPct: r.weekPct, weekTrend: r.weekTrend, direction: r.direction };
+          const ai = await fetchAISignal(r.ticker, r.price, r.change, r.name, metrics);
+          const tmp = document.createElement('div');
+          tmp.innerHTML = renderRecCard(r, ai);
+          $(gridId).children[i]?.replaceWith(tmp.firstElementChild);
+        }
+      };
+      await enrichGrid('recs-grid-stocks', stocks);
+      await enrichGrid('recs-grid-crypto', crypto);
+
+    } catch(e) {
+      const err = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">Could not load recommendations. <button onclick="loadRecommendations()" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);">Retry</button></div>`;
+      $('recs-grid-stocks').innerHTML = err;
+      $('recs-grid-crypto').innerHTML = '';
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function refreshRecs() { loadRecommendations(); }
+
+  /* ── Exchange ticker bar (minimal — no yahoo deps needed, just labels) ── */
+  const EXCHANGES = [
+    { name:'NYSE',    label:'New York SE',  flag:'🇺🇸', tz:'America/New_York', open:'09:30', close:'16:00' },
+    { name:'NASDAQ',  label:'Nasdaq',       flag:'🇺🇸', tz:'America/New_York', open:'09:30', close:'16:00' },
+    { name:'LSE',     label:'London SE',    flag:'🇬🇧', tz:'Europe/London',   open:'08:00', close:'16:30' },
+    { name:'Euronext',label:'Euronext',     flag:'🇪🇺', tz:'Europe/Paris',    open:'09:00', close:'17:30' },
+    { name:'TSE',     label:'Tokyo SE',     flag:'🇯🇵', tz:'Asia/Tokyo',      open:'09:00', close:'15:30' },
+    { name:'SSE',     label:'Shanghai SE',  flag:'🇨🇳', tz:'Asia/Shanghai',   open:'09:30', close:'15:00' },
+  ];
+  function isExchangeOpen(tz, open, close) {
+    try {
+      const now = new Date();
+      const fmt = t => new Date(now.toLocaleDateString('en-US',{timeZone:tz})+' '+t);
+      const day = parseInt(now.toLocaleDateString('en-US',{weekday:'short',timeZone:tz}).slice(0,3)==='Sat'?'6':now.toLocaleDateString('en-US',{weekday:'short',timeZone:tz}).slice(0,3)==='Sun'?'0':'1');
+      const wday = new Date(now.toLocaleString('en-US',{timeZone:tz})).getDay();
+      if (wday === 0 || wday === 6) return false;
+      const openT=fmt(open), closeT=fmt(close);
+      return now >= openT && now <= closeT;
+    } catch { return false; }
+  }
+  function loadExchangeTicker() {
+    const track = $('exchange-ticker-track');
+    if (!track) return;
+    const items = EXCHANGES.map(ex => {
+      const open = isExchangeOpen(ex.tz, ex.open, ex.close);
+      return `<span class="ticker-item"><span class="ticker-exchange-flag">${ex.flag}</span><span class="ticker-exchange-name">${ex.label}</span><span class="exchange-status-dot ${open?'open':'closed'}"></span><span class="ticker-exchange-status">${open?'Open':'Closed'}</span></span>`;
+    }).join('');
+    track.innerHTML = items + items;
+  }
+  loadExchangeTicker();
+</script>
+</body>
+</html>
