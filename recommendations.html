@@ -115,6 +115,65 @@
     text-decoration: none; transition: opacity 0.15s; font-family: inherit;
   }
   .auth-gate-btn:hover { opacity: 0.85; }
+
+  /* ── Card analysing animation ── */
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position:  400px 0; }
+  }
+  @keyframes card-pulse {
+    0%, 100% { border-color: rgba(108,99,255,0.15); box-shadow: 0 0 0 0 rgba(108,99,255,0); }
+    50%       { border-color: rgba(108,99,255,0.45); box-shadow: 0 0 12px 2px rgba(108,99,255,0.12); }
+  }
+  @keyframes scan-line {
+    0%   { top: 0; opacity: 0.6; }
+    100% { top: 100%; opacity: 0; }
+  }
+  @keyframes dot-pulse {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40%           { transform: scale(1);   opacity: 1; }
+  }
+
+  .rec-card.analysing {
+    animation: card-pulse 2s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+  .rec-card.analysing::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(108,99,255,0.5), transparent);
+    animation: scan-line 2s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Shimmer on skeleton rows */
+  .rec-skel {
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--surface2) 25%, var(--border2) 50%, var(--surface2) 75%);
+    background-size: 400px 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* Analysing badge replaces signal pill */
+  .analysing-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
+    color: #a9a3ff; background: var(--accent-dim);
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 20px; padding: 3px 9px;
+    white-space: nowrap;
+  }
+  .analysing-dots { display: inline-flex; gap: 3px; align-items: center; }
+  .analysing-dots span {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: #a9a3ff; display: inline-block;
+    animation: dot-pulse 1.2s ease-in-out infinite;
+  }
+  .analysing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .analysing-dots span:nth-child(3) { animation-delay: 0.4s; }
   </style>
 </head>
 
@@ -268,10 +327,44 @@
           <p>Multi-factor model · entry &amp; size guidance · refreshes on demand</p>
         </div>
       </div>
-      <button class="recs-refresh-btn" id="recs-refresh-btn" onclick="refreshRecs()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        Refresh
-      </button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="recs-refresh-btn" id="recs-refresh-btn" onclick="refreshRecs()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+        <button class="recs-refresh-btn" id="lookup-toggle-btn" onclick="toggleLookupPanel()" title="Search by company name">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Stock lookup
+        </button>
+      </div>
+    </div>
+
+    <!-- Stock Lookup dropdown panel -->
+    <div id="lookup-panel" style="display:none;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1.25rem;position:relative;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Stock Lookup</span>
+          <span style="font-size:11px;color:var(--text-dim);">Search by company name to find a ticker</span>
+        </div>
+        <button onclick="closeLookupPanel()" title="Close" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px;display:flex;align-items:center;transition:color 0.15s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-dim)'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="lookup-row">
+        <div class="lookup-input-wrap">
+          <input type="text" id="lookup-input" placeholder="e.g. Apple, Tesla, Nvidia…" autocomplete="off" oninput="toggleLookupClear()"/>
+          <button class="btn-input-clear" id="lookup-clear-btn" onclick="clearLookup()" title="Clear" style="display:none">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <button class="btn-lookup" id="lookup-btn" onclick="lookupTicker()">Find</button>
+      </div>
+      <div class="lookup-error" id="lookup-error"></div>
+      <div class="lookup-loading" id="lookup-loading" style="display:none">
+        <div class="spinner-sm"></div> Searching…
+      </div>
+      <div class="lookup-results" id="lookup-results"></div>
     </div>
 
     <!-- Stocks -->
@@ -499,16 +592,19 @@
         </div>` : ''}
       </div>` : '';
 
+    const signalEl = loading
+      ? `<span class="analysing-badge"><span class="analysing-dots"><span></span><span></span><span></span></span> Analysing</span>`
+      : `<span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>${conf ? `<span style="font-size:10px;color:var(--text-dim);">${conf} confidence</span>` : ''}`;
+
     return `
-      <div class="rec-card">
+      <div class="rec-card${loading ? ' analysing' : ''}">
         <div class="rec-top">
           <div>
             <div class="rec-ticker">${r.ticker.replace('-USD','')}</div>
             <div class="rec-name">${r.name}</div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
-            <span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>
-            ${conf ? `<span style="font-size:10px;color:var(--text-dim);">${conf} confidence</span>` : ''}
+            ${signalEl}
           </div>
         </div>
         <div class="rec-price">$${r.price} <span class="${pos ? 'pos' : 'neg'}">${r.change} today</span></div>
@@ -526,7 +622,7 @@
             </div>
           </div>
         </div>
-        <div class="rec-reason${loading ? ' rec-loading' : ''}">${rationale}</div>
+        <div class="rec-reason${loading ? ' rec-loading' : ''}">${loading ? `<span class="rec-skel" style="display:block;height:12px;width:90%;margin-bottom:5px;"></span><span class="rec-skel" style="display:block;height:12px;width:70%;"></span>` : rationale}</div>
         ${actionHtml}
         <a class="rec-etoro-link" href="${etoroUrl}" target="_blank" rel="noopener">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -549,8 +645,8 @@
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
       const picks = data.picks || [];
-      const stocks = picks.filter(r => !isCrypto(r.ticker)).slice(0, 6);
-      const crypto = picks.filter(r =>  isCrypto(r.ticker)).slice(0, 6);
+      const stocks = picks.filter(r => !isCrypto(r.ticker)).slice(0, 12);
+      const crypto = picks.filter(r =>  isCrypto(r.ticker)).slice(0, 12);
 
       // Placeholders
       const renderGrid = (gridId, items) => {
@@ -560,15 +656,25 @@
       renderGrid('recs-grid-stocks', stocks);
       renderGrid('recs-grid-crypto', crypto);
 
-      // Enrich sequentially
+      // Enrich sequentially — remove HOLDs as they resolve
       const enrichGrid = async (gridId, items) => {
         for (let i = 0; i < items.length; i++) {
           const r = items[i];
           const metrics = { rsi: r.rsi, volRatio: r.volRatio, rangePct: r.rangePct, streak: r.streak, weekPct: r.weekPct, weekTrend: r.weekTrend, direction: r.direction };
           const ai = await fetchAISignal(r.ticker, r.price, r.change, r.name, metrics);
+          const signal = ai && ai.signal ? ai.signal : (r.direction === 'up' ? 'BUY' : 'SELL');
+          // Drop HOLDs — only show actionable BUY/SELL
+          if (signal === 'HOLD') {
+            $(gridId).children[i]?.remove();
+            continue;
+          }
           const tmp = document.createElement('div');
           tmp.innerHTML = renderRecCard(r, ai);
           $(gridId).children[i]?.replaceWith(tmp.firstElementChild);
+        }
+        // If grid is now empty, show a message
+        if (!$(gridId).children.length) {
+          $(gridId).innerHTML = '<div class="movers-empty" style="grid-column:1/-1">No strong BUY or SELL signals right now — check back later.</div>';
         }
       };
       await enrichGrid('recs-grid-stocks', stocks);
@@ -584,6 +690,91 @@
   }
 
   function refreshRecs() { loadRecommendations(); }
+
+  /* ── Stock Lookup panel ── */
+  function toggleLookupPanel() {
+    const panel = $('lookup-panel');
+    const btn   = $('lookup-toggle-btn');
+    const open  = panel.style.display !== 'none';
+    if (open) {
+      closeLookupPanel();
+    } else {
+      panel.style.display = 'block';
+      btn.style.borderColor  = 'var(--accent)';
+      btn.style.color        = 'var(--accent)';
+      btn.style.background   = 'var(--accent-dim)';
+      setTimeout(() => $('lookup-input')?.focus(), 50);
+    }
+  }
+
+  function closeLookupPanel() {
+    const panel = $('lookup-panel');
+    const btn   = $('lookup-toggle-btn');
+    if (panel) panel.style.display = 'none';
+    if (btn) { btn.style.borderColor = ''; btn.style.color = ''; btn.style.background = ''; }
+    clearLookup();
+  }
+
+  async function lookupTicker() {
+    const query = $('lookup-input').value.trim();
+    if (!query) return;
+    $('lookup-error').textContent = '';
+    $('lookup-results').innerHTML = '';
+    $('lookup-loading').style.display = 'flex';
+    $('lookup-btn').disabled = true;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__lookup__', lookupQuery: query })
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      const results = data.lookupResults || [];
+      if (!results.length) {
+        $('lookup-results').innerHTML = '<div class="lookup-empty">No matches found.</div>';
+      } else {
+        $('lookup-results').innerHTML = results.map(r => `
+          <div class="lookup-item" onclick="useLookupResult('${r.ticker}')">
+            <span class="lookup-ticker">${r.ticker}</span>
+            <span class="lookup-name">${r.name}</span>
+            <span style="font-size:11px;color:var(--text-dim);flex-shrink:0;">${r.exchange || ''}</span>
+            <span class="lookup-use">Use →</span>
+          </div>`).join('');
+      }
+    } catch (err) {
+      $('lookup-error').textContent = 'Lookup failed. Try again.';
+    } finally {
+      $('lookup-loading').style.display = 'none';
+      $('lookup-btn').disabled = false;
+    }
+  }
+
+  function useLookupResult(ticker) {
+    // On recommendations page — just copy ticker to clipboard and close
+    // (no ticker-input on this page)
+    navigator.clipboard?.writeText(ticker).catch(()=>{});
+    $('lookup-results').innerHTML = `<div class="lookup-empty" style="color:var(--green);">✓ Ticker <strong style="font-family:var(--mono)">${ticker}</strong> copied to clipboard</div>`;
+    setTimeout(closeLookupPanel, 1800);
+  }
+
+  function clearLookup() {
+    const inp = $('lookup-input'); if (inp) inp.value = '';
+    const res = $('lookup-results'); if (res) res.innerHTML = '';
+    const err = $('lookup-error'); if (err) err.textContent = '';
+    const clr = $('lookup-clear-btn'); if (clr) clr.style.display = 'none';
+  }
+
+  function toggleLookupClear() {
+    const btn = $('lookup-clear-btn');
+    const inp = $('lookup-input');
+    if (btn && inp) btn.style.display = inp.value.length ? 'flex' : 'none';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLookupPanel();
+    if (e.key === 'Enter' && document.activeElement?.id === 'lookup-input') lookupTicker();
+  });
 
   /* ── Exchange Ticker Bar ── */
   const EXCHANGES = [
