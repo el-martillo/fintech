@@ -520,6 +520,15 @@
     $('recs-page').style.display = 'block';
     loadRecommendations();
     loadExchangeTicker();
+    // Auto-run lookup if arriving from profile page recent searches
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoLookup = urlParams.get('lookup');
+    if (autoLookup) {
+      // Clean URL without reloading
+      history.replaceState(null, '', window.location.pathname);
+      // Small delay so page content is visible first
+      setTimeout(() => useLookupResult(autoLookup.toUpperCase(), ''), 800);
+    }
   }
 
   db.auth.onAuthStateChange((event, session) => {
@@ -794,6 +803,22 @@
       return;
     }
     _searchedTickers.add(ticker);
+
+    // Save to Supabase (fire-and-forget — don't block the UI)
+    if (_currentUser) {
+      // Delete any existing row for this ticker first (keeps it deduped + updates timestamp)
+      db.from('stock_searches')
+        .delete()
+        .eq('user_id', _currentUser.id)
+        .eq('ticker', ticker)
+        .then(() => {
+          db.from('stock_searches').insert({
+            user_id: _currentUser.id,
+            ticker,
+            name: name || ticker,
+          });
+        });
+    }
 
     // Show confirmation and close panel
     $('lookup-results').innerHTML = `<div class="lookup-empty" style="color:var(--green);">✓ Analysing <strong style="font-family:var(--mono)">${ticker}</strong>…</div>`;

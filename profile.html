@@ -697,6 +697,20 @@
         </div>
       </div>
 
+      <!-- Recent stock searches -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div class="profile-card-title">Recent stock searches</div>
+        </div>
+        <div class="profile-card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:0.9rem;">Your last 5 lookups from the Recommendations page. Click any to re-analyse.</p>
+          <div id="recent-searches-list">
+            <div style="font-size:13px;color:var(--text-dim);font-style:italic;">No recent searches yet.</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Change password -->
       <div class="profile-card" id="pw-card">
         <div class="profile-card-header">
@@ -1021,6 +1035,7 @@
     document.getElementById('profile-content').style.display = 'block';
     renderProfile(user);
     loadStats(user);
+    loadRecentSearches();
   }
 
   function renderProfile(user) {
@@ -1073,6 +1088,38 @@
     document.getElementById('stat-analyses').textContent = rows.length;
     document.getElementById('stat-buys').textContent     = buys;
     document.getElementById('stat-sells').textContent    = sells;
+  }
+
+  async function loadRecentSearches() {
+    const el = document.getElementById('recent-searches-list');
+    if (!el || !_currentUser) return;
+
+    el.innerHTML = '<div style="font-size:13px;color:var(--text-dim);">Loading…</div>';
+
+    const { data, error } = await db
+      .from('stock_searches')
+      .select('ticker, name, searched_at')
+      .eq('user_id', _currentUser.id)
+      .order('searched_at', { ascending: false })
+      .limit(5);
+
+    if (error || !data || !data.length) {
+      el.innerHTML = '<div style="font-size:13px;color:var(--text-dim);font-style:italic;">No recent searches yet.</div>';
+      return;
+    }
+
+    el.innerHTML = data.map(item => {
+      const date = new Date(item.searched_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      return `
+        <a href="recommendations.html?lookup=${encodeURIComponent(item.ticker)}"
+           style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:border-color 0.15s;margin-bottom:6px;"
+           onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);min-width:52px;">${item.ticker}</span>
+          <span style="font-size:12px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name || ''}</span>
+          <span style="font-size:11px;color:var(--text-dim);flex-shrink:0;">${date}</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>`;
+    }).join('');
   }
 
   /* ── Password strength ── */
