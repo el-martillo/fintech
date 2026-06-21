@@ -528,7 +528,10 @@
         <!-- Price chart -->
         <div class="panel chart-panel">
           <div class="chart-header">
-            <div class="panel-title" style="margin-bottom:0">Price history</div>
+            <div>
+              <div id="chart-title-ticker" style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--text);letter-spacing:-0.02em;line-height:1.2;"></div>
+              <div id="chart-title-sub" style="font-size:11px;color:var(--text-dim);margin-top:2px;"></div>
+            </div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <!-- Chart type toggle -->
               <div class="chart-type-toggle">
@@ -548,6 +551,10 @@
                 <button class="chart-tab" onclick="switchChartTab(this,'6M')">6M</button>
                 <button class="chart-tab" onclick="switchChartTab(this,'1Y')">1Y</button>
               </div>
+              <!-- Save button -->
+              <button class="chart-expand-btn" onclick="saveChart()" title="Save chart as PNG">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </button>
               <!-- Expand button -->
               <button class="chart-expand-btn" onclick="openChartModal()" title="Expand chart">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
@@ -566,7 +573,10 @@
             <!-- Modal header -->
             <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
               <div style="display:flex;align-items:center;gap:12px;">
-                <div id="modal-ticker-label" style="font-size:1.2rem;font-weight:600;font-family:var(--mono);color:#fff;letter-spacing:-0.02em;"></div>
+                <div>
+                  <div id="modal-ticker-label" style="font-size:1.2rem;font-weight:600;font-family:var(--mono);color:#fff;letter-spacing:-0.02em;line-height:1.2;"></div>
+                  <div id="modal-company-label" style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;"></div>
+                </div>
                 <!-- Modal period tabs -->
                 <div class="chart-tabs" id="modal-chart-tabs">
                   <button class="chart-tab active" onclick="switchModalTab(this,'1D')">1D</button>
@@ -586,9 +596,15 @@
                   </button>
                 </div>
               </div>
-              <button onclick="closeChartModal()" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <!-- Modal save button -->
+                <button onclick="saveModalChart()" title="Save chart as PNG" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button onclick="closeChartModal()" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
             </div>
             <!-- Modal canvas container -->
             <div style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem;min-height:0;display:flex;flex-direction:column;gap:0.5rem;">
@@ -897,6 +913,11 @@
 
     $('res-ticker').textContent  = d.ticker;
     $('res-company').textContent = `${d.companyName} · ${d.sector}`;
+
+    // Update chart title labels
+    currentChartCompany = d.companyName || '';
+    currentChartSector  = d.sector || '';
+    _updateChartTitles();
 
     $('res-signal').innerHTML = `<span class="signal-pill signal-${d.signal}">${signalIcon(d.signal)} ${d.signal} · ${d.confidence}</span>`;
 
@@ -1388,17 +1409,31 @@
   /* ── Price chart ── */
   let priceChart         = null;
   let currentChartTicker = '';
+  let currentChartCompany = '';
+  let currentChartSector  = '';
   let chartCache         = {};
   let currentChartType   = 'candle';
 
+  function _updateChartTitles() {
+    const activeTab = document.querySelector('.chart-tabs .chart-tab.active');
+    const period = activeTab ? activeTab.textContent.trim() : '';
+    const periodLabel = { '1D':'5 Days', '5D':'1 Month', '1M':'3 Months', '3M':'6 Months', '6M':'1 Year', '1Y':'2 Years' }[period] || period;
+    const el = $('chart-title-ticker');
+    const sub = $('chart-title-sub');
+    if (el) el.textContent = currentChartTicker ? `${currentChartTicker} — Price History` : 'Price History';
+    if (sub) sub.textContent = currentChartTicker
+      ? `${currentChartCompany}${currentChartSector ? ' · ' + currentChartSector : ''} · Daily candles${periodLabel ? ' · ' + periodLabel : ''}`
+      : 'Enter a ticker above to load chart data';
+  }
+
   // Maps UI tab labels to Yahoo Finance range/interval params
   const CHART_PARAMS = {
-    '1D': { range: '5d',   interval: '1d'  },
-    '5D': { range: '1mo',  interval: '1d'  },
-    '1M': { range: '3mo',  interval: '1d'  },
-    '3M': { range: '6mo',  interval: '1d'  },
-    '6M': { range: '1y',   interval: '1wk' },
-    '1Y': { range: '2y',   interval: '1wk' },
+    '1D': { range: '5d',   interval: '1d' },
+    '5D': { range: '1mo',  interval: '1d' },
+    '1M': { range: '3mo',  interval: '1d' },
+    '3M': { range: '6mo',  interval: '1d' },
+    '6M': { range: '1y',   interval: '1d' },
+    '1Y': { range: '2y',   interval: '1d' },
   };
 
   async function loadPriceChart(ticker, period) {
@@ -1493,7 +1528,7 @@
     if (priceChart) { priceChart.destroy(); priceChart = null; }
 
     const c = _chartColors();
-    const timeUnit = ['6M','1Y'].includes(period) ? 'week' : 'day';
+    const timeUnit = 'day';
     const maxVol = candles.reduce((m,x) => Math.max(m, x.v), 0);
 
     // ── Price axis: tight range around actual H/L with 2% padding ──
@@ -1660,8 +1695,9 @@
   }
 
   function switchChartTab(btn, period) {
-    document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.chart-tabs .chart-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    _updateChartTitles();
     if (currentChartTicker) loadPriceChart(currentChartTicker, period);
   }
 
@@ -1977,6 +2013,9 @@
 
     // Sync ticker label and active tab/type with main chart
     $('modal-ticker-label').textContent = currentChartTicker;
+    $('modal-company-label').textContent = currentChartCompany
+      ? `${currentChartCompany}${currentChartSector ? ' · ' + currentChartSector : ''} · Daily candles`
+      : '';
     modalChartType = currentChartType;
     const activeTab = document.querySelector('.chart-tab.active');
     modalPeriod = activeTab ? activeTab.textContent.trim() : '1D';
@@ -2051,7 +2090,7 @@
     _chartFooter(candles, period, footer);
 
     const c = _chartColors();
-    const timeUnit = ['6M','1Y'].includes(period) ? 'week' : 'day';
+    const timeUnit = 'day';
     const maxVol = candles.reduce((m,x) => Math.max(m, x.v), 0);
 
     const allHigh = candles.map(x => x.h).filter(Boolean);
@@ -2167,6 +2206,73 @@
 
   // Close modal on Escape key
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('chart-modal').style.display = 'none'; document.body.style.overflow = ''; if (modalChart) { modalChart.destroy(); modalChart = null; } } });
+
+  /* ── Save chart as PNG ── */
+  function _downloadChartCanvas(canvas, ticker, period) {
+    if (!canvas) return;
+    const dark = !document.body.classList.contains('light');
+    const bg   = dark ? '#0d0f14' : '#f4f5f7';
+    const textCol   = dark ? '#e8eaf0' : '#111318';
+    const mutedCol  = dark ? '#8b90a0' : '#4b5060';
+
+    // Draw onto an off-screen canvas with title header
+    const headerH = 56;
+    const footerH = 32;
+    const padX    = 20;
+    const W = canvas.width;
+    const H = canvas.height;
+    const out = document.createElement('canvas');
+    out.width  = W;
+    out.height = H + headerH + footerH;
+    const ctx = out.getContext('2d');
+
+    // Background
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, out.width, out.height);
+
+    // Header — ticker title
+    ctx.fillStyle = textCol;
+    ctx.font = 'bold 16px "JetBrains Mono", monospace';
+    ctx.fillText(`${ticker} — Price History`, padX, 22);
+
+    // Header — subtitle
+    const periodLabel = { '1D':'5 Days','5D':'1 Month','1M':'3 Months','3M':'6 Months','6M':'1 Year','1Y':'2 Years' }[period] || period;
+    const subtitle = `${currentChartCompany}${currentChartSector ? ' · '+currentChartSector : ''} · Daily candles · ${periodLabel}`;
+    ctx.fillStyle = mutedCol;
+    ctx.font = '11px Inter, system-ui, sans-serif';
+    ctx.fillText(subtitle, padX, 42);
+
+    // Chart
+    ctx.drawImage(canvas, 0, headerH, W, H);
+
+    // Footer — watermark + date
+    const now = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    ctx.fillStyle = mutedCol;
+    ctx.font = '10px Inter, system-ui, sans-serif';
+    ctx.fillText('Stock Advisor · el-martillo.github.io/fintech', padX, H + headerH + 20);
+    ctx.textAlign = 'right';
+    ctx.fillText(`Generated ${now}`, W - padX, H + headerH + 20);
+
+    // Download
+    const a = document.createElement('a');
+    a.download = `${ticker}_${period}_chart.png`;
+    a.href = out.toDataURL('image/png');
+    a.click();
+  }
+
+  function saveChart() {
+    if (!priceChart) return;
+    const canvas  = $('price-chart');
+    const activeTab = document.querySelector('.chart-tabs .chart-tab.active');
+    const period = activeTab ? activeTab.textContent.trim() : '1D';
+    _downloadChartCanvas(canvas, currentChartTicker, period);
+  }
+
+  function saveModalChart() {
+    if (!modalChart) return;
+    const canvas = $('price-chart-modal');
+    _downloadChartCanvas(canvas, currentChartTicker, modalPeriod);
+  }
 
   /* ── Chart image upload & vision analysis ── */
   let chartFileData = null;
