@@ -548,12 +548,55 @@
                 <button class="chart-tab" onclick="switchChartTab(this,'6M')">6M</button>
                 <button class="chart-tab" onclick="switchChartTab(this,'1Y')">1Y</button>
               </div>
+              <!-- Expand button -->
+              <button class="chart-expand-btn" onclick="openChartModal()" title="Expand chart">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              </button>
             </div>
           </div>
           <div class="chart-loading" id="chart-loading"><div class="spinner-sm"></div> Loading chart…</div>
           <div class="chart-error" id="chart-error" style="display:none"></div>
-          <canvas id="price-chart" style="display:none;width:100%;"></canvas>
+          <canvas id="price-chart" style="display:none;width:100%;cursor:pointer;" onclick="openChartModal()" title="Click to expand"></canvas>
           <div class="chart-footer" id="chart-footer"></div>
+        </div>
+
+        <!-- Chart modal overlay -->
+        <div id="chart-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);padding:1.5rem;" onclick="closeChartModal(event)">
+          <div style="position:relative;width:100%;max-width:1100px;margin:0 auto;height:100%;display:flex;flex-direction:column;gap:0.75rem;">
+            <!-- Modal header -->
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div id="modal-ticker-label" style="font-size:1.2rem;font-weight:600;font-family:var(--mono);color:#fff;letter-spacing:-0.02em;"></div>
+                <!-- Modal period tabs -->
+                <div class="chart-tabs" id="modal-chart-tabs">
+                  <button class="chart-tab active" onclick="switchModalTab(this,'1D')">1D</button>
+                  <button class="chart-tab" onclick="switchModalTab(this,'5D')">5D</button>
+                  <button class="chart-tab" onclick="switchModalTab(this,'1M')">1M</button>
+                  <button class="chart-tab" onclick="switchModalTab(this,'3M')">3M</button>
+                  <button class="chart-tab" onclick="switchModalTab(this,'6M')">6M</button>
+                  <button class="chart-tab" onclick="switchModalTab(this,'1Y')">1Y</button>
+                </div>
+                <!-- Modal chart type -->
+                <div class="chart-type-toggle">
+                  <button class="chart-type-btn active" id="modal-btn-candle" onclick="switchModalType('candle',this)" title="Candlestick">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="4" height="10" rx="1"/><line x1="4" y1="4" x2="4" y2="7"/><line x1="4" y1="17" x2="4" y2="20"/><rect x="10" y="4" width="4" height="14" rx="1"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="18" x2="12" y2="22"/><rect x="18" y="9" width="4" height="7" rx="1"/><line x1="20" y1="6" x2="20" y2="9"/><line x1="20" y1="16" x2="20" y2="19"/></svg>
+                  </button>
+                  <button class="chart-type-btn" id="modal-btn-line" onclick="switchModalType('line',this)" title="Line">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </button>
+                </div>
+              </div>
+              <button onclick="closeChartModal()" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <!-- Modal canvas container -->
+            <div style="flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem;min-height:0;display:flex;flex-direction:column;gap:0.5rem;">
+              <div id="modal-chart-loading" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);padding:1rem 0;justify-content:center;"><div class="spinner-sm"></div> Loading…</div>
+              <canvas id="price-chart-modal" style="flex:1;min-height:0;width:100%;"></canvas>
+              <div id="modal-chart-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:0.5rem;border-top:1px solid var(--border);font-size:12px;"></div>
+            </div>
+          </div>
         </div>
 
         <div class="panel">
@@ -1350,12 +1393,12 @@
 
   // Maps UI tab labels to Yahoo Finance range/interval params
   const CHART_PARAMS = {
-    '1D': { range: '1d',   interval: '5m'  },
-    '5D': { range: '5d',   interval: '15m' },
-    '1M': { range: '1mo',  interval: '1d'  },
-    '3M': { range: '3mo',  interval: '1d'  },
-    '6M': { range: '6mo',  interval: '1wk' },
-    '1Y': { range: '1y',   interval: '1wk' },
+    '1D': { range: '5d',   interval: '1d'  },
+    '5D': { range: '1mo',  interval: '1d'  },
+    '1M': { range: '3mo',  interval: '1d'  },
+    '3M': { range: '6mo',  interval: '1d'  },
+    '6M': { range: '1y',   interval: '1wk' },
+    '1Y': { range: '2y',   interval: '1wk' },
   };
 
   async function loadPriceChart(ticker, period) {
@@ -1430,9 +1473,7 @@
     const clr   = isUp ? '#22c55e' : '#ef4444';
     const sign  = isUp ? '+' : '';
     const pct   = (((last - first) / first) * 100).toFixed(2);
-    const fmt   = ts => period === '1D'
-      ? new Date(ts).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'})
-      : new Date(ts).toLocaleDateString('en-GB', {day:'numeric',month:'short'});
+    const fmt   = ts => new Date(ts).toLocaleDateString('en-GB', {day:'numeric',month:'short'});
     footer.innerHTML = `<span style="color:var(--text-dim);font-size:11px;">${fmt(candles[0].t)} → ${fmt(candles[candles.length-1].t)}</span><span style="font-size:12px;font-weight:600;color:${clr};margin-left:auto;">${sign}${pct}%</span>`;
   }
 
@@ -1452,7 +1493,7 @@
     if (priceChart) { priceChart.destroy(); priceChart = null; }
 
     const c = _chartColors();
-    const timeUnit = period === '1D' ? 'hour' : ['5D','1M'].includes(period) ? 'day' : 'week';
+    const timeUnit = ['6M','1Y'].includes(period) ? 'week' : 'day';
     const maxVol = candles.reduce((m,x) => Math.max(m, x.v), 0);
 
     // ── Price axis: tight range around actual H/L with 2% padding ──
@@ -1508,9 +1549,7 @@
               title: items => {
                 const ts = items[0]?.raw?.x ?? items[0]?.parsed?.x;
                 if (!ts) return '';
-                return period === '1D'
-                  ? new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-                  : new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                return new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
               },
               label: ctx => {
                 if (ctx.dataset.label === 'Volume') {
@@ -1924,6 +1963,210 @@
     else if(id==='su-email'||id==='su-pw'||id==='su-pw2') adpSignUp();
     else if(id==='rp-email') adpResetPw();
   });
+
+  /* ── Chart modal (fullscreen) ── */
+  let modalChart = null;
+  let modalChartType = 'candle';
+  let modalPeriod = '1D';
+
+  function openChartModal() {
+    if (!currentChartTicker) return;
+    const modal = $('chart-modal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Sync ticker label and active tab/type with main chart
+    $('modal-ticker-label').textContent = currentChartTicker;
+    modalChartType = currentChartType;
+    const activeTab = document.querySelector('.chart-tab.active');
+    modalPeriod = activeTab ? activeTab.textContent.trim() : '1D';
+
+    // Sync tab highlights
+    document.querySelectorAll('#modal-chart-tabs .chart-tab').forEach(b => {
+      b.classList.toggle('active', b.textContent.trim() === modalPeriod);
+    });
+    // Sync type buttons
+    $('modal-btn-candle').classList.toggle('active', modalChartType === 'candle');
+    $('modal-btn-line').classList.toggle('active',   modalChartType === 'line');
+
+    renderModalChart(currentChartTicker, modalPeriod);
+  }
+
+  function closeChartModal(e) {
+    if (e && e.target !== $('chart-modal')) return; // only close on backdrop click
+    $('chart-modal').style.display = 'none';
+    document.body.style.overflow = '';
+    if (modalChart) { modalChart.destroy(); modalChart = null; }
+  }
+
+  function switchModalTab(btn, period) {
+    modalPeriod = period;
+    document.querySelectorAll('#modal-chart-tabs .chart-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderModalChart(currentChartTicker, period);
+  }
+
+  function switchModalType(type, btn) {
+    modalChartType = type;
+    document.querySelectorAll('#chart-modal .chart-type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Re-render from cache
+    const cacheKey = `${currentChartTicker}_${modalPeriod}`;
+    if (chartCache[cacheKey]) {
+      _renderModalFromCandles(chartCache[cacheKey], modalPeriod);
+    }
+  }
+
+  async function renderModalChart(ticker, period) {
+    const cacheKey = `${ticker}_${period}`;
+    $('modal-chart-loading').style.display = 'flex';
+    if (modalChart) { modalChart.destroy(); modalChart = null; }
+
+    let candles = chartCache[cacheKey];
+    if (!candles) {
+      try {
+        const { range, interval } = CHART_PARAMS[period] || CHART_PARAMS['1D'];
+        const result = await yahooFetch(ticker, range, interval);
+        if (!result) throw new Error('No data');
+        const timestamps = result.timestamp || [];
+        const q = result.indicators?.quote?.[0] || {};
+        candles = timestamps.map((t, i) => ({
+          t: t * 1000, o: q.open?.[i], h: q.high?.[i], l: q.low?.[i], c: q.close?.[i], v: q.volume?.[i] || 0,
+        })).filter(x => x.o != null && x.c != null);
+        chartCache[cacheKey] = candles;
+      } catch(e) {
+        $('modal-chart-loading').style.display = 'none';
+        return;
+      }
+    }
+    _renderModalFromCandles(candles, period);
+  }
+
+  function _renderModalFromCandles(candles, period) {
+    $('modal-chart-loading').style.display = 'none';
+    if (modalChart) { modalChart.destroy(); modalChart = null; }
+
+    const canvas = $('price-chart-modal');
+    const footer = $('modal-chart-footer');
+    _chartFooter(candles, period, footer);
+
+    const c = _chartColors();
+    const timeUnit = ['6M','1Y'].includes(period) ? 'week' : 'day';
+    const maxVol = candles.reduce((m,x) => Math.max(m, x.v), 0);
+
+    const allHigh = candles.map(x => x.h).filter(Boolean);
+    const allLow  = candles.map(x => x.l).filter(Boolean);
+    const priceMax = Math.max(...allHigh);
+    const priceMin = Math.min(...allLow);
+    const pricePad = (priceMax - priceMin) * 0.08;
+    const yMin = priceMin - pricePad;
+    const yMax = priceMax + pricePad;
+    const priceRange = yMax - yMin;
+    const volMax = maxVol / 0.22 * (priceRange / yMax) * yMax;
+
+    if (modalChartType === 'candle') {
+      modalChart = new Chart(canvas, {
+        data: { datasets: [
+          {
+            type: 'candlestick', label: 'Price',
+            data: candles.map(x => ({ x: x.t, o: x.o, h: x.h, l: x.l, c: x.c })),
+            color: { up: '#22c55e', down: '#ef4444', unchanged: '#8b90a0' },
+            borderColor: { up: '#22c55e', down: '#ef4444', unchanged: '#8b90a0' },
+            borderWidth: 1, yAxisID: 'y',
+          },
+          {
+            type: 'line', label: 'MA20',
+            data: _calcMA(candles, 20),
+            borderColor: 'rgba(108,99,255,0.85)', borderWidth: 1.5,
+            pointRadius: 0, tension: 0.3, yAxisID: 'y',
+          },
+          {
+            type: 'bar', label: 'Volume',
+            data: candles.map(x => ({ x: x.t, y: x.v })),
+            backgroundColor: candles.map(x => x.c >= x.o ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'),
+            yAxisID: 'vol', order: 10, barPercentage: 0.85, categoryPercentage: 0.9,
+          },
+        ]},
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          layout: { padding: { top: 12, right: 8, bottom: 0, left: 0 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: c.ttBg, titleColor: c.ttTitle, bodyColor: c.ttBody,
+              borderColor: c.ttBord, borderWidth: 1, padding: 10,
+              callbacks: {
+                title: items => {
+                  const ts = items[0]?.raw?.x ?? items[0]?.parsed?.x;
+                  if (!ts) return '';
+                  return new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                },
+                label: ctx => {
+                  if (ctx.dataset.label === 'Volume') {
+                    const v = ctx.raw?.y || 0;
+                    return ` Vol: ${v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v}`;
+                  }
+                  if (ctx.dataset.label === 'MA20') return ` MA20: $${ctx.parsed.y?.toFixed(2)}`;
+                  const r = ctx.raw;
+                  return r?.o != null ? [` O: $${r.o.toFixed(2)}`, ` H: $${r.h.toFixed(2)}`, ` L: $${r.l.toFixed(2)}`, ` C: $${r.c.toFixed(2)}`] : '';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'time',
+              time: { unit: timeUnit, displayFormats: { hour: 'HH:mm', day: 'd MMM', week: 'd MMM' } },
+              grid: { display: false }, border: { display: false },
+              ticks: { color: c.tick, font: { size: 11 }, maxTicksLimit: 10, maxRotation: 0, autoSkip: true },
+            },
+            y: {
+              position: 'right', min: yMin, max: yMax,
+              grid: { color: c.grid }, border: { display: false },
+              ticks: { color: c.tick, font: { size: 11 }, callback: v => '$' + v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) },
+            },
+            vol: { position: 'left', min: 0, max: volMax, grid: { display: false }, border: { display: false }, ticks: { display: false } },
+          }
+        }
+      });
+    } else {
+      const prices = candles.map(x => x.c);
+      const isUp = prices[prices.length-1] >= prices[0];
+      const clr  = isUp ? '#22c55e' : '#ef4444';
+      const fmt  = ts => new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      modalChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: candles.map(x => fmt(x.t)),
+          datasets: [{
+            data: prices, borderColor: clr,
+            backgroundColor: isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+            borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, fill: true, tension: 0.3,
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: c.ttBg, titleColor: c.ttTitle, bodyColor: c.ttBody,
+              borderColor: c.ttBord, borderWidth: 1, padding: 10,
+              callbacks: { label: ctx => ` $${ctx.parsed.y.toFixed(2)}` }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, border: { display: false }, ticks: { color: c.tick, font: { size: 11 }, maxTicksLimit: 8, maxRotation: 0 } },
+            y: { position: 'right', grid: { color: c.grid }, border: { display: false }, ticks: { color: c.tick, font: { size: 11 }, callback: v => '$' + v.toFixed(0) } },
+          }
+        }
+      });
+    }
+  }
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('chart-modal').style.display = 'none'; document.body.style.overflow = ''; if (modalChart) { modalChart.destroy(); modalChart = null; } } });
 
   /* ── Chart image upload & vision analysis ── */
   let chartFileData = null;
