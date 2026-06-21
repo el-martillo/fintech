@@ -728,10 +728,14 @@
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
         body: JSON.stringify({ ticker: '__lookup__', lookupQuery: query })
       });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
       const data = await res.json();
       const results = data.lookupResults || [];
-      if (!results.length) {
+
+      if (!results || !results.length) {
         $('lookup-results').innerHTML = '<div class="lookup-empty">No matches found.</div>';
       } else {
         $('lookup-results').innerHTML = results.map(r => `
@@ -743,7 +747,7 @@
           </div>`).join('');
       }
     } catch (err) {
-      $('lookup-error').textContent = 'Lookup failed. Try again.';
+      $('lookup-error').textContent = `Lookup failed: ${err.message}`;
     } finally {
       $('lookup-loading').style.display = 'none';
       $('lookup-btn').disabled = false;
