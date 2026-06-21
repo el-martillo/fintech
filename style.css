@@ -1178,6 +1178,7 @@ body.light .hero-badge {
 
 /* ── Price chart ── */
 .chart-panel { padding-bottom: 0.75rem; }
+.chart-panel canvas { display: block; }
 .chart-header {
   display: flex;
   align-items: center;
@@ -1223,7 +1224,7 @@ body.light .hero-badge {
   padding: 1rem 0;
   text-align: center;
 }
-#price-chart { height: 180px !important; }
+#price-chart { height: 320px !important; }
 .chart-footer {
   display: flex;
   align-items: center;
@@ -1426,4 +1427,13 @@ body.light .exchange-ticker-bar { background: var(--surface); }
   background: var(--surface);
   color: var(--text);
   box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+/* ── Chart upload panel ── */
+.chart-upload-panel {
+  margin-top: 0.75rem;
+}
+#chart-drop-zone:hover {
+  border-color: var(--accent) !important;
+  background: var(--accent-dim) !important;
 }

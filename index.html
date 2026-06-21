@@ -502,9 +502,10 @@
       </div>
 
       <!-- Loading -->
-      <div class="state-msg" id="loading-state">
-        <div class="spinner" style="margin: 0 auto 1rem;"></div>
-        Fetching analysis…
+      <div class="state-msg" id="loading-state" style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);margin-top:0.75rem;">
+        <div class="spinner" style="margin: 0 auto 0.75rem; width:28px; height:28px; border-width:3px;"></div>
+        <div style="font-size:14px;font-weight:500;color:var(--text);">Fetching analysis…</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">AI is analysing the ticker, this may take a moment</div>
       </div>
 
       <!-- Result -->
@@ -551,7 +552,7 @@
           </div>
           <div class="chart-loading" id="chart-loading"><div class="spinner-sm"></div> Loading chart…</div>
           <div class="chart-error" id="chart-error" style="display:none"></div>
-          <canvas id="price-chart" style="display:none;width:100%;height:260px;"></canvas>
+          <canvas id="price-chart" style="display:none;width:100%;"></canvas>
           <div class="chart-footer" id="chart-footer"></div>
         </div>
 
@@ -575,6 +576,44 @@
         <div class="disclaimer">
           ⚠️ For informational purposes only — not financial advice. CFDs and stock trading involve risk of loss. Always do your own research before trading.
         </div>
+      </div>
+
+      <!-- Chart Image Analysis -->
+      <div class="panel chart-upload-panel" id="chart-upload-panel" style="margin-top:0.75rem;">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:5px;"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="3 9 9 9 9 3"/><polyline points="15 3 21 3 21 9"/><polyline points="21 15 21 21 15 21"/><polyline points="9 21 3 21 3 15"/></svg>
+            Chart Image Analysis
+          </span>
+          <span style="font-size:11px;color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0;">Upload a chart screenshot for AI analysis</span>
+        </div>
+        <div id="chart-drop-zone" onclick="document.getElementById('chart-file-input').click()"
+          style="border:2px dashed var(--border2);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.15s,background 0.15s;"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-dim)';"
+          ondragleave="this.style.borderColor='';this.style.background='';"
+          ondrop="handleChartDrop(event)">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Drop chart image here or <span style="color:var(--accent);font-weight:500;">click to browse</span></div>
+          <div style="font-size:11px;color:var(--text-dim);">PNG, JPG, WEBP · Max 5MB</div>
+          <input type="file" id="chart-file-input" accept="image/*" style="display:none" onchange="handleChartFile(this.files[0])">
+        </div>
+        <div id="chart-preview-wrap" style="display:none;margin-top:0.75rem;">
+          <div style="position:relative;display:inline-block;width:100%;">
+            <img id="chart-preview-img" src="" alt="Chart preview" style="width:100%;max-height:220px;object-fit:contain;border-radius:var(--radius);border:1px solid var(--border2);">
+            <button onclick="clearChartUpload()" title="Remove" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn-analyze" onclick="analyzeChartImage()" id="chart-analyze-btn" style="width:100%;margin-top:0.6rem;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span id="chart-analyze-label">Analyse Chart</span>
+          </button>
+        </div>
+        <div id="chart-vision-loading" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);padding:0.75rem 0;">
+          <div class="spinner-sm"></div> Analysing chart image…
+        </div>
+        <div id="chart-vision-result" style="display:none;margin-top:0.75rem;padding:1rem;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);font-size:13.5px;color:var(--text-muted);line-height:1.7;white-space:pre-wrap;"></div>
+        <div id="chart-vision-error" style="display:none;margin-top:0.5rem;font-size:13px;color:var(--red);"></div>
       </div>
 
       <!-- History -->
@@ -1410,60 +1449,95 @@
     const canvas = $('price-chart'), loading = $('chart-loading'), footer = $('chart-footer');
     loading.style.display = 'none'; canvas.style.display = 'block';
     _chartFooter(candles, period, footer);
-    if (priceChart) priceChart.destroy();
+    if (priceChart) { priceChart.destroy(); priceChart = null; }
 
     const c = _chartColors();
-    const timeUnit = ['1D','5D'].includes(period) ? 'hour' : ['1M','3M'].includes(period) ? 'day' : 'week';
-    const maxVol = candles.reduce((m,x)=>Math.max(m,x.v),0);
+    const timeUnit = period === '1D' ? 'hour' : ['5D','1M'].includes(period) ? 'day' : 'week';
+    const maxVol = candles.reduce((m,x) => Math.max(m, x.v), 0);
+
+    // Candlestick bar width: narrower for more candles, wider for fewer
+    const barPct = candles.length > 100 ? 0.6 : candles.length > 30 ? 0.7 : 0.75;
 
     priceChart = new Chart(canvas, {
       data: { datasets: [
-        { type:'candlestick', label:'Price',
-          data: candles.map(x=>({x:x.t,o:x.o,h:x.h,l:x.l,c:x.c})),
-          color:{ up:'#22c55e', down:'#ef4444', unchanged:'#8b90a0' },
-          borderColor:{ up:'#22c55e', down:'#ef4444', unchanged:'#8b90a0' },
-          yAxisID:'y' },
-        { type:'line', label:'MA20', data:_calcMA(candles,20),
-          borderColor:'rgba(108,99,255,0.75)', borderWidth:1.5,
-          pointRadius:0, tension:0.3, yAxisID:'y' },
-        { type:'bar', label:'Volume',
-          data: candles.map(x=>({x:x.t,y:x.v})),
-          backgroundColor: candles.map(x=> x.c>=x.o ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'),
-          yAxisID:'vol', order:10 },
+        {
+          type: 'candlestick',
+          label: 'Price',
+          data: candles.map(x => ({ x: x.t, o: x.o, h: x.h, l: x.l, c: x.c })),
+          color: { up: '#22c55e', down: '#ef4444', unchanged: '#8b90a0' },
+          borderColor: { up: '#22c55e', down: '#ef4444', unchanged: '#8b90a0' },
+          borderWidth: 1,
+          barPercentage: barPct,
+          categoryPercentage: 0.8,
+          yAxisID: 'y',
+        },
+        {
+          type: 'line', label: 'MA20',
+          data: _calcMA(candles, 20),
+          borderColor: 'rgba(108,99,255,0.8)', borderWidth: 1.5,
+          pointRadius: 0, tension: 0.3, yAxisID: 'y',
+        },
+        {
+          type: 'bar', label: 'Volume',
+          data: candles.map(x => ({ x: x.t, y: x.v })),
+          backgroundColor: candles.map(x => x.c >= x.o ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'),
+          yAxisID: 'vol', order: 10,
+          barPercentage: 0.9, categoryPercentage: 0.9,
+        },
       ]},
       options: {
-        responsive:true, maintainAspectRatio:false,
-        interaction:{ intersect:false, mode:'index' },
-        plugins:{ legend:{display:false}, tooltip:{
-          backgroundColor:c.ttBg, titleColor:c.ttTitle, bodyColor:c.ttBody,
-          borderColor:c.ttBord, borderWidth:1, padding:10,
-          callbacks:{
-            title: items => {
-              const ts = items[0]?.raw?.x ?? items[0]?.parsed?.x;
-              if (!ts) return '';
-              return period==='1D'
-                ? new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
-                : new Date(ts).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-            },
-            label: ctx => {
-              if (ctx.dataset.label==='Volume') {
-                const v=ctx.raw?.y||0;
-                return ` Vol: ${v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v}`;
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        layout: { padding: { top: 8, right: 4, bottom: 0, left: 0 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: c.ttBg, titleColor: c.ttTitle, bodyColor: c.ttBody,
+            borderColor: c.ttBord, borderWidth: 1, padding: 10,
+            callbacks: {
+              title: items => {
+                const ts = items[0]?.raw?.x ?? items[0]?.parsed?.x;
+                if (!ts) return '';
+                return period === '1D'
+                  ? new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                  : new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+              },
+              label: ctx => {
+                if (ctx.dataset.label === 'Volume') {
+                  const v = ctx.raw?.y || 0;
+                  return ` Vol: ${v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v}`;
+                }
+                if (ctx.dataset.label === 'MA20') return ` MA20: $${ctx.parsed.y?.toFixed(2)}`;
+                const r = ctx.raw;
+                return r?.o != null
+                  ? [` O: $${r.o.toFixed(2)}`, ` H: $${r.h.toFixed(2)}`, ` L: $${r.l.toFixed(2)}`, ` C: $${r.c.toFixed(2)}`]
+                  : '';
               }
-              if (ctx.dataset.label==='MA20') return ` MA20: $${ctx.parsed.y?.toFixed(2)}`;
-              const r=ctx.raw;
-              return r?.o!=null ? [` O:$${r.o.toFixed(2)}`,` H:$${r.h.toFixed(2)}`,` L:$${r.l.toFixed(2)}`,` C:$${r.c.toFixed(2)}`] : '';
             }
           }
-        }},
-        scales:{
-          x:{ type:'timeseries', time:{unit:timeUnit},
-            grid:{display:false}, border:{display:false},
-            ticks:{color:c.tick,font:{size:10},maxTicksLimit:7,maxRotation:0,autoSkip:true} },
-          y:{ position:'right', grid:{color:c.grid}, border:{display:false},
-            ticks:{color:c.tick,font:{size:10},callback:v=>'$'+v.toLocaleString()} },
-          vol:{ position:'left', grid:{display:false}, border:{display:false},
-            ticks:{display:false}, max: maxVol*5 },
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: { unit: timeUnit, displayFormats: { hour: 'HH:mm', day: 'd MMM', week: 'd MMM' } },
+            grid: { display: false },
+            border: { display: false },
+            ticks: { color: c.tick, font: { size: 10 }, maxTicksLimit: 8, maxRotation: 0, autoSkip: true },
+          },
+          y: {
+            position: 'right',
+            grid: { color: c.grid },
+            border: { display: false },
+            ticks: { color: c.tick, font: { size: 10 }, callback: v => '$' + v.toLocaleString() },
+          },
+          vol: {
+            position: 'left',
+            grid: { display: false },
+            border: { display: false },
+            ticks: { display: false },
+            max: maxVol * 5,
+          },
         }
       }
     });
@@ -1835,6 +1909,99 @@
     else if(id==='su-email'||id==='su-pw'||id==='su-pw2') adpSignUp();
     else if(id==='rp-email') adpResetPw();
   });
+
+  /* ── Chart image upload & vision analysis ── */
+  let chartFileData = null;
+  let chartFileMime = null;
+
+  function handleChartFile(file) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      $('chart-vision-error').textContent = 'File too large. Max 5MB.';
+      $('chart-vision-error').style.display = 'block';
+      return;
+    }
+    $('chart-vision-error').style.display = 'none';
+    $('chart-vision-result').style.display = 'none';
+    chartFileMime = file.type || 'image/png';
+    const reader = new FileReader();
+    reader.onload = e => {
+      const dataUrl = e.target.result;
+      chartFileData = dataUrl.split(',')[1]; // base64 only
+      $('chart-preview-img').src = dataUrl;
+      $('chart-preview-wrap').style.display = 'block';
+      $('chart-drop-zone').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleChartDrop(e) {
+    e.preventDefault();
+    $('chart-drop-zone').style.borderColor = '';
+    $('chart-drop-zone').style.background = '';
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type.startsWith('image/')) handleChartFile(file);
+  }
+
+  function clearChartUpload() {
+    chartFileData = null;
+    chartFileMime = null;
+    $('chart-file-input').value = '';
+    $('chart-preview-img').src = '';
+    $('chart-preview-wrap').style.display = 'none';
+    $('chart-drop-zone').style.display = 'block';
+    $('chart-vision-result').style.display = 'none';
+    $('chart-vision-error').style.display = 'none';
+  }
+
+  async function analyzeChartImage() {
+    if (!chartFileData) return;
+    const ticker = $('ticker-input').value.trim().toUpperCase() || 'this stock';
+    const chartPrompt = `You are a professional technical analyst. Analyse this chart for ${ticker}.
+
+Identify:
+1. **Trend** — current direction and strength
+2. **Key levels** — support and resistance
+3. **Patterns** — any chart patterns (e.g. head & shoulders, triangle, flag, etc.)
+4. **Indicators** — comment on any visible indicators (MA, RSI, MACD, volume, etc.)
+5. **Signal** — BUY, SELL, or HOLD with a brief reason
+6. **Timeframe suggestion** — recommended trade horizon
+
+Be concise but specific. Format with clear headings.`;
+
+    $('chart-vision-loading').style.display = 'flex';
+    $('chart-vision-result').style.display = 'none';
+    $('chart-vision-error').style.display = 'none';
+    $('chart-analyze-btn').disabled = true;
+    $('chart-analyze-label').innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span>';
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          ticker: '__chart__',
+          chartImage: chartFileData,
+          chartMime: chartFileMime,
+          chartPrompt,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `Error ${res.status}`);
+      $('chart-vision-result').textContent = data.analysis || 'No analysis returned.';
+      $('chart-vision-result').style.display = 'block';
+    } catch (err) {
+      $('chart-vision-error').textContent = err.message || 'Chart analysis failed.';
+      $('chart-vision-error').style.display = 'block';
+    } finally {
+      $('chart-vision-loading').style.display = 'none';
+      $('chart-analyze-btn').disabled = false;
+      $('chart-analyze-label').textContent = 'Analyse Chart';
+    }
+  }
 
 </script>
 </body>
