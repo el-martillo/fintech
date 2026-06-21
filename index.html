@@ -16,6 +16,9 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.1/dist/chartjs-chart-financial.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
   <script src="config.js"></script>
 
   <style id="auth-styles">
@@ -525,16 +528,30 @@
         <div class="panel chart-panel">
           <div class="chart-header">
             <div class="panel-title" style="margin-bottom:0">Price history</div>
-            <div class="chart-tabs">
-              <button class="chart-tab active" onclick="switchChartTab(this,'1D')">1D</button>
-              <button class="chart-tab" onclick="switchChartTab(this,'1W')">1W</button>
-              <button class="chart-tab" onclick="switchChartTab(this,'1M')">1M</button>
-              <button class="chart-tab" onclick="switchChartTab(this,'1Y')">1Y</button>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <!-- Chart type toggle -->
+              <div class="chart-type-toggle">
+                <button class="chart-type-btn active" id="btn-type-candle" onclick="switchChartType('candle',this)" title="Candlestick">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="4" height="10" rx="1"/><line x1="4" y1="4" x2="4" y2="7"/><line x1="4" y1="17" x2="4" y2="20"/><rect x="10" y="4" width="4" height="14" rx="1"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="18" x2="12" y2="22"/><rect x="18" y="9" width="4" height="7" rx="1"/><line x1="20" y1="6" x2="20" y2="9"/><line x1="20" y1="16" x2="20" y2="19"/></svg>
+                </button>
+                <button class="chart-type-btn" id="btn-type-line" onclick="switchChartType('line',this)" title="Line chart">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </button>
+              </div>
+              <!-- Period tabs -->
+              <div class="chart-tabs">
+                <button class="chart-tab active" onclick="switchChartTab(this,'1D')">1D</button>
+                <button class="chart-tab" onclick="switchChartTab(this,'5D')">5D</button>
+                <button class="chart-tab" onclick="switchChartTab(this,'1M')">1M</button>
+                <button class="chart-tab" onclick="switchChartTab(this,'3M')">3M</button>
+                <button class="chart-tab" onclick="switchChartTab(this,'6M')">6M</button>
+                <button class="chart-tab" onclick="switchChartTab(this,'1Y')">1Y</button>
+              </div>
             </div>
           </div>
           <div class="chart-loading" id="chart-loading"><div class="spinner-sm"></div> Loading chart…</div>
           <div class="chart-error" id="chart-error" style="display:none"></div>
-          <canvas id="price-chart" style="display:none;width:100%;height:180px;"></canvas>
+          <canvas id="price-chart" style="display:none;width:100%;height:260px;"></canvas>
           <div class="chart-footer" id="chart-footer"></div>
         </div>
 
@@ -620,105 +637,6 @@
     </aside><!-- /col-sidebar -->
 
   </div><!-- /layout -->
-
-
-  <!-- ── Chart Analysis ── -->
-  <section class="chart-analysis-section" id="chart-analysis-section">
-    <div class="recs-header" style="margin-bottom:1rem;">
-      <span class="recs-title">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Chart Analysis
-      </span>
-      <span class="recs-sub">Upload a candlestick chart for AI technical analysis</span>
-    </div>
-
-    <div class="chart-upload-area" id="chart-upload-area">
-      <input type="file" id="chart-file-input" accept="image/*" style="display:none" onchange="handleChartFile(event)" />
-
-      <!-- Drop zone -->
-      <div class="chart-dropzone" id="chart-dropzone"
-           onclick="document.getElementById('chart-file-input').click()"
-           ondragover="event.preventDefault();this.classList.add('dragover')"
-           ondragleave="this.classList.remove('dragover')"
-           ondrop="handleChartDrop(event)">
-        <div class="chart-dropzone-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3 9 4-4 4 4 4-4 4 4"/><path d="M3 15h18"/></svg>
-        </div>
-        <div class="chart-dropzone-label">Drop chart image here or <span>click to upload</span></div>
-        <div class="chart-dropzone-hint">PNG, JPG or screenshot · Any timeframe · Any broker</div>
-      </div>
-
-      <!-- Preview + controls -->
-      <div class="chart-preview-wrap" id="chart-preview-wrap" style="display:none">
-        <div class="chart-preview-img-wrap">
-          <img id="chart-preview-img" src="" alt="Chart preview" class="chart-preview-img" />
-          <button class="chart-clear-btn" onclick="clearChart()" title="Remove chart">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div class="chart-meta-row">
-          <div class="chart-meta-field">
-            <label>Ticker <span style="color:var(--text-dim)">(optional)</span></label>
-            <input type="text" id="chart-ticker-input" placeholder="e.g. AAPL, TSLA…"
-                   style="text-transform:uppercase" autocomplete="off" />
-          </div>
-          <div class="chart-meta-field">
-            <label>Timeframe <span style="color:var(--text-dim)">(optional)</span></label>
-            <select id="chart-timeframe-select">
-              <option value="">Unknown</option>
-              <option value="1m">1 minute</option>
-              <option value="5m">5 minutes</option>
-              <option value="15m">15 minutes</option>
-              <option value="1h">1 hour</option>
-              <option value="4h">4 hours</option>
-              <option value="1D">Daily</option>
-              <option value="1W">Weekly</option>
-              <option value="1M">Monthly</option>
-            </select>
-          </div>
-          <div class="chart-meta-field" style="flex:2">
-            <label>Question <span style="color:var(--text-dim)">(optional)</span></label>
-            <input type="text" id="chart-question-input"
-                   placeholder="e.g. Is this a bullish reversal? Where's support?" />
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <button class="chart-analyze-btn" id="chart-analyze-btn" onclick="analyzeChart()">
-            <svg id="chart-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <span id="chart-btn-label">Analyse chart</span>
-          </button>
-          <div id="chart-inline-loading" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);">
-            <div class="spinner-sm"></div>
-            Analysing chart…
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Result -->
-    <div class="chart-result" id="chart-result" style="display:none">
-      <div class="chart-result-header">
-        <div class="chart-result-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Technical Analysis
-        </div>
-        <button class="chart-new-btn" onclick="clearChart()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          New chart
-        </button>
-      </div>
-      <div class="chart-result-body" id="chart-result-body"></div>
-    </div>
-
-    <!-- Loading -->
-    <div class="chart-loading" id="chart-loading" style="display:none">
-      <div class="spinner"></div>
-      Analysing chart…
-    </div>
-
-    <!-- Error -->
-    <div class="chart-error" id="chart-error" style="display:none"></div>
-  </section>
 
   <!-- ── Financial news ── -->
   <section class="news-section">
@@ -1386,32 +1304,35 @@
   }
 
   /* ── Price chart ── */
-  let priceChart = null;
+  let priceChart         = null;
   let currentChartTicker = '';
-  let chartCache = {};
+  let chartCache         = {};
+  let currentChartType   = 'candle';
 
   // Maps UI tab labels to Yahoo Finance range/interval params
   const CHART_PARAMS = {
-    '1D': { range: '1d',  interval: '5m'  },
-    '1W': { range: '5d',  interval: '60m' },
-    '1M': { range: '1mo', interval: '1d'  },
-    '1Y': { range: '1y',  interval: '1wk' },
+    '1D': { range: '1d',   interval: '5m'  },
+    '5D': { range: '5d',   interval: '15m' },
+    '1M': { range: '1mo',  interval: '1d'  },
+    '3M': { range: '3mo',  interval: '1d'  },
+    '6M': { range: '6mo',  interval: '1wk' },
+    '1Y': { range: '1y',   interval: '1wk' },
   };
 
   async function loadPriceChart(ticker, period) {
-    const canvas = $('price-chart');
+    const canvas  = $('price-chart');
     const loading = $('chart-loading');
-    const error = $('chart-error');
-    const footer = $('chart-footer');
+    const error   = $('chart-error');
+    const footer  = $('chart-footer');
 
     loading.style.display = 'flex';
-    canvas.style.display = 'none';
-    error.style.display = 'none';
-    footer.textContent = '';
+    canvas.style.display  = 'none';
+    error.style.display   = 'none';
+    if (footer) footer.textContent = '';
 
     const cacheKey = `${ticker}_${period}`;
     if (chartCache[cacheKey]) {
-      renderChart(chartCache[cacheKey], period);
+      dispatchChart(chartCache[cacheKey], period);
       return;
     }
 
@@ -1421,108 +1342,193 @@
       if (!result) throw new Error('Yahoo Finance unavailable');
 
       const timestamps = result.timestamp || [];
-      const closes     = result.indicators?.quote?.[0]?.close || [];
+      const q          = result.indicators?.quote?.[0] || {};
 
-      // Filter out null closes (pre/post market gaps)
-      const pairs = timestamps
-        .map((t, i) => ({ t, p: closes[i] }))
-        .filter(x => x.p != null);
+      const candles = timestamps.map((t, i) => ({
+        t:  t * 1000,
+        o:  q.open?.[i],
+        h:  q.high?.[i],
+        l:  q.low?.[i],
+        c:  q.close?.[i],
+        v:  q.volume?.[i] || 0,
+      })).filter(x => x.o != null && x.c != null);
 
-      if (pairs.length < 2) throw new Error('Insufficient data');
+      if (candles.length < 2) throw new Error('Insufficient data');
 
-      // Format labels based on period
-      const fmt = period === '1D'
-        ? t => new Date(t * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-        : t => new Date(t * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-
-      const chartData = {
-        labels: pairs.map(x => fmt(x.t)),
-        prices: pairs.map(x => parseFloat(x.p.toFixed(2))),
-      };
-
-      chartCache[cacheKey] = chartData;
-      renderChart(chartData, period);
+      chartCache[cacheKey] = candles;
+      dispatchChart(candles, period);
     } catch(e) {
       loading.style.display = 'none';
-      error.style.display = 'block';
-      error.textContent = 'Could not load chart data — market may be closed or ticker unavailable.';
+      error.style.display   = 'block';
+      error.textContent     = 'Could not load chart — market may be closed or ticker unavailable.';
       console.warn('Chart error:', e);
     }
   }
 
-  function renderChart(data, period) {
-    const canvas = $('price-chart');
-    const loading = $('chart-loading');
-    const footer = $('chart-footer');
+  // Route to correct renderer based on currentChartType
+  function dispatchChart(candles, period) {
+    if (currentChartType === 'candle') renderCandleChart(candles, period);
+    else renderLineChart(candles, period);
+  }
 
-    loading.style.display = 'none';
-    canvas.style.display = 'block';
+  /* shared helpers */
+  function _chartColors() {
+    const dark = !document.body.classList.contains('light');
+    return {
+      grid:    dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)',
+      tick:    dark ? '#555a6e' : '#9099b0',
+      ttBg:    dark ? 'rgba(20,23,31,0.97)' : 'rgba(255,255,255,0.97)',
+      ttTitle: dark ? '#8b90a0' : '#4b5060',
+      ttBody:  dark ? '#e8eaf0' : '#111318',
+      ttBord:  dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)',
+    };
+  }
 
-    const prices = data.prices;
-    const first = prices[0];
-    const last = prices[prices.length - 1];
-    const isUp = last >= first;
-    const color = isUp ? '#22c55e' : '#ef4444';
-    const fillColor = isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
-    const change = (((last - first) / first) * 100).toFixed(2);
-    const sign = isUp ? '+' : '';
-    footer.innerHTML = `<span style="color:var(--text-dim);font-size:11px;">${data.labels[0]} → ${data.labels[data.labels.length-1]}</span><span style="font-size:12px;font-weight:600;color:${color};margin-left:auto;">${sign}${change}%</span>`;
+  function _chartFooter(candles, period, footer) {
+    if (!footer) return;
+    const first = candles[0].c, last = candles[candles.length-1].c;
+    const isUp  = last >= first;
+    const clr   = isUp ? '#22c55e' : '#ef4444';
+    const sign  = isUp ? '+' : '';
+    const pct   = (((last - first) / first) * 100).toFixed(2);
+    const fmt   = ts => period === '1D'
+      ? new Date(ts).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'})
+      : new Date(ts).toLocaleDateString('en-GB', {day:'numeric',month:'short'});
+    footer.innerHTML = `<span style="color:var(--text-dim);font-size:11px;">${fmt(candles[0].t)} → ${fmt(candles[candles.length-1].t)}</span><span style="font-size:12px;font-weight:600;color:${clr};margin-left:auto;">${sign}${pct}%</span>`;
+  }
 
+  function _calcMA(candles, n) {
+    return candles.map((_, i) => {
+      if (i < n - 1) return null;
+      const avg = candles.slice(i-n+1, i+1).reduce((s,c)=>s+c.c,0)/n;
+      return { x: candles[i].t, y: +avg.toFixed(2) };
+    }).filter(Boolean);
+  }
+
+  /* ── Candlestick ── */
+  function renderCandleChart(candles, period) {
+    const canvas = $('price-chart'), loading = $('chart-loading'), footer = $('chart-footer');
+    loading.style.display = 'none'; canvas.style.display = 'block';
+    _chartFooter(candles, period, footer);
     if (priceChart) priceChart.destroy();
 
+    const c = _chartColors();
+    const timeUnit = ['1D','5D'].includes(period) ? 'hour' : ['1M','3M'].includes(period) ? 'day' : 'week';
+    const maxVol = candles.reduce((m,x)=>Math.max(m,x.v),0);
+
     priceChart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: data.labels,
-        datasets: [{
-          data: prices,
-          borderColor: color,
-          backgroundColor: fillColor,
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          fill: true,
-          tension: 0.3,
-        }]
-      },
+      data: { datasets: [
+        { type:'candlestick', label:'Price',
+          data: candles.map(x=>({x:x.t,o:x.o,h:x.h,l:x.l,c:x.c})),
+          color:{ up:'#22c55e', down:'#ef4444', unchanged:'#8b90a0' },
+          borderColor:{ up:'#22c55e', down:'#ef4444', unchanged:'#8b90a0' },
+          yAxisID:'y' },
+        { type:'line', label:'MA20', data:_calcMA(candles,20),
+          borderColor:'rgba(108,99,255,0.75)', borderWidth:1.5,
+          pointRadius:0, tension:0.3, yAxisID:'y' },
+        { type:'bar', label:'Volume',
+          data: candles.map(x=>({x:x.t,y:x.v})),
+          backgroundColor: candles.map(x=> x.c>=x.o ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'),
+          yAxisID:'vol', order:10 },
+      ]},
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'index' },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(20,23,31,0.95)',
-            titleColor: '#8b90a0',
-            bodyColor: '#e8eaf0',
-            borderColor: 'rgba(255,255,255,0.08)',
-            borderWidth: 1,
-            padding: 10,
-            callbacks: {
-              label: ctx => ` $${ctx.parsed.y.toFixed(2)}`
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ intersect:false, mode:'index' },
+        plugins:{ legend:{display:false}, tooltip:{
+          backgroundColor:c.ttBg, titleColor:c.ttTitle, bodyColor:c.ttBody,
+          borderColor:c.ttBord, borderWidth:1, padding:10,
+          callbacks:{
+            title: items => {
+              const ts = items[0]?.raw?.x ?? items[0]?.parsed?.x;
+              if (!ts) return '';
+              return period==='1D'
+                ? new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
+                : new Date(ts).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+            },
+            label: ctx => {
+              if (ctx.dataset.label==='Volume') {
+                const v=ctx.raw?.y||0;
+                return ` Vol: ${v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v}`;
+              }
+              if (ctx.dataset.label==='MA20') return ` MA20: $${ctx.parsed.y?.toFixed(2)}`;
+              const r=ctx.raw;
+              return r?.o!=null ? [` O:$${r.o.toFixed(2)}`,` H:$${r.h.toFixed(2)}`,` L:$${r.l.toFixed(2)}`,` C:$${r.c.toFixed(2)}`] : '';
             }
           }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: {
-              color: '#555a6e',
-              font: { size: 10 },
-              maxTicksLimit: 6,
-              maxRotation: 0,
-            },
-            border: { display: false }
-          },
-          y: {
-            position: 'right',
-            grid: { color: 'rgba(255,255,255,0.05)' },
-            ticks: { color: '#555a6e', font: { size: 10 }, callback: v => '$' + v.toFixed(0) },
-            border: { display: false }
-          }
+        }},
+        scales:{
+          x:{ type:'timeseries', time:{unit:timeUnit},
+            grid:{display:false}, border:{display:false},
+            ticks:{color:c.tick,font:{size:10},maxTicksLimit:7,maxRotation:0,autoSkip:true} },
+          y:{ position:'right', grid:{color:c.grid}, border:{display:false},
+            ticks:{color:c.tick,font:{size:10},callback:v=>'$'+v.toLocaleString()} },
+          vol:{ position:'left', grid:{display:false}, border:{display:false},
+            ticks:{display:false}, max: maxVol*5 },
         }
       }
     });
+  }
+
+  /* ── Line chart ── */
+  function renderLineChart(candles, period) {
+    const canvas = $('price-chart'), loading = $('chart-loading'), footer = $('chart-footer');
+    loading.style.display = 'none'; canvas.style.display = 'block';
+    _chartFooter(candles, period, footer);
+    if (priceChart) priceChart.destroy();
+
+    const c      = _chartColors();
+    const prices = candles.map(x => x.c);
+    const isUp   = prices[prices.length-1] >= prices[0];
+    const clr    = isUp ? '#22c55e' : '#ef4444';
+    const fill   = isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+    const fmt    = period === '1D'
+      ? ts => new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})
+      : ts => new Date(ts).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+
+    priceChart = new Chart(canvas, {
+      type:'line',
+      data:{
+        labels: candles.map(x=>fmt(x.t)),
+        datasets:[{
+          data: prices, borderColor:clr, backgroundColor:fill,
+          borderWidth:2, pointRadius:0, pointHoverRadius:4,
+          fill:true, tension:0.3,
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{intersect:false,mode:'index'},
+        plugins:{ legend:{display:false}, tooltip:{
+          backgroundColor:c.ttBg, titleColor:c.ttTitle, bodyColor:c.ttBody,
+          borderColor:c.ttBord, borderWidth:1, padding:10,
+          callbacks:{ label: ctx => ` $${ctx.parsed.y.toFixed(2)}` }
+        }},
+        scales:{
+          x:{ grid:{display:false}, border:{display:false},
+            ticks:{color:c.tick,font:{size:10},maxTicksLimit:6,maxRotation:0} },
+          y:{ position:'right', grid:{color:c.grid}, border:{display:false},
+            ticks:{color:c.tick,font:{size:10},callback:v=>'$'+v.toFixed(0)} },
+        }
+      }
+    });
+  }
+
+  /* ── Chart type toggle ── */
+  function switchChartType(type, btn) {
+    currentChartType = type;
+    document.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Re-render from cache if data available
+    if (currentChartTicker) {
+      document.querySelectorAll('.chart-tab').forEach(b => {
+        if (b.classList.contains('active')) {
+          const period = b.textContent.trim();
+          const cached = chartCache[`${currentChartTicker}_${period}`];
+          if (cached) dispatchChart(cached, period);
+          else loadPriceChart(currentChartTicker, period);
+        }
+      });
+    }
   }
 
   function switchChartTab(btn, period) {
@@ -1616,179 +1622,6 @@
 
 
   loadExchangeTicker();
-
-  /* ════════════════════════════════════════════════
-     CHART ANALYSIS — image upload + Claude vision
-  ════════════════════════════════════════════════ */
-
-  let _chartBase64 = null;
-  let _chartMime   = 'image/png';
-
-  const ALLOWED_IMAGE_TYPES = ['image/png','image/jpeg','image/jpg','image/gif','image/webp','image/bmp','image/tiff'];
-
-  function handleChartFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      showChartError('Please upload an image file (PNG, JPG, GIF, WEBP, BMP).');
-      event.target.value = '';
-      return;
-    }
-    loadChartFile(file);
-  }
-
-  function handleChartDrop(event) {
-    event.preventDefault();
-    document.getElementById('chart-dropzone').classList.remove('dragover');
-    const file = event.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) loadChartFile(file);
-  }
-
-  function showChartError(msg) {
-    const el = document.getElementById('chart-error');
-    el.textContent = msg;
-    el.style.display = 'block';
-  }
-
-  function loadChartFile(file) {
-    _chartMime = file.type || 'image/png';
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target.result;
-      _chartBase64 = dataUrl.split(',')[1];
-      document.getElementById('chart-preview-img').src = dataUrl;
-      document.getElementById('chart-dropzone').style.display    = 'none';
-      document.getElementById('chart-preview-wrap').style.display = 'block';
-      document.getElementById('chart-result').style.display       = 'none';
-      document.getElementById('chart-error').style.display        = 'none';
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function clearChart() {
-    _chartBase64 = null;
-    document.getElementById('chart-file-input').value     = '';
-    document.getElementById('chart-preview-img').src      = '';
-    document.getElementById('chart-dropzone').style.display     = 'block';
-    document.getElementById('chart-preview-wrap').style.display = 'none';
-    document.getElementById('chart-result').style.display       = 'none';
-    document.getElementById('chart-error').style.display        = 'none';
-    document.getElementById('chart-loading').style.display      = 'none';
-    document.getElementById('chart-ticker-input').value         = '';
-    document.getElementById('chart-timeframe-select').value     = '';
-    document.getElementById('chart-question-input').value       = '';
-  }
-
-  async function analyzeChart() {
-    if (!_chartBase64) return;
-
-    const ticker    = document.getElementById('chart-ticker-input').value.trim().toUpperCase();
-    const timeframe = document.getElementById('chart-timeframe-select').value;
-    const question  = document.getElementById('chart-question-input').value.trim();
-
-    document.getElementById('chart-result').style.display        = 'none';
-    document.getElementById('chart-error').style.display         = 'none';
-    document.getElementById('chart-loading').style.display       = 'none';
-    document.getElementById('chart-inline-loading').style.display = 'flex';
-    document.getElementById('chart-btn-icon').style.display       = 'none';
-    document.getElementById('chart-btn-label').textContent        = 'Analysing…';
-
-    const btn = document.getElementById('chart-analyze-btn');
-    btn.disabled = true;
-
-    const contextParts = [];
-    if (ticker)    contextParts.push(`Ticker: ${ticker}`);
-    if (timeframe) contextParts.push(`Timeframe: ${timeframe}`);
-    if (question)  contextParts.push(`User question: ${question}`);
-    const context = contextParts.length ? contextParts.join(' | ') : 'No additional context provided.';
-
-    const prompt = `You are an expert technical analyst. Analyse this candlestick chart for a retail trader on eToro.
-
-Context: ${context}
-
-Provide a structured technical analysis covering:
-
-1. **Trend** — Overall direction (uptrend/downtrend/sideways), strength, and momentum
-2. **Key levels** — Support and resistance levels visible on the chart
-3. **Candlestick patterns** — Any significant patterns you can identify (name them)
-4. **Chart patterns** — Broader formations (head & shoulders, flags, wedges, triangles etc.)
-5. **Signal** — Your overall read: Bullish / Bearish / Neutral with brief reasoning
-6. **eToro trade idea** — Specific actionable suggestion with entry zone, target, and where to consider a stop loss
-
-Be specific about price levels if visible. Keep each section concise. End with a one-line summary verdict.`;
-
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          ticker:     '__chart__',
-          chartImage: _chartBase64,
-          chartMime:  _chartMime,
-          chartPrompt: prompt
-        })
-      });
-
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-      const data = await res.json();
-
-      if (data.error) throw new Error(data.error);
-
-      renderChartResult(data.analysis || data.text || data);
-    } catch (err) {
-      document.getElementById('chart-loading').style.display = 'none';
-      const errEl = document.getElementById('chart-error');
-      errEl.textContent = err.message || 'Analysis failed. Please try again.';
-      errEl.style.display = 'block';
-    } finally {
-      btn.disabled = false;
-      document.getElementById('chart-inline-loading').style.display = 'none';
-      document.getElementById('chart-btn-icon').style.display       = '';
-      document.getElementById('chart-btn-label').textContent        = 'Analyse chart';
-    }
-  }
-
-  function renderChartResult(text) {
-    document.getElementById('chart-loading').style.display = 'none';
-
-    // Convert markdown to HTML safely without regex escape issues
-    let out = '';
-    const lines = text.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
-      // Bold **text**
-      line = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      // Numbered section headings: "1. **Title**"
-      const secMatch = line.match(/^(\d+)\.\s+\*\*(.+?)\*\*\s*(.*)$/);
-      if (secMatch) {
-        out += '<div class="chart-section"><div class="chart-section-title">' + secMatch[2] + '</div>';
-        const body = secMatch[3] ? secMatch[3].replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') : '';
-        out += '<div class="chart-section-body">' + (body || '&nbsp;') + '</div></div>';
-        continue;
-      }
-      // H3/H4 headings: "### Title"
-      const hMatch = line.match(/^#{1,4}\s+(.+)$/);
-      if (hMatch) {
-        out += '<h4 style="color:var(--text);font-size:13px;font-weight:600;margin:0.75rem 0 0.25rem;">' + hMatch[1] + '</h4>';
-        continue;
-      }
-      // Blank lines → paragraph break
-      if (line.trim() === '') {
-        out += '<br>';
-        continue;
-      }
-      out += line + '<br>';
-    }
-
-    document.getElementById('chart-result-body').innerHTML = out;
-    document.getElementById('chart-result').style.display = 'block';
-    document.getElementById('chart-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-
   initSections();
 
   // Refresh movers every 5 minutes
