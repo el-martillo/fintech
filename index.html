@@ -682,10 +682,16 @@
                    placeholder="e.g. Is this a bullish reversal? Where's support?" />
           </div>
         </div>
-        <button class="chart-analyze-btn" id="chart-analyze-btn" onclick="analyzeChart()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Analyse chart
-        </button>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <button class="chart-analyze-btn" id="chart-analyze-btn" onclick="analyzeChart()">
+            <svg id="chart-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span id="chart-btn-label">Analyse chart</span>
+          </button>
+          <div id="chart-inline-loading" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);">
+            <div class="spinner-sm"></div>
+            Analysing chart…
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1618,9 +1624,17 @@
   let _chartBase64 = null;
   let _chartMime   = 'image/png';
 
+  const ALLOWED_IMAGE_TYPES = ['image/png','image/jpeg','image/jpg','image/gif','image/webp','image/bmp','image/tiff'];
+
   function handleChartFile(event) {
     const file = event.target.files[0];
-    if (file) loadChartFile(file);
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      showChartError('Please upload an image file (PNG, JPG, GIF, WEBP, BMP).');
+      event.target.value = '';
+      return;
+    }
+    loadChartFile(file);
   }
 
   function handleChartDrop(event) {
@@ -1628,6 +1642,12 @@
     document.getElementById('chart-dropzone').classList.remove('dragover');
     const file = event.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) loadChartFile(file);
+  }
+
+  function showChartError(msg) {
+    const el = document.getElementById('chart-error');
+    el.textContent = msg;
+    el.style.display = 'block';
   }
 
   function loadChartFile(file) {
@@ -1666,9 +1686,12 @@
     const timeframe = document.getElementById('chart-timeframe-select').value;
     const question  = document.getElementById('chart-question-input').value.trim();
 
-    document.getElementById('chart-result').style.display  = 'none';
-    document.getElementById('chart-error').style.display   = 'none';
-    document.getElementById('chart-loading').style.display = 'flex';
+    document.getElementById('chart-result').style.display        = 'none';
+    document.getElementById('chart-error').style.display         = 'none';
+    document.getElementById('chart-loading').style.display       = 'none';
+    document.getElementById('chart-inline-loading').style.display = 'flex';
+    document.getElementById('chart-btn-icon').style.display       = 'none';
+    document.getElementById('chart-btn-label').textContent        = 'Analysing…';
 
     const btn = document.getElementById('chart-analyze-btn');
     btn.disabled = true;
@@ -1722,6 +1745,9 @@ Be specific about price levels if visible. Keep each section concise. End with a
       errEl.style.display = 'block';
     } finally {
       btn.disabled = false;
+      document.getElementById('chart-inline-loading').style.display = 'none';
+      document.getElementById('chart-btn-icon').style.display       = '';
+      document.getElementById('chart-btn-label').textContent        = 'Analyse chart';
     }
   }
 
