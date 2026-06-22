@@ -72,7 +72,7 @@ function renderRecCard(r, ai) {
     : `<span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>${conf ? `<span style="font-size:10px;color:var(--text-dim);">${conf} confidence</span>` : ''}`;
 
   return `
-    <div class="rec-card${loading ? ' analysing' : ''}" data-ticker="${r.ticker}">
+    <div class="rec-card${loading ? ' analysing' : ''}${isFav ? ' fav-active' : ''}" data-ticker="${r.ticker}">
       <div class="rec-top">
         <div>
           <div class="rec-ticker">${r.ticker.replace('-USD','')}</div>

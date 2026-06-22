@@ -41,6 +41,10 @@ async function toggleFavourite(ticker, name, e) {
   const isFav = _favourites.has(ticker);
   if (isFav) { _favourites.delete(ticker); await db.from('stock_favourites').delete().eq('user_id', _currentUser.id).eq('ticker', ticker); }
   else       { _favourites.add(ticker);    await db.from('stock_favourites').upsert({ user_id: _currentUser.id, ticker, name }, { onConflict: 'user_id,ticker' }); }
+  // Toggle fav-active on the card itself (amber border + background)
+  document.querySelectorAll(`[data-ticker="${ticker}"]`).forEach(card => {
+    card.classList.toggle('fav-active', !isFav);
+  });
   document.querySelectorAll(`[data-ticker="${ticker}"] .fav-btn`).forEach(btn => {
     btn.classList.toggle('fav-active', !isFav);
     const svg = btn.querySelector('svg');
