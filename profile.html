@@ -699,7 +699,10 @@
           <div style="margin-top:1rem;">
             <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Dashboard analyses (last 30 days)</div>
             <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">BUY/SELL signals from manual ticker lookups on the dashboard.</div>
-            <div id="signal-history-chart" style="min-height:56px;display:flex;align-items:flex-end;gap:3px;"></div>
+            <div style="position:relative;">
+              <div id="signal-history-tooltip" style="display:none;position:absolute;top:-52px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:11px;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:10;text-align:center;"></div>
+              <div id="signal-history-chart" style="min-height:56px;display:flex;align-items:flex-end;gap:2px;"></div>
+            </div>
             <div style="display:flex;gap:14px;margin-top:8px;">
               <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:2px;background:var(--green);display:inline-block;"></span>BUY</span>
               <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:2px;background:var(--red);display:inline-block;"></span>SELL</span>
@@ -1142,15 +1145,19 @@
 
   function renderSignalHistoryChart(rows) {
     const el = document.getElementById('signal-history-chart');
+    const tip = document.getElementById('signal-history-tooltip');
     if (!el) return;
-    if (!rows.length) { el.innerHTML = '<span style="font-size:12px;color:var(--text-dim);font-style:italic;">No analysis history yet.</span>'; return; }
+    if (!rows.length) {
+      el.innerHTML = '<span style="font-size:12px;color:var(--text-dim);font-style:italic;">No analysis history yet. Analyse a stock on the dashboard to get started.</span>';
+      return;
+    }
 
     // Build daily buckets for last 30 days
     const buckets = {};
     const today = new Date(); today.setHours(0,0,0,0);
     for (let i = 29; i >= 0; i--) {
       const d = new Date(today); d.setDate(d.getDate() - i);
-      buckets[d.toISOString().slice(0,10)] = { buy: 0, sell: 0 };
+      buckets[d.toISOString().slice(0,10)] = { buy: 0, sell: 0, date: new Date(d) };
     }
     rows.forEach(r => {
       const day = (r.created_at || '').slice(0,10);
@@ -1162,19 +1169,69 @@
 
     const days   = Object.entries(buckets);
     const maxVal = Math.max(1, ...days.map(([,v]) => v.buy + v.sell));
-    const barH   = 48;
+    const barH   = 52;
 
-    el.innerHTML = days.map(([day, v]) => {
-      const total = v.buy + v.sell;
-      const buyH  = total ? Math.round((v.buy  / maxVal) * barH) : 0;
-      const sellH = total ? Math.round((v.sell / maxVal) * barH) : 0;
-      const title = `${day}: ${v.buy} BUY, ${v.sell} SELL`;
-      return `<div title="${title}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1px;height:${barH}px;cursor:default;">
-        ${buyH  ? `<div style="width:100%;height:${buyH}px;background:var(--green);border-radius:2px 2px 0 0;opacity:0.85;"></div>` : ''}
-        ${sellH ? `<div style="width:100%;height:${sellH}px;background:var(--red);border-radius:${buyH?'0':'2px 2px'} 0 0;opacity:0.85;"></div>` : ''}
-        ${!total ? `<div style="width:100%;height:2px;background:var(--border);border-radius:1px;"></div>` : ''}
-      </div>`;
+    // Show a month label every time the month changes
+    let lastMonth = null;
+
+    el.innerHTML = days.map(([day, v], idx) => {
+      const total   = v.buy + v.sell;
+      const buyH    = total ? Math.round((v.buy  / maxVal) * barH) : 0;
+      const sellH   = total ? Math.round((v.sell / maxVal) * barH) : 0;
+      const d       = v.date;
+      const month   = d.toLocaleDateString('en-GB', { month: 'short' });
+      const dayNum  = d.getDate();
+      const showLbl = month !== lastMonth;
+      if (showLbl) lastMonth = month;
+
+      const activeCls = total ? 'style="opacity:1;"' : 'style="opacity:0.35;"';
+
+      return `<div
+          data-day="${day}"
+          data-buy="${v.buy}"
+          data-sell="${v.sell}"
+          data-label="${d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}"
+          onmouseenter="showChartTip(this)"
+          onmouseleave="hideChartTip()"
+          style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1px;height:${barH + 14}px;cursor:default;padding-bottom:2px;"
+          ${activeCls}>
+          <div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;height:${barH}px;">
+            ${buyH  ? `<div style="width:100%;height:${buyH}px;background:var(--green);border-radius:2px 2px 0 0;opacity:0.85;"></div>` : ''}
+            ${sellH ? `<div style="width:100%;height:${sellH}px;background:var(--red);border-radius:${buyH?'0':'2px 2px'} 0 0;opacity:0.85;"></div>` : ''}
+            ${!total ? `<div style="width:100%;height:2px;background:var(--border);border-radius:1px;margin-bottom:0;"></div>` : ''}
+          </div>
+          <div style="font-size:9px;color:${showLbl ? 'var(--text-dim)' : 'transparent'};line-height:1;margin-top:2px;white-space:nowrap;">${showLbl ? month : '·'}</div>
+        </div>`;
     }).join('');
+  }
+
+  function showChartTip(el) {
+    const tip = document.getElementById('signal-history-tooltip');
+    if (!tip) return;
+    const label = el.dataset.label;
+    const buy   = parseInt(el.dataset.buy)  || 0;
+    const sell  = parseInt(el.dataset.sell) || 0;
+    const total = buy + sell;
+    if (!total) {
+      tip.style.display = 'none';
+      return;
+    }
+    tip.innerHTML = `<span style="color:var(--text-muted);font-weight:600;">${label}</span><br>`
+      + (buy  ? `<span style="color:var(--green);">▲ ${buy} BUY</span>  ` : '')
+      + (sell ? `<span style="color:var(--red);">▼ ${sell} SELL</span>` : '');
+
+    // Position tooltip above the hovered bar
+    const chartEl = document.getElementById('signal-history-chart');
+    const barRect  = el.getBoundingClientRect();
+    const chartRect = chartEl.getBoundingClientRect();
+    const leftPct = ((barRect.left + barRect.width / 2 - chartRect.left) / chartRect.width) * 100;
+    tip.style.left = `${leftPct}%`;
+    tip.style.display = 'block';
+  }
+
+  function hideChartTip() {
+    const tip = document.getElementById('signal-history-tooltip');
+    if (tip) tip.style.display = 'none';
   }
 
   async function loadWhatsApp(user) {
