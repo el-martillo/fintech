@@ -515,7 +515,10 @@
   });
 
   /* ── Auth gate ── */
+  let _pageShown = false;
   function showPage() {
+    if (_pageShown) return;
+    _pageShown = true;
     $('auth-gate').style.display = 'none';
     $('recs-page').style.display = 'block';
     loadRecommendations();
