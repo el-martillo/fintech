@@ -569,37 +569,13 @@
   const liveMarketData = {};
 
   /* ── Price Alerts ── */
-  let _alerts = new Set(); // Set of tickers with active alerts
-
-  async function loadAlerts() {
-    if (!_currentUser) return;
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__get-alerts__', userId: _currentUser.id })
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      _alerts = new Set((data.alerts || []).filter(a => !a.triggered).map(a => a.ticker));
-      // Refresh bell icons on visible cards
-      document.querySelectorAll('.alert-btn').forEach(btn => {
-        const card = btn.closest('[data-ticker]');
-        if (!card) return;
-        const t = card.dataset.ticker;
-        const active = _alerts.has(t);
-        btn.classList.toggle('alert-active', active);
-        const svg = btn.querySelector('svg');
-        if (svg) svg.setAttribute('fill', active ? 'rgba(108,99,255,0.2)' : 'none');
-      });
-    } catch { /* silent */ }
-  }
+  let _alerts = new Set();
+  let _whatsappNumber = '';
+  let _callmebotKey = '';
 
   function openAlertModal(ticker, name, currentPrice, e) {
     if (e) e.stopPropagation();
-    // Remove existing modal if any
     document.getElementById('alert-modal-overlay')?.remove();
-
     const existing = _alerts.has(ticker);
     const overlay = document.createElement('div');
     overlay.id = 'alert-modal-overlay';
@@ -619,7 +595,7 @@
         </div>
         <div class="alert-field">
           <label>Target price ($)</label>
-          <input type="number" id="alert-price" placeholder="e.g. 250.00" step="0.01" min="0" value="${existing ? '' : parseFloat(currentPrice).toFixed(2)}"/>
+          <input type="number" id="alert-price" placeholder="e.g. 250.00" step="0.01" min="0" value="${parseFloat(currentPrice).toFixed(2)}"/>
         </div>
         <div class="alert-field">
           <label>WhatsApp number (with country code)</label>
@@ -629,7 +605,7 @@
           <label>CallMeBot API Key</label>
           <input type="text" id="alert-apikey" placeholder="Your CallMeBot API key" value="${_callmebotKey || ''}"/>
           <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
-            First time? WhatsApp <strong>+34 644 59 72 24</strong> with the message <em>"I allow callmebot to send me messages"</em> — you'll receive your API key instantly. Free, no signup.
+            First time? WhatsApp <strong>+34 644 81 58 78</strong> with <em>"I allow callmebot to send me messages"</em> — free, no signup.
           </div>
         </div>
         <div id="alert-msg" style="display:none;font-size:12px;padding:7px 10px;border-radius:6px;margin-top:8px;"></div>
@@ -642,14 +618,28 @@
     document.body.appendChild(overlay);
   }
 
-  let _whatsappNumber = '';
-  let _callmebotKey = '';
+  async function loadAlerts() {
+    if (!_currentUser) return;
+    try {
+      const { data } = await db.from('price_alerts').select('ticker').eq('user_id', _currentUser.id).eq('triggered', false);
+      _alerts = new Set((data || []).map(a => a.ticker));
+      // Refresh bell icons
+      document.querySelectorAll('.alert-btn').forEach(btn => {
+        const card = btn.closest('[data-ticker]');
+        if (!card) return;
+        const active = _alerts.has(card.dataset.ticker);
+        btn.classList.toggle('alert-active', active);
+        const svg = btn.querySelector('svg');
+        if (svg) svg.setAttribute('fill', active ? 'rgba(108,99,255,0.2)' : 'none');
+      });
+    } catch { /* silent */ }
+  }
 
   async function saveAlert(ticker, name) {
-    const price   = parseFloat(document.getElementById('alert-price')?.value);
-    const dir     = document.getElementById('alert-direction')?.value;
-    const phone   = document.getElementById('alert-phone')?.value?.trim();
-    const apikey  = document.getElementById('alert-apikey')?.value?.trim();
+    const price  = parseFloat(document.getElementById('alert-price')?.value);
+    const dir    = document.getElementById('alert-direction')?.value;
+    const phone  = document.getElementById('alert-phone')?.value?.trim();
+    const apikey = document.getElementById('alert-apikey')?.value?.trim();
 
     if (!price || price <= 0) { _alertMsg('Enter a valid price.', 'err'); return; }
     if (!phone || !phone.startsWith('+')) { _alertMsg('Enter phone with country code e.g. +447911123456', 'err'); return; }
@@ -657,35 +647,31 @@
 
     _whatsappNumber = phone;
     _callmebotKey   = apikey;
-    if (_currentUser) {
-      db.from('profiles').upsert({ id: _currentUser.id, whatsapp_number: phone, callmebot_apikey: apikey }, { onConflict: 'id' });
-    }
+
+    // Save phone + apikey to profile
+    db.from('profiles').upsert({ id: _currentUser.id, whatsapp_number: phone, callmebot_apikey: apikey }, { onConflict: 'id' });
 
     _alertMsg('Saving…', 'ok');
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__set-alert__', alertTicker: ticker, alertName: name, targetPrice: price, direction: dir, userId: _currentUser.id })
-      });
-      if (!res.ok) throw new Error('Failed');
+      const { error } = await db.from('price_alerts').upsert({
+        user_id: _currentUser.id, ticker, name: name || ticker,
+        target_price: price, direction: dir || 'above',
+        triggered: false,
+      }, { onConflict: 'user_id,ticker' });
+      if (error) throw error;
+
       _alerts.add(ticker);
-      // Update bell icons
       document.querySelectorAll(`[data-ticker="${ticker}"] .alert-btn`).forEach(btn => {
         btn.classList.add('alert-active');
         const svg = btn.querySelector('svg'); if (svg) svg.setAttribute('fill', 'rgba(108,99,255,0.2)');
       });
-      _alertMsg(`✓ Alert set for $${price} (${dir})`, 'ok');
-      setTimeout(() => document.getElementById('alert-modal-overlay')?.remove(), 1200);
-    } catch { _alertMsg('Failed to save alert — try again.', 'err'); }
+      _alertMsg(`✓ Alert set — notify when ${dir === 'below' ? 'below' : 'above'} $${price}`, 'ok');
+      setTimeout(() => document.getElementById('alert-modal-overlay')?.remove(), 1400);
+    } catch(e) { _alertMsg('Failed to save — ' + (e.message || 'try again.'), 'err'); }
   }
 
   async function deleteAlert(ticker) {
-    await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({ ticker: '__delete-alert__', alertTicker: ticker, userId: _currentUser.id })
-    });
+    await db.from('price_alerts').delete().eq('user_id', _currentUser.id).eq('ticker', ticker);
     _alerts.delete(ticker);
     document.querySelectorAll(`[data-ticker="${ticker}"] .alert-btn`).forEach(btn => {
       btn.classList.remove('alert-active');
@@ -1217,6 +1203,8 @@
   function refreshRecs() {
     sessionStorage.removeItem(RECS_CACHE_KEY);
     loadRecommendations(true);
+    loadFavourites();
+    loadSavedSearches();
   }
 
   /* ── Stock Lookup panel ── */
