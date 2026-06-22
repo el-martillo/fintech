@@ -770,9 +770,7 @@
           <div class="profile-field">
             <label>CallMeBot API Key</label>
             <input type="text" id="wa-apikey" placeholder="Your CallMeBot API key" autocomplete="off"/>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.5;">
-              One-time setup: WhatsApp <strong>+34 644 81 58 78</strong> with the message <em>"I allow callmebot to send me messages"</em> — you'll receive your API key within 2 minutes. If no response, try <strong>+34 621 331 709</strong>.
-            </div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.5;">One-time setup: WhatsApp <strong>+34 644 81 58 78</strong> with <em>"I allow callmebot to send me messages"</em> — API key arrives within 2 minutes. Backup: <strong>+34 621 331 709</strong>.</div>
           </div>
           <div class="profile-btn-row">
             <button class="profile-btn" onclick="saveWhatsApp()">Save</button>
@@ -788,7 +786,7 @@
           <div class="profile-card-title">eToro Agent API</div>
         </div>
         <div class="profile-card-body">
-          <p style="font-size:12px;color:var(--text-dim);margin-bottom:0.9rem;line-height:1.6;">Connect your eToro API keys to use <a href="agent-portfolios.html" style="color:var(--accent);text-decoration:none;">Agent Portfolios</a> — view live positions and P&amp;L with AI signals. Get your keys from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">eToro Settings → Trade</a>.</p>
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:0.9rem;line-height:1.6;">Connect your eToro API keys to use <a href="agent-portfolios.html" style="color:var(--accent);text-decoration:none;">Agent Portfolios</a> — view live positions and P&amp;L with AI signals. Get keys from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">eToro Settings → Trade</a>.</p>
           <div class="profile-msg error"   id="etoro-error"></div>
           <div class="profile-msg success" id="etoro-success"></div>
           <div class="profile-field">
@@ -1245,18 +1243,11 @@
     }
   }
 
-  /* ── Sign out ── */
-  async function handleSignOutFromProfile() {
-    await db.auth.signOut();
-    window.location.href = 'index.html';
-  }
-
   /* ── WhatsApp / Price alerts ── */
   async function loadWhatsApp(user) {
     const { data } = await db.from('profiles').select('whatsapp_number, callmebot_apikey').eq('id', user.id).single();
-    if (data?.whatsapp_number) document.getElementById('wa-number').value  = data.whatsapp_number;
-    if (data?.callmebot_apikey) document.getElementById('wa-apikey').value = data.callmebot_apikey;
-
+    if (data?.whatsapp_number)  document.getElementById('wa-number').value  = data.whatsapp_number;
+    if (data?.callmebot_apikey) document.getElementById('wa-apikey').value  = data.callmebot_apikey;
     const { data: alerts } = await db.from('price_alerts').select('*').eq('user_id', user.id).eq('triggered', false).order('created_at', { ascending: false });
     const listEl = document.getElementById('wa-alerts-list');
     if (!listEl) return;
@@ -1264,7 +1255,7 @@
       listEl.innerHTML = '<p style="font-size:12px;color:var(--text-dim);font-style:italic;">No active price alerts. Set them from any stock card on the Recommendations page.</p>';
       return;
     }
-    listEl.innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Active alerts (${alerts.length})</div>` +
+    listEl.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Active alerts (' + alerts.length + ')</div>' +
       alerts.map(a => `
         <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;">
           <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);min-width:52px;">${a.ticker.replace('-USD','')}</span>
@@ -1304,6 +1295,12 @@
     const { error } = await db.from('profiles').upsert({ id: _currentUser.id, etoro_api_key: apiKey, etoro_user_key: userKey }, { onConflict: 'id' });
     if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
     else { okEl.textContent = '✓ eToro API keys saved.'; okEl.style.display = 'block'; }
+  }
+
+  /* ── Sign out ── */
+  async function handleSignOutFromProfile() {
+    await db.auth.signOut();
+    window.location.href = 'index.html';
   }
 
   /* ── Init ── */
