@@ -1436,7 +1436,7 @@
   function _updateChartTitles() {
     const activeTab = document.querySelector('.chart-tabs .chart-tab.active');
     const period = activeTab ? activeTab.textContent.trim() : '';
-    const periodLabel = { '1D':'5 Days', '5D':'1 Month', '1M':'3 Months', '3M':'6 Months', '6M':'1 Year', '1Y':'2 Years' }[period] || period;
+    const periodLabel = { '1D':'Today', '5D':'5 Days', '1M':'1 Month', '3M':'3 Months', '6M':'6 Months', '1Y':'1 Year' }[period] || period;
     const el = $('chart-title-ticker');
     const sub = $('chart-title-sub');
     if (el) el.textContent = currentChartTicker ? `${currentChartTicker} — Price History` : 'Price History';
@@ -1447,12 +1447,12 @@
 
   // Maps UI tab labels to Yahoo Finance range/interval params
   const CHART_PARAMS = {
-    '1D': { range: '5d',   interval: '1d' },
-    '5D': { range: '1mo',  interval: '1d' },
-    '1M': { range: '3mo',  interval: '1d' },
-    '3M': { range: '6mo',  interval: '1d' },
-    '6M': { range: '1y',   interval: '1d' },
-    '1Y': { range: '2y',   interval: '1d' },
+    '1D': { range: '1d',   interval: '5m'  },
+    '5D': { range: '5d',   interval: '30m' },
+    '1M': { range: '1mo',  interval: '1d'  },
+    '3M': { range: '3mo',  interval: '1d'  },
+    '6M': { range: '6mo',  interval: '1d'  },
+    '1Y': { range: '1y',   interval: '1d'  },
   };
 
   async function loadPriceChart(ticker, period) {
@@ -1527,7 +1527,11 @@
     const clr   = isUp ? '#22c55e' : '#ef4444';
     const sign  = isUp ? '+' : '';
     const pct   = (((last - first) / first) * 100).toFixed(2);
-    const fmt   = ts => new Date(ts).toLocaleDateString('en-GB', {day:'numeric',month:'short'});
+    const fmt   = ts => {
+      if (period === '1D') return new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      if (period === '5D') return new Date(ts).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    };
     footer.innerHTML = `<span style="color:var(--text-dim);font-size:11px;">${fmt(candles[0].t)} → ${fmt(candles[candles.length-1].t)}</span><span style="font-size:12px;font-weight:600;color:${clr};margin-left:auto;">${sign}${pct}%</span>`;
   }
 
@@ -1543,12 +1547,15 @@
   function _fmtLabel(ts, period) {
     const d = new Date(ts);
     if (period === '1D') {
+      // Intraday — show time only
       return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     }
     if (period === '5D') {
-      return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      // Multi-day intraday — show day + time
+      return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' }) + ' ' +
+             d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     }
-    // 1M, 3M, 6M, 1Y — day + month is enough
+    // 1M, 3M, 6M, 1Y — daily candles, day + month is enough
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   }
 
