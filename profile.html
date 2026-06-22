@@ -416,7 +416,7 @@
 
     /* Stats mini row */
     .profile-stats {
-      display: grid; grid-template-columns: repeat(3, 1fr);
+      display: grid; grid-template-columns: repeat(4, 1fr);
       gap: 8px; margin-bottom: 1rem;
     }
     .profile-stat {
@@ -692,6 +692,10 @@
             <div class="profile-stat">
               <div class="profile-stat-value" id="stat-sells">—</div>
               <div class="profile-stat-label">Sell signals</div>
+            </div>
+            <div class="profile-stat">
+              <div class="profile-stat-value" id="stat-favs" style="color:var(--amber);">—</div>
+              <div class="profile-stat-label">Favourites</div>
             </div>
           </div>
         </div>
@@ -1076,18 +1080,20 @@
   }
 
   async function loadStats(user) {
-    const { data } = await db
-      .from('stock_analyses')
-      .select('signal')
-      .eq('user_id', user.id);
+    const [analysesRes, favsRes] = await Promise.all([
+      db.from('stock_analyses').select('signal').eq('user_id', user.id),
+      db.from('stock_favourites').select('ticker', { count: 'exact', head: true }).eq('user_id', user.id)
+    ]);
 
-    const rows  = data || [];
+    const rows  = analysesRes.data || [];
     const buys  = rows.filter(r => r.signal === 'BUY').length;
     const sells = rows.filter(r => r.signal === 'SELL').length;
+    const favs  = favsRes.count ?? 0;
 
     document.getElementById('stat-analyses').textContent = rows.length;
     document.getElementById('stat-buys').textContent     = buys;
     document.getElementById('stat-sells').textContent    = sells;
+    document.getElementById('stat-favs').textContent     = favs;
   }
 
   async function loadRecentSearches() {
