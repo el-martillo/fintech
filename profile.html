@@ -812,12 +812,9 @@
           <div class="profile-msg error"   id="etoro-error"></div>
           <div class="profile-msg success" id="etoro-success"></div>
           <div class="profile-field">
-            <label>API Key (x-api-key)</label>
-            <input type="password" id="etoro-api-key-profile" placeholder="Your eToro API key" autocomplete="off"/>
-          </div>
-          <div class="profile-field">
-            <label>User Key (x-user-key)</label>
-            <input type="password" id="etoro-user-key-profile" placeholder="Your eToro user key" autocomplete="off"/>
+            <label>Agent Portfolio User Key</label>
+            <input type="password" id="etoro-user-key-profile" placeholder="Your agent-portfolio user key" autocomplete="off"/>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">This is the token generated when you created your agent-portfolio at <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">eToro Settings → Trade</a>.</div>
           </div>
           <div class="profile-btn-row">
             <button class="profile-btn" onclick="saveEtoroKeys()">Save keys</button>
@@ -1414,20 +1411,17 @@
 
   /* ── eToro API keys ── */
   async function loadEtoroKeys(user) {
-    const { data } = await db.from('profiles').select('etoro_api_key, etoro_user_key').eq('id', user.id).single();
-    if (data?.etoro_api_key)  document.getElementById('etoro-api-key-profile').value  = '•'.repeat(20);
+    const { data } = await db.from('profiles').select('etoro_user_key').eq('id', user.id).single();
     if (data?.etoro_user_key) document.getElementById('etoro-user-key-profile').value = '•'.repeat(20);
   }
 
   async function saveEtoroKeys() {
-    const apiKey  = document.getElementById('etoro-api-key-profile')?.value?.trim();
     const userKey = document.getElementById('etoro-user-key-profile')?.value?.trim();
     const errEl   = document.getElementById('etoro-error');
     const okEl    = document.getElementById('etoro-success');
     errEl.style.display = 'none'; okEl.style.display = 'none';
-    if (!apiKey  || apiKey.startsWith('•'))  { errEl.textContent = 'Enter your eToro API key.';  errEl.style.display = 'block'; return; }
-    if (!userKey || userKey.startsWith('•')) { errEl.textContent = 'Enter your eToro user key.'; errEl.style.display = 'block'; return; }
-    const { error } = await db.from('profiles').upsert({ id: _currentUser.id, etoro_api_key: apiKey, etoro_user_key: userKey }, { onConflict: 'id' });
+    if (!userKey || userKey.startsWith('•')) { errEl.textContent = 'Enter your agent-portfolio user key.'; errEl.style.display = 'block'; return; }
+    const { error } = await db.from('profiles').upsert({ id: _currentUser.id, etoro_user_key: userKey }, { onConflict: 'id' });
     if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
     else { okEl.textContent = '✓ eToro API keys saved.'; okEl.style.display = 'block'; }
   }

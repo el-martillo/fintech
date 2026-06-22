@@ -522,14 +522,11 @@
         </div>
       </div>
 
-      <!-- API key setup — hidden once keys saved -->
+      <!-- API key setup — hidden once key saved -->
       <div class="setup-card" id="setup-card">
-        <h3>🔑 Connect your eToro API keys</h3>
-        <p>Get your keys from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>. Keys are stored in your profile and proxied server-side — they never appear in the browser.</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="setup-field"><label>API Key (x-api-key)</label><input type="password" id="etoro-api-key" placeholder="Your eToro API key" autocomplete="off"/></div>
-          <div class="setup-field"><label>User Key (x-user-key)</label><input type="password" id="etoro-user-key" placeholder="Your eToro user key" autocomplete="off"/></div>
-        </div>
+        <h3>🔑 Connect your eToro Agent Portfolio key</h3>
+        <p>Paste your <strong>agent-portfolio user key</strong> (created at <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>). This is the token generated when you created your agent-portfolio — not your main account API key.</p>
+        <div class="setup-field"><label>Agent Portfolio User Key</label><input type="password" id="etoro-user-key" placeholder="Your agent-portfolio user key" autocomplete="off"/></div>
         <div class="setup-msg" id="setup-msg"></div>
         <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;">
           <button onclick="saveApiKeys()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:var(--radius);font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:opacity 0.15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Save &amp; connect</button>
@@ -574,19 +571,15 @@
   const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
   const ADMIN_EMAILS = ['giacomo.medici@gmail.com'];
-
   const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
-  });
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true } });
   const $ = id => document.getElementById(id);
   const isAdmin = () => ADMIN_EMAILS.includes(_currentUser?.email);
 
-  let _currentUser = null;
-  let _panelOpen   = false;
-  let _etoroApiKey  = '';
+  let _currentUser  = null;
+  let _panelOpen    = false;
   let _etoroUserKey = '';
-  let _env = 'real';
+  let _equity       = 0; // current portfolio equity for % calculations
 
   /* ── Theme ── */
   function toggleTheme() {
@@ -605,44 +598,28 @@
     });
   }
 
-  /* ── Auth panel ── */
+  /* ── Auth panel (compact) ── */
   function toggleAuthPanel() { _panelOpen ? closeAuthPanel() : openAuthPanel(); }
-  function openAuthPanel() { $('auth-dropdown').classList.add('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','true'); _panelOpen = true; setTimeout(() => document.addEventListener('click', _outsideClick), 0); }
-  function closeAuthPanel() { $('auth-dropdown').classList.remove('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','false'); _panelOpen = false; document.removeEventListener('click', _outsideClick); adpClearMsg(); }
-  function _outsideClick(e) { if (!e.target.closest('.auth-trigger-wrap')) closeAuthPanel(); }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuthPanel(); });
-
-  function adpTab(tab) { adpClearMsg(); ['signin','signup','reset'].forEach(t => { $(('adp-' + t)).style.display = t === tab ? 'block' : 'none'; }); $('adp-tabs')?.style.setProperty('display', tab === 'reset' ? 'none' : 'flex'); ['signin','signup'].forEach(t => { $('tab-' + t)?.classList.toggle('active', t === tab); }); }
-  function adpClearMsg() { const e=$('adp-err'),s=$('adp-ok'); if(e){e.style.display='none';e.textContent='';} if(s){s.style.display='none';s.textContent='';} }
-  function adpErr(msg){const el=$('adp-err');if(!el)return;el.textContent=msg;el.style.display='block';$('adp-ok').style.display='none';}
-  function adpOk(msg){const el=$('adp-ok');if(!el)return;el.textContent=msg;el.style.display='block';$('adp-err').style.display='none';}
-  function adpSpin(id,loading,label){const b=$(id);if(!b)return;b.disabled=loading;b.innerHTML=loading?'<span class="adp-spin"></span>':label;}
+  function openAuthPanel()  { $('auth-dropdown').classList.add('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','true'); _panelOpen=true; setTimeout(()=>document.addEventListener('click',_outsideClick),0); }
+  function closeAuthPanel() { $('auth-dropdown').classList.remove('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','false'); _panelOpen=false; document.removeEventListener('click',_outsideClick); adpClearMsg(); }
+  function _outsideClick(e) { if(!e.target.closest('.auth-trigger-wrap')) closeAuthPanel(); }
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeAuthPanel(); });
+  function adpTab(t){adpClearMsg();['signin','signup','reset'].forEach(x=>{$('adp-'+x).style.display=x===t?'block':'none';});$('adp-tabs')?.style.setProperty('display',t==='reset'?'none':'flex');['signin','signup'].forEach(x=>{$('tab-'+x)?.classList.toggle('active',x===t);});}
+  function adpClearMsg(){const e=$('adp-err'),s=$('adp-ok');if(e){e.style.display='none';e.textContent='';}if(s){s.style.display='none';s.textContent='';}}
+  function adpErr(m){const el=$('adp-err');if(!el)return;el.textContent=m;el.style.display='block';$('adp-ok').style.display='none';}
+  function adpOk(m){const el=$('adp-ok');if(!el)return;el.textContent=m;el.style.display='block';$('adp-err').style.display='none';}
+  function adpSpin(id,l,label){const b=$(id);if(!b)return;b.disabled=l;b.innerHTML=l?'<span class="adp-spin"></span>':label;}
   function adpTogglePw(id,btn){const inp=$(id);const show=inp.type==='password';inp.type=show?'text':'password';btn.innerHTML=show?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';}
-  async function adpSignIn(){const email=$('si-email')?.value.trim(),pw=$('si-pw')?.value;if(!email||!pw){adpErr('Please fill in all fields.');return;}adpClearMsg();adpSpin('si-btn',true,'Sign in');try{const{error}=await db.auth.signInWithPassword({email,password:pw});if(error)throw error;}catch(e){adpErr(e.message||'Sign in failed.');adpSpin('si-btn',false,'Sign in');}}
-  async function adpSignUp(){const email=$('su-email')?.value.trim(),pw=$('su-pw')?.value,pw2=$('su-pw2')?.value;if(!email||!pw){adpErr('Please fill in all fields.');return;}if(pw.length<8){adpErr('Password must be at least 8 characters.');return;}if(pw!==pw2){adpErr('Passwords do not match.');return;}adpClearMsg();adpSpin('su-btn',true,'Create account');try{const{error}=await db.auth.signUp({email,password:pw});if(error)throw error;adpOk('✓ Check your email to confirm, then sign in.');}catch(e){adpErr(e.message||'Sign up failed.');}adpSpin('su-btn',false,'Create account');}
-  async function adpResetPw(){const email=$('rp-email')?.value.trim();if(!email){adpErr('Please enter your email.');return;}adpClearMsg();adpSpin('rp-btn',true,'Sending…');try{const{error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});if(error)throw error;adpOk('✓ Reset link sent — check your inbox.');}catch(e){adpErr(e.message||'Could not send reset email.');}adpSpin('rp-btn',false,'Send reset link');}
-  async function adpGoogle(){adpClearMsg();try{const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://el-martillo.github.io/fintech/',queryParams:{access_type:'offline',prompt:'consent'}}});if(error){if(error.message?.includes('provider is not enabled')||error.status===400)adpErr('Google sign-in not yet configured — use email/password for now.');else adpErr(error.message);}}catch(e){adpErr('Google sign-in unavailable — use email/password.');}}
+  async function adpSignIn(){const email=$('si-email')?.value.trim(),pw=$('si-pw')?.value;if(!email||!pw){adpErr('Fill in all fields.');return;}adpClearMsg();adpSpin('si-btn',true,'Sign in');try{const{error}=await db.auth.signInWithPassword({email,password:pw});if(error)throw error;}catch(e){adpErr(e.message||'Sign in failed.');adpSpin('si-btn',false,'Sign in');}}
+  async function adpSignUp(){const email=$('su-email')?.value.trim(),pw=$('su-pw')?.value,pw2=$('su-pw2')?.value;if(!email||!pw){adpErr('Fill in all fields.');return;}if(pw.length<8){adpErr('Password must be at least 8 characters.');return;}if(pw!==pw2){adpErr('Passwords do not match.');return;}adpClearMsg();adpSpin('su-btn',true,'Create account');try{const{error}=await db.auth.signUp({email,password:pw});if(error)throw error;adpOk('✓ Check your email to confirm.');}catch(e){adpErr(e.message||'Sign up failed.');}adpSpin('su-btn',false,'Create account');}
+  async function adpResetPw(){const email=$('rp-email')?.value.trim();if(!email){adpErr('Enter your email.');return;}adpClearMsg();adpSpin('rp-btn',true,'Sending…');try{const{error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});if(error)throw error;adpOk('✓ Reset link sent.');}catch(e){adpErr(e.message||'Could not send.');}adpSpin('rp-btn',false,'Send reset link');}
+  async function adpGoogle(){adpClearMsg();try{const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://el-martillo.github.io/fintech/',queryParams:{access_type:'offline',prompt:'consent'}}});if(error)adpErr(error.message);}catch(e){adpErr('Google sign-in unavailable.');}}
   async function adpSignOut(){closeAuthPanel();await db.auth.signOut();window.location.href='index.html';}
+  function _renderTrigger(user){const wrap=$('auth-trigger-btn');if(!wrap)return;if(!user){wrap.className='navbar-account auth-trigger';wrap.title='Sign in';wrap.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';}else{const ini=(user.email||'U').slice(0,2).toUpperCase();wrap.className='adp-user-btn';wrap.title='My account';wrap.innerHTML=ini;}}
+  function _renderLoggedIn(user){const lo=$('auth-logged-out'),li=$('auth-logged-in');if(!lo||!li)return;if(!user){lo.style.display='block';li.style.display='none';adpTab('signin');return;}lo.style.display='none';li.style.display='block';const ini=(user.email||'U').slice(0,2).toUpperCase();const av=$('adp-avatar'),em=$('adp-user-email'),si=$('adp-user-since');if(av)av.textContent=ini;if(em)em.textContent=user.email;if(si&&user.created_at)si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});const adminLink=$('adp-admin-link');if(adminLink)adminLink.style.display=isAdmin()?'flex':'none';}
+  document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const id=document.activeElement?.id;if(id==='si-email'||id==='si-pw')adpSignIn();else if(id==='su-email'||id==='su-pw'||id==='su-pw2')adpSignUp();else if(id==='rp-email')adpResetPw();});
 
-  function _renderTrigger(user) {
-    const wrap=$('auth-trigger-btn');if(!wrap)return;
-    if(!user){wrap.className='navbar-account auth-trigger';wrap.title='Sign in / Register';wrap.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;}
-    else{const ini=(user.email||'U').slice(0,2).toUpperCase();wrap.className='adp-user-btn';wrap.title='My account';wrap.innerHTML=ini;}
-  }
-  function _renderLoggedIn(user) {
-    const lo=$('auth-logged-out'),li=$('auth-logged-in');if(!lo||!li)return;
-    if(!user){lo.style.display='block';li.style.display='none';adpTab('signin');return;}
-    lo.style.display='none';li.style.display='block';
-    const ini=(user.email||'U').slice(0,2).toUpperCase();
-    const av=$('adp-avatar'),em=$('adp-user-email'),si=$('adp-user-since');
-    if(av)av.textContent=ini;if(em)em.textContent=user.email;
-    if(si&&user.created_at)si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-    const adminLink=$('adp-admin-link');
-    if(adminLink)adminLink.style.display=isAdmin()?'flex':'none';
-  }
-  document.addEventListener('keydown', e => { if(e.key!=='Enter')return; const id=document.activeElement?.id; if(id==='si-email'||id==='si-pw')adpSignIn(); else if(id==='su-email'||id==='su-pw'||id==='su-pw2')adpSignUp(); else if(id==='rp-email')adpResetPw(); });
-
-  /* ── Auth gate — verified server-side via getSession ── */
+  /* ── Auth gate ── */
   async function initPage() {
     const { data: { session } } = await db.auth.getSession();
     if (!session?.user) {
@@ -658,45 +635,36 @@
       history.replaceState(null, '', window.location.pathname);
     $('agent-gate').style.display    = 'none';
     $('agent-content').style.display = 'block';
-    await loadSavedKeys();
-    if (_etoroApiKey && _etoroUserKey) loadPortfolio();
+    await loadSavedKey();
+    if (_etoroUserKey) loadPortfolio();
   }
 
   db.auth.onAuthStateChange((event, session) => {
     _currentUser = session?.user ?? null;
     _renderTrigger(_currentUser);
     _renderLoggedIn(_currentUser);
-    if (event === 'SIGNED_IN') {
-      if (window.location.hash.includes('access_token'))
-        history.replaceState(null, '', window.location.pathname);
-      setTimeout(closeAuthPanel, 700);
-    }
+    if (event === 'SIGNED_IN') { if (window.location.hash.includes('access_token')) history.replaceState(null,'',window.location.pathname); setTimeout(closeAuthPanel,700); }
     if (event === 'SIGNED_OUT') window.location.href = 'index.html';
   });
 
-  /* ── Keys ── */
-  async function loadSavedKeys() {
-    const { data } = await db.from('profiles').select('etoro_api_key, etoro_user_key').eq('id', _currentUser.id).single();
-    if (data?.etoro_api_key)  { _etoroApiKey  = data.etoro_api_key;  $('etoro-api-key').value  = '•'.repeat(24); }
-    if (data?.etoro_user_key) { _etoroUserKey = data.etoro_user_key; $('etoro-user-key').value = '•'.repeat(24); }
-    if (_etoroApiKey && _etoroUserKey) $('setup-card').style.display = 'none';
+  /* ── Key storage — only user key needed, x-api-key is hardcoded server-side ── */
+  async function loadSavedKey() {
+    const { data } = await db.from('profiles').select('etoro_user_key').eq('id', _currentUser.id).single();
+    if (data?.etoro_user_key) {
+      _etoroUserKey = data.etoro_user_key;
+      $('etoro-user-key').value = '•'.repeat(24);
+      $('setup-card').style.display = 'none';
+    }
   }
 
   async function saveApiKeys() {
-    const apiKey  = $('etoro-api-key')?.value?.trim();
     const userKey = $('etoro-user-key')?.value?.trim();
-    const msgEl   = $('setup-msg');
-    if (!apiKey  || apiKey.startsWith('•'))  { showSetupMsg('Enter your API key.',  'err'); return; }
-    if (!userKey || userKey.startsWith('•')) { showSetupMsg('Enter your user key.', 'err'); return; }
+    if (!userKey || userKey.startsWith('•')) { showSetupMsg('Enter your agent-portfolio user key.', 'err'); return; }
     showSetupMsg('Saving…', 'ok');
-    const { error } = await db.from('profiles').upsert(
-      { id: _currentUser.id, etoro_api_key: apiKey, etoro_user_key: userKey },
-      { onConflict: 'id' }
-    );
+    const { error } = await db.from('profiles').upsert({ id: _currentUser.id, etoro_user_key: userKey }, { onConflict: 'id' });
     if (error) { showSetupMsg('Save failed: ' + error.message, 'err'); return; }
-    _etoroApiKey  = apiKey;
     _etoroUserKey = userKey;
-    showSetupMsg('✓ Keys saved — loading portfolio…', 'ok');
+    showSetupMsg('✓ Key saved — loading portfolio…', 'ok');
     setTimeout(() => { $('setup-card').style.display = 'none'; loadPortfolio(); }, 600);
   }
 
@@ -707,9 +675,9 @@
 
   /* ── Environment toggle ── */
   function switchEnv(env) {
-    _env = env;
-    $('env-real').classList.toggle('active', env === 'real');
-    $('env-demo').classList.toggle('active', env === 'demo');
+    // Agent portfolios always use real — toggle is kept for UX but locked to real
+    $('env-real').classList.add('active');
+    $('env-demo').classList.remove('active');
     loadPortfolio();
   }
 
@@ -718,18 +686,57 @@
     const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({ ticker: '__etoro__', etoroPath: path, etoroMethod: method, etoroBody: body, etoroApiKey: _etoroApiKey, etoroUserKey: _etoroUserKey })
+      body: JSON.stringify({ ticker: '__etoro__', etoroPath: path, etoroMethod: method, etoroBody: body, etoroUserKey: _etoroUserKey })
     });
     if (!res.ok) throw new Error(`Proxy error ${res.status}`);
     const json = await res.json();
     if (json.error) throw new Error(json.error);
-    if (json.status >= 400) throw new Error(`eToro ${json.status}: ${JSON.stringify(json.data).slice(0,120)}`);
+    if (json.status >= 400) throw new Error(`eToro ${json.status}: ${JSON.stringify(json.data).slice(0,180)}`);
     return json.data;
+  }
+
+  /* ── Portfolio calculations per eToro SKILL.md ── */
+  function calcPortfolio(cp) {
+    const positions     = cp?.positions     || [];
+    const mirrors       = cp?.mirrors       || [];
+    const ordersForOpen = cp?.ordersForOpen || [];
+    const orders        = cp?.orders        || [];
+
+    // Available Cash = credit - manual open orders amounts - close orders amounts
+    const manualOpenAmt = ordersForOpen.filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0).reduce((s,o) => s + (o.amount||0), 0);
+    const closeOrderAmt = orders.reduce((s,o) => s + (o.amount||0), 0);
+    const availableCash = (cp?.credit ?? 0) - manualOpenAmt - closeOrderAmt;
+
+    // Unrealised PnL = positions + mirror positions + mirror closed profits
+    const posPnl    = positions.reduce((s,p) => s + (p.unrealizedPnL?.pnL ?? p.unrealizedPnl?.pnL ?? 0), 0);
+    const mirrorPnl = mirrors.reduce((s,m) => {
+      const mPosPnl = (m.positions||[]).reduce((ms,mp) => ms + (mp.unrealizedPnL?.pnL ?? mp.unrealizedPnl?.pnL ?? 0), 0);
+      return s + mPosPnl + (m.closedPositionsNetProfit ?? 0);
+    }, 0);
+    const unrealisedPnl = posPnl + mirrorPnl;
+
+    // Total Invested
+    const posAmt        = positions.reduce((s,p) => s + (p.amount||0), 0);
+    const mirrorAmt     = mirrors.reduce((s,m) => {
+      const mPosAmt = (m.positions||[]).reduce((ms,mp) => ms + (mp.amount||0), 0);
+      return s + mPosAmt + (m.availableAmount||0) - (m.closedPositionsNetProfit??0);
+    }, 0);
+    const manualOpenCosts = ordersForOpen.filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0).reduce((s,o) => s + (o.totalExternalCosts||0), 0);
+    const totalInvested = posAmt + mirrorAmt + manualOpenAmt + closeOrderAmt + manualOpenCosts;
+
+    const equity = availableCash + totalInvested + unrealisedPnl;
+
+    return { availableCash, totalInvested, unrealisedPnl, equity, positions, ordersForOpen, orders };
+  }
+
+  function pct(amount, eq) {
+    if (!eq || eq === 0) return '—';
+    return (amount / eq * 100).toFixed(1) + '%';
   }
 
   /* ── Load portfolio ── */
   async function loadPortfolio() {
-    if (!_etoroApiKey || !_etoroUserKey) return;
+    if (!_etoroUserKey) return;
     const errEl = $('agent-error');
     errEl.style.display = 'none';
     $('portfolio-section').style.display = 'none';
@@ -738,24 +745,18 @@
     $('positions-grid').innerHTML = '';
 
     try {
-      const envPath = _env === 'demo' ? 'demo' : 'real';
-      // Single endpoint returns full account state incl. positions and P&L
-      const data = await etoroCall(`/trading/info/${envPath}/pnl`);
-      const cp = data?.clientPortfolio ?? data;
+      const data = await etoroCall('/trading/info/real/pnl');
+      const cp   = data?.clientPortfolio ?? data;
+      const { availableCash, unrealisedPnl, equity, positions } = calcPortfolio(cp);
+      _equity = equity;
 
-      const available = cp?.availableCash ?? cp?.availableAmount ?? cp?.available ?? 0;
-      const equity    = cp?.equity ?? cp?.totalBalance ?? 0;
-      const pnl       = cp?.totalUnrealizedPnl ?? cp?.currentPNL ?? cp?.unrealizedPnl ?? 0;
-      const positions = (cp?.positions || []).filter(p => p && (p.positionId || p.PositionID || p.id));
-
-      const fmt = n => '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
-      $('sum-cash').textContent   = fmt(available);
-      $('sum-equity').textContent = fmt(equity);
+      // Summary — show % of equity, never raw dollar amounts (per SKILL.md)
+      $('sum-cash').textContent   = pct(availableCash, equity);
+      $('sum-equity').textContent = equity > 0 ? (equity >= 1000 ? '$' + (equity/1000).toFixed(1)+'k' : '$'+equity.toFixed(0)) : '—';
       const pnlEl = $('sum-pnl');
-      pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmt(Math.abs(pnl)).replace('$','') ;
-      pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-      // Re-add dollar sign after setting color
-      pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      const pnlPct = equity > 0 ? (unrealisedPnl / equity * 100) : 0;
+      pnlEl.textContent  = (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%';
+      pnlEl.style.color  = pnlPct >= 0 ? 'var(--green)' : 'var(--red)';
       $('sum-count').textContent  = positions.length;
       $('positions-ts').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       $('portfolio-section').style.display = 'block';
@@ -764,59 +765,61 @@
       if (!positions.length) { $('positions-empty').style.display = 'block'; return; }
 
       const grid = $('positions-grid');
-      for (const pos of positions.slice(0, 24)) renderPositionCard(pos, grid);
-      for (const pos of positions.slice(0, 24)) enrichPositionCard(pos);
-
+      for (const pos of positions.slice(0,24)) renderPositionCard(pos, grid);
+      for (const pos of positions.slice(0,24)) enrichPositionCard(pos);
     } catch(e) {
       $('positions-loading').style.display = 'none';
-      errEl.textContent = '⚠️ Could not load portfolio: ' + e.message + ' — check your API keys below.';
+      errEl.textContent = '⚠️ Could not load portfolio: ' + e.message;
       errEl.style.display = 'block';
       $('setup-card').style.display = 'block';
     }
   }
 
   function renderPositionCard(pos, grid) {
-    const posId   = String(pos.positionId || pos.PositionID || pos.id || '');
-    const ticker  = String(pos.instrumentName || pos.symbol || pos.Instrument || posId || '?').toUpperCase();
+    // Field names: instrumentID (uppercase D), positionID (uppercase D) per eToro conventions
+    const posId   = String(pos.positionID ?? pos.positionId ?? pos.id ?? '');
+    const instrId = pos.instrumentID ?? pos.instrumentId ?? 0;
+    const ticker  = String(pos.instrumentName || pos.symbol || instrId || '?').toUpperCase();
     const name    = pos.instrumentDisplayName || pos.displayName || ticker;
-    const openRate = Number(pos.openRate || pos.openPrice || pos.OpenRate || 0);
-    const curRate  = Number(pos.currentRate || pos.currentPrice || pos.CurrentRate || openRate);
-    const pnl      = Number(pos.pnl ?? pos.profit ?? pos.unrealizedPnl ?? pos.NetProfit ?? 0);
-    const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
-    const amount   = Number(pos.investedAmount || pos.amount || pos.Amount || pos.notionalValue || 0);
-    const isBuy    = pos.isBuy !== false && pos.direction !== 'SELL';
-    const isUp     = pnl >= 0;
-    const pnlColor = isUp ? 'var(--green)' : 'var(--red)';
-    const sign     = isUp ? '+' : '-';
-    const etoroUrl = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
-    const signalId = `signal-${posId || ticker}`;
+    const openRate= Number(pos.openRate ?? pos.openPrice ?? 0);
+    const curRate = Number(pos.currentRate ?? pos.currentPrice ?? openRate);
+    const pnlAbs  = Number(pos.unrealizedPnL?.pnL ?? pos.unrealizedPnl?.pnL ?? 0);
+    const amount  = Number(pos.amount ?? 0);
+    const isBuy   = pos.isBuy !== false;
+    const pnlPct  = _equity > 0 ? (pnlAbs / _equity * 100) : 0;
+    const allocPct= _equity > 0 ? (amount  / _equity * 100) : 0;
+    const isUp    = pnlPct >= 0;
+    const pnlColor= isUp ? 'var(--green)' : 'var(--red)';
+    const signPnl = isUp ? '+' : '';
+    const etoroUrl= `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
+    const signalId= `signal-${posId||ticker}`;
 
     const card = document.createElement('div');
     card.className = `pos-card ${isUp ? 'pos-up' : 'pos-down'}`;
-    card.dataset.positionId = posId;
-    card.dataset.ticker     = ticker;
+    card.dataset.positionId  = posId;
+    card.dataset.instrumentId= instrId;
+    card.dataset.ticker      = ticker;
     card.innerHTML = `
       <div class="pos-top">
         <div>
           <div class="pos-ticker">${ticker.replace('-USD','')}</div>
-          <div class="pos-name">${name.length > 30 ? name.slice(0,28)+'…' : name}</div>
+          <div class="pos-name">${name.length>30?name.slice(0,28)+'…':name}</div>
         </div>
         <div class="pos-pnl">
-          <div class="pos-pnl-value" style="color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
-          <div class="pos-pnl-pct"   style="color:${pnlColor};">${sign}${Math.abs(pnlPct).toFixed(2)}%</div>
+          <div class="pos-pnl-value" style="color:${pnlColor};">${signPnl}${pnlPct.toFixed(2)}%</div>
+          <div class="pos-pnl-pct" style="color:var(--text-dim);font-size:10px;">${allocPct.toFixed(1)}% of portfolio</div>
         </div>
       </div>
       <div class="pos-meta">
-        <div class="pos-meta-item"><strong>Open</strong> $${openRate.toFixed(openRate < 10 ? 4 : 2)}</div>
-        <div class="pos-meta-item"><strong>Now</strong>  $${curRate.toFixed(curRate < 10 ? 4 : 2)}</div>
-        <div class="pos-meta-item"><strong>Size</strong> $${amount.toFixed(0)}</div>
-        <div class="pos-meta-item"><strong>${isBuy ? '↑ BUY' : '↓ SELL'}</strong></div>
+        <div class="pos-meta-item"><strong>Open</strong> $${openRate.toFixed(openRate<10?4:2)}</div>
+        <div class="pos-meta-item"><strong>Now</strong> $${curRate.toFixed(curRate<10?4:2)}</div>
+        <div class="pos-meta-item"><strong>${isBuy?'↑ BUY':'↓ SELL'}</strong></div>
       </div>
       <div class="pos-signal" id="${signalId}">
         <span style="font-size:10px;color:var(--text-dim);font-style:italic;">Analysing…</span>
       </div>
       <div class="pos-actions">
-        ${posId ? `<button class="pos-btn close-btn" onclick="confirmClose('${posId}','${ticker}',${pnl.toFixed(2)})">Close position</button>` : ''}
+        ${posId?`<button class="pos-btn close-btn" onclick="confirmClose('${posId}','${ticker}',${instrId},${pnlPct.toFixed(2)})">Close position</button>`:''}
         <a class="pos-btn etoro-btn" href="${etoroUrl}" target="_blank" rel="noopener">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           eToro
@@ -826,71 +829,67 @@
   }
 
   async function enrichPositionCard(pos) {
-    const posId   = String(pos.positionId || pos.PositionID || pos.id || '');
-    const ticker  = String(pos.instrumentName || pos.symbol || '').toUpperCase();
-    const name    = pos.instrumentDisplayName || pos.displayName || ticker;
-    const openRate = Number(pos.openRate || 0);
-    const curRate  = Number(pos.currentRate || openRate);
-    const changePct = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
-    const signalEl  = document.getElementById(`signal-${posId || ticker}`);
+    const posId  = String(pos.positionID ?? pos.positionId ?? pos.id ?? '');
+    const ticker = String(pos.instrumentName || pos.symbol || '').toUpperCase();
+    const name   = pos.instrumentDisplayName || pos.displayName || ticker;
+    const openRate = Number(pos.openRate ?? 0);
+    const curRate  = Number(pos.currentRate ?? openRate);
+    const changePct = openRate > 0 ? ((curRate - openRate) / openRate * 100) : 0;
+    const signalEl  = document.getElementById(`signal-${posId||ticker}`);
     if (!signalEl) return;
     try {
-      const metrics = {
-        rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
-        weekPct: changePct, weekTrend: changePct >= 0 ? 'up' : 'down',
-        direction: changePct >= 0 ? 'up' : 'down'
-      };
+      const metrics = { rsi:50, volRatio:1, rangePct:50, streak:1, weekPct:changePct, weekTrend:changePct>=0?'up':'down', direction:changePct>=0?'up':'down' };
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price: curRate.toFixed(2), change: (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%', name, metrics })
+        body: JSON.stringify({ ticker:'__signal__', signalTicker:ticker, price:curRate.toFixed(2), change:(changePct>=0?'+':'')+changePct.toFixed(2)+'%', name, metrics })
       });
       if (!res.ok) return;
       const ai = await res.json();
       if (!ai?.signal) return;
-      const cls = ai.signal === 'BUY' ? 'signal-BUY' : ai.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
-      signalEl.innerHTML = `<span class="signal-pill ${cls}" style="font-size:10px;padding:2px 8px;flex-shrink:0;">${ai.signal}</span><span class="pos-signal-text">${ai.rationale || ''}</span>`;
-    } catch { signalEl.innerHTML = '<span style="font-size:10px;color:var(--text-dim);">Signal unavailable</span>'; }
+      const cls = ai.signal==='BUY'?'signal-BUY':ai.signal==='SELL'?'signal-SELL':'signal-HOLD';
+      signalEl.innerHTML = `<span class="signal-pill ${cls}" style="font-size:10px;padding:2px 8px;flex-shrink:0;">${ai.signal}</span><span class="pos-signal-text">${ai.rationale||''}</span>`;
+    } catch { signalEl.innerHTML='<span style="font-size:10px;color:var(--text-dim);">Signal unavailable</span>'; }
   }
 
-  /* ── Close position ── */
-  function confirmClose(positionId, ticker, pnl) {
+  /* ── Close position — correct endpoint per SKILL.md ── */
+  function confirmClose(positionId, ticker, instrumentId, pnlPct) {
     document.getElementById('confirm-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'confirm-overlay';
     overlay.className = 'confirm-overlay';
-    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
-    const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const sign = pnl >= 0 ? '+$' : '-$';
+    overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+    const pnlColor = pnlPct >= 0 ? 'var(--green)' : 'var(--red)';
     overlay.innerHTML = `
       <div class="confirm-modal">
         <h3>Close ${ticker} position?</h3>
-        <p>Closes your <strong>${ticker}</strong> position at current market price.<br>
-        P&amp;L: <strong style="color:${pnlColor};">${sign}${Math.abs(pnl).toFixed(2)}</strong></p>
-        <p style="font-size:12px;padding:8px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:1rem;">⚠️ This trades with ${_env} money and cannot be undone.</p>
+        <p>Closes your <strong>${ticker}</strong> position at market price.<br>
+        P&amp;L: <strong style="color:${pnlColor};">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}% of portfolio</strong></p>
+        <p style="font-size:12px;padding:8px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:1rem;">⚠️ This executes a real trade and cannot be undone.</p>
         <div class="confirm-row">
           <button class="confirm-cancel" onclick="document.getElementById('confirm-overlay').remove()">Cancel</button>
-          <button class="confirm-ok" onclick="closePosition('${positionId}','${ticker}')">Close position</button>
+          <button class="confirm-ok" onclick="closePosition('${positionId}','${ticker}',${instrumentId})">Close position</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
   }
 
-  async function closePosition(positionId, ticker) {
+  async function closePosition(positionId, ticker, instrumentId) {
     document.getElementById('confirm-overlay')?.remove();
     const card = document.querySelector(`[data-position-id="${positionId}"]`);
-    if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
+    if (card) { card.style.opacity='0.4'; card.style.pointerEvents='none'; }
     try {
-      const envPath = _env === 'demo' ? 'demo' : 'real';
-      await etoroCall(`/trading/execution/${envPath}/market-close-orders/${positionId}`, 'POST');
+      // Correct endpoint per SKILL.md: /trading/execution/market-close-orders/positions/{positionId}
+      await etoroCall(`/trading/execution/market-close-orders/positions/${positionId}`, 'POST', {
+        InstrumentId: instrumentId,  // lowercase 'd' on close per API conventions
+        UnitsToDeduct: null          // null = full close
+      });
       if (card) {
-        card.style.transition = 'all 0.35s';
-        card.style.opacity = '0';
-        card.style.transform = 'scale(0.95)';
-        setTimeout(() => { card.remove(); $('sum-count').textContent = $('positions-grid').querySelectorAll('.pos-card').length; }, 350);
+        card.style.transition='all 0.35s'; card.style.opacity='0'; card.style.transform='scale(0.95)';
+        setTimeout(() => { card.remove(); $('sum-count').textContent=$('positions-grid').querySelectorAll('.pos-card').length; }, 350);
       }
     } catch(e) {
-      if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+      if (card) { card.style.opacity='1'; card.style.pointerEvents=''; }
       alert('Failed to close: ' + e.message);
     }
   }
