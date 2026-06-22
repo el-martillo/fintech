@@ -245,15 +245,20 @@
   /* ── Favourites section ── */
   .favs-section {
     margin-bottom: 1.75rem;
+    border: 1.5px solid rgba(245,158,11,0.35);
+    border-radius: var(--radius-lg);
+    background: rgba(245,158,11,0.04);
+    overflow: hidden;
   }
+  body.light .favs-section { background: rgba(245,158,11,0.06); }
   .favs-toggle-row {
     display: flex; align-items: center; justify-content: space-between;
     cursor: pointer; user-select: none;
-    padding: 10px 14px; background: var(--surface);
-    border: 1px solid var(--border2); border-radius: var(--radius-lg);
-    transition: border-color 0.15s;
+    padding: 10px 14px; background: transparent;
+    border: none; border-radius: 0;
+    transition: background 0.15s;
   }
-  .favs-toggle-row:hover { border-color: var(--amber); }
+  .favs-toggle-row:hover { background: rgba(245,158,11,0.06); }
   .favs-toggle-left { display: flex; align-items: center; gap: 9px; }
   .favs-toggle-title { font-size: 13px; font-weight: 600; color: var(--text); }
   .favs-toggle-count {
@@ -265,12 +270,14 @@
   .favs-toggle-row.open .favs-toggle-chevron { transform: rotate(180deg); }
   .favs-body { overflow: hidden; transition: max-height 0.3s ease; max-height: 0; }
   .favs-body.open { max-height: 2000px; }
-  .favs-inner { padding-top: 12px; }
+  .favs-inner { padding: 0 12px 12px; }
   .favs-empty {
     text-align: center; padding: 28px 16px;
     font-size: 13px; color: var(--text-dim);
-    background: var(--surface); border: 1px solid var(--border2);
-    border-radius: var(--radius); margin-top: 0;
+  }
+  .favs-limit-note {
+    font-size: 11px; color: var(--amber); text-align: right;
+    padding: 4px 0 0; opacity: 0.8;
   }
   </style>
 </head>
@@ -748,12 +755,12 @@
       grid.innerHTML = '<div class="favs-empty">Star any stock card to add it to your favourites list.</div>';
       return;
     }
-    // Show loading placeholders for tickers not yet in grid
-    const existing = new Set([...document.querySelectorAll('#recs-grid-favs [data-ticker]')].map(el => el.dataset.ticker));
-    // Rebuild from scratch each time for simplicity
-    const tickers = [..._favourites];
+    const MAX_FAVS = 6;
+    const allTickers = [..._favourites];
+    const tickers = allTickers.slice(0, MAX_FAVS);
+    const overflow = allTickers.length - tickers.length;
+
     grid.innerHTML = tickers.map(ticker => {
-      // Try to find existing card data from liveMarketData
       const md = liveMarketData[ticker];
       const placeholder = {
         ticker, name: ticker, price: md?.price || '—',
@@ -762,8 +769,8 @@
         weekPct: 0, weekTrend: 'up',
       };
       return renderRecCard(placeholder, null);
-    }).join('');
-    // Enrich each card
+    }).join('') + (overflow > 0 ? `<div class="favs-limit-note" style="grid-column:1/-1;">+${overflow} more · showing first 6</div>` : '');
+
     for (const ticker of tickers) {
       enrichFavCard(ticker);
     }
