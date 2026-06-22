@@ -695,9 +695,11 @@
               <div class="profile-stat-label">Sell signals</div>
             </div>
           </div>
-          <div style="margin-top:1.25rem;">
+          <div style="position:relative;height:90px;margin-top:1.25rem;">
             <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.6rem;">Analyses — last 30 days</div>
-            <canvas id="activity-chart" height="90" style="width:100%;"></canvas>
+            <div style="position:relative;height:70px;">
+              <canvas id="activity-chart" style="width:100%;height:100%;"></canvas>
+            </div>
           </div>
         </div>
       </div>
@@ -1388,18 +1390,24 @@
     if (!apikey) { errEl.textContent = 'Enter your CallMeBot API key first.'; errEl.style.display = 'block'; return; }
     okEl.textContent = 'Sending test message…'; okEl.style.display = 'block';
     try {
-      const msg = encodeURIComponent('🤖 eToro Stock Advisor — test message. Your price alerts are working!');
-      const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(num)}&text=${msg}&apikey=${encodeURIComponent(apikey)}`;
-      const res = await fetch(url);
-      const text = await res.text();
-      if (text.toLowerCase().includes('message queued') || text.toLowerCase().includes('success') || res.ok) {
+      // CallMeBot blocks direct browser fetches (CORS) — proxy via Edge Function
+      const msg = '🤖 eToro Stock Advisor — test message. Your price alerts are working!';
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(num)}&text=${encodeURIComponent(msg)}&apikey=${encodeURIComponent(apikey)}`;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__proxy__', proxyUrl: url })
+      });
+      const json = await res.json();
+      const text = (json.body || json.text || json.data || '').toString().toLowerCase();
+      if (text.includes('message queued') || text.includes('success') || json.status < 400) {
         okEl.textContent = '✓ Test message sent — check your WhatsApp.';
       } else {
-        errEl.textContent = 'CallMeBot error: ' + text.slice(0, 120);
+        errEl.textContent = 'CallMeBot error: ' + (json.body || json.text || 'check your number and API key').toString().slice(0, 120);
         errEl.style.display = 'block'; okEl.style.display = 'none';
       }
     } catch(e) {
-      errEl.textContent = 'Could not reach CallMeBot — try again.';
+      errEl.textContent = 'Could not send — ' + (e.message || 'try again.');
       errEl.style.display = 'block'; okEl.style.display = 'none';
     }
   }
