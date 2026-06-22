@@ -825,25 +825,52 @@
   let _allUsers = [], _filtered = [], _sortKey = 'created_at', _sortAsc = false, _page = 0;
 
   async function checkAdminAccess() {
+    // Show loading state while we verify server-side
+    document.getElementById('gate-title').textContent = 'Verifying access…';
+    document.getElementById('gate-sub').textContent   = 'Checking admin privileges.';
+
     const { data: { session } } = await db.auth.getSession();
     const user = session?.user;
+
     if (!user) {
       showGate('Not signed in', 'Please sign in to the main app first, then return here.', true);
       return;
     }
+
+    // Client-side pre-check (UX only — not a security boundary)
     if (!ADMIN_EMAILS.includes(user.email ?? '')) {
       showGate('Access denied', user.email + ' does not have admin privileges.', true);
       return;
     }
+
+    // Server-side verification — the Edge Function re-checks the JWT and email
+    // This is the actual security gate; the client-side check above is just UX
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-users`, {
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }
+      });
+      if (res.status === 401 || res.status === 403) {
+        const err = await res.json().catch(() => ({}));
+        showGate('Access denied', err.error || 'You do not have admin privileges.', true);
+        return;
+      }
+      if (!res.ok) {
+        // Server error — still allow if client-side check passed (degraded mode)
+        console.warn('admin-users returned', res.status, '— proceeding in degraded mode');
+      } else {
+        const json = await res.json();
+        _allUsers = json.users || [];
+        processUsers();
+      }
+    } catch(e) {
+      console.warn('admin-users fetch failed:', e);
+      // Network error — fall back to analyses table data
+      await loadUsersFallback();
+    }
+
     document.getElementById('admin-gate').style.display    = 'none';
     document.getElementById('admin-content').style.display = 'block';
-    loadUsers();
-  }
-
-  function showGate(title, sub, showBtn) {
-    document.getElementById('gate-title').textContent = title;
-    document.getElementById('gate-sub').textContent   = sub;
-    if (showBtn) document.getElementById('gate-btn').style.display = 'inline-flex';
+    setRefreshSpinning(false);
   }
 
   async function loadUsers() {
@@ -854,9 +881,16 @@
     document.getElementById('users-pagination').style.display = 'none';
     try {
       const { data: { session } } = await db.auth.getSession();
+      if (!session?.access_token) throw new Error('No session');
       const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-users`, {
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }
       });
+      if (res.status === 401 || res.status === 403) {
+        showGate('Session expired', 'Please sign in again.', true);
+        document.getElementById('admin-gate').style.display    = 'flex';
+        document.getElementById('admin-content').style.display = 'none';
+        return;
+      }
       if (res.ok) {
         const json = await res.json();
         _allUsers = json.users || [];
@@ -870,6 +904,14 @@
     }
     processUsers();
     setRefreshSpinning(false);
+  }
+
+  function showGate(title, sub, showBtn) {
+    document.getElementById('gate-title').textContent = title;
+    document.getElementById('gate-sub').textContent   = sub;
+    if (showBtn) document.getElementById('gate-btn').style.display = 'inline-flex';
+    document.getElementById('admin-gate').style.display    = 'flex';
+    document.getElementById('admin-content').style.display = 'none';
   }
 
   async function loadUsersFallback() {

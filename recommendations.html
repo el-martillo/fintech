@@ -693,13 +693,20 @@
 
   async function loadFavourites() {
     if (!_currentUser) return;
+    const grid = $('recs-grid-favs');
     try {
       const { data, error } = await db.from('stock_favourites').select('ticker').eq('user_id', _currentUser.id);
       if (error) throw error;
       _favourites = new Set((data || []).map(r => r.ticker));
       renderFavsSection();
       updateFavCount();
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      // Show error state inside the favourites grid
+      if (grid) grid.innerHTML = `<div class="favs-empty" style="color:var(--text-dim);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;margin-right:5px;opacity:0.5;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Could not load favourites — <button onclick="loadFavourites()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:inherit;font-size:inherit;padding:0;text-decoration:underline;">retry</button>
+      </div>`;
+    }
   }
 
   async function toggleFavourite(ticker, name, e) {
@@ -1319,30 +1326,38 @@
 
   async function loadSavedSearches() {
     if (!_currentUser) return;
-    const { data, error } = await db
-      .from('stock_searches')
-      .select('ticker, name')
-      .eq('user_id', _currentUser.id)
-      .order('searched_at', { ascending: false })
-      .limit(12);
-    if (error || !data || !data.length) return;
     const grid = $('recs-grid-searches');
-    grid.innerHTML = ''; // clear placeholder text
-    for (const row of data) {
-      _searchedTickers.add(row.ticker);
-      const placeholderR = {
-        ticker: row.ticker, name: row.name || row.ticker,
-        price: '—', change: '+0.00%', weekData: [], direction: 'up',
-        weekTrend: 'up', weekPct: 0, rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
-      };
-      const tmp = document.createElement('div');
-      tmp.innerHTML = _wrapSearchCard(renderRecCard(placeholderR, null), row.ticker);
-      grid.appendChild(tmp.firstElementChild);
-    }
-    _updateSearchesClearBtn();
-    // Enrich sequentially
-    for (const row of data) {
-      await _enrichSearchCard(row.ticker, row.name || row.ticker);
+    try {
+      const { data, error } = await db
+        .from('stock_searches')
+        .select('ticker, name')
+        .eq('user_id', _currentUser.id)
+        .order('searched_at', { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      if (!data || !data.length) return;
+      grid.innerHTML = '';
+      for (const row of data) {
+        _searchedTickers.add(row.ticker);
+        const placeholderR = {
+          ticker: row.ticker, name: row.name || row.ticker,
+          price: '—', change: '+0.00%', weekData: [], direction: 'up',
+          weekTrend: 'up', weekPct: 0, rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
+        };
+        const tmp = document.createElement('div');
+        tmp.innerHTML = _wrapSearchCard(renderRecCard(placeholderR, null), row.ticker);
+        grid.appendChild(tmp.firstElementChild);
+      }
+      _updateSearchesClearBtn();
+      for (const row of data) {
+        await _enrichSearchCard(row.ticker, row.name || row.ticker);
+      }
+    } catch(e) {
+      if (grid && !grid.querySelector('.rec-card')) {
+        grid.innerHTML = `<div class="movers-empty" style="grid-column:1/-1;font-size:13px;color:var(--text-dim);font-style:italic;">
+          Could not load saved searches — <button onclick="loadSavedSearches()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:inherit;font-size:inherit;padding:0;text-decoration:underline;">retry</button>
+        </div>`;
+      }
     }
   }
 
