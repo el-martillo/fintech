@@ -139,44 +139,26 @@ async function loadRecommendations() {
     renderGrid('recs-grid-stocks', stocks);
     renderGrid('recs-grid-crypto', crypto);
 
-    // Enrich sequentially — remove HOLDs as they resolve
+    // Enrich sequentially — remove HOLDs, collect resolved for sort
     const enrichGrid = async (gridId, items) => {
-      // Use data-ticker attributes to find each card reliably regardless of removals
+      const resolved = []; // { r, ai } pairs
       for (const r of items) {
         const metrics = { rsi: r.rsi, volRatio: r.volRatio, rangePct: r.rangePct, streak: r.streak, weekPct: r.weekPct, weekTrend: r.weekTrend, direction: r.direction };
         const ai = await fetchAISignal(r.ticker, r.price, r.change, r.name, metrics);
-
-        // Find this card's placeholder by its ticker data attribute
-        const card = $(gridId).querySelector(`[data-ticker="${r.ticker}"]`);
-        if (!card) continue;
-
         const signal = ai && ai.signal ? ai.signal : (r.direction === 'up' ? 'BUY' : 'SELL');
-
-        // Drop HOLDs — only show actionable BUY/SELL
-        if (signal === 'HOLD') {
-          card.remove();
-          continue;
-        }
-
-        // If AI failed, show a fallback so card never stays "Analysing"
-        const resolvedAi = ai || {
-          signal,
-          confidence: 'Low',
-          rationale: 'Signal temporarily unavailable — check back after refresh.',
-          action: '',
-          entry: '',
-          stopLoss: '',
-          positionSize: '',
-        };
-
-        const tmp = document.createElement('div');
-        tmp.innerHTML = renderRecCard(r, resolvedAi);
-        card.replaceWith(tmp.firstElementChild);
+        if (signal === 'HOLD') continue;
+        const resolvedAi = ai || { signal, confidence: 'Low', rationale: 'Signal temporarily unavailable — check back after refresh.', action: '', entry: '', stopLoss: '', positionSize: '' };
+        resolved.push({ r, ai: resolvedAi });
       }
-      // If grid is now empty, show a message
-      if (!$(gridId).children.length) {
+      if (!resolved.length) {
         $(gridId).innerHTML = '<div class="movers-empty" style="grid-column:1/-1">No strong BUY or SELL signals right now — check back later.</div>';
+        return;
       }
+      // Sort by confidence: High → Medium → Low
+      const confOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+      resolved.sort((a, b) => (confOrder[a.ai.confidence] ?? 2) - (confOrder[b.ai.confidence] ?? 2));
+      // Re-render grid in sorted order
+      $(gridId).innerHTML = resolved.map(({ r, ai }) => renderRecCard(r, ai)).join('');
     };
     await enrichGrid('recs-grid-stocks', stocks);
     await enrichGrid('recs-grid-crypto', crypto);
