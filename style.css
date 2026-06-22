@@ -809,6 +809,25 @@ body.light .spinner-sm { border-color: rgba(0,0,0,0.1); border-top-color: var(--
   gap: 6px;
 }
 .rec-card:hover { border-color: var(--border2); }
+.rec-card.fav-active:hover { border-color: var(--amber); border-left-width: 3px; }
+
+/* Favourites section — amber wrapper border */
+#favs-body {
+  border: 1px solid rgba(245,158,11,0.35);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 10px;
+  background: rgba(245,158,11,0.03);
+}
+#favs-toggle-row {
+  border-radius: var(--radius) !important;
+  transition: border-color 0.15s, border-radius 0.15s;
+}
+#favs-toggle-row.open {
+  border-radius: var(--radius) var(--radius) 0 0 !important;
+  border-bottom-color: rgba(245,158,11,0.35) !important;
+  border-color: rgba(245,158,11,0.35) !important;
+}
 .rec-top {
   display: flex;
   align-items: flex-start;
