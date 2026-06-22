@@ -158,6 +158,15 @@
     background: rgba(245,158,11,0.08);
   }
 
+  /* Confidence border — left accent by confidence band */
+  .rec-card.conf-high   { border-left: 3px solid var(--green); }
+  .rec-card.conf-medium { border-left: 3px solid var(--red); }
+  .rec-card.conf-low    { border-left: 3px solid var(--text-dim); }
+  /* Preserve amber if also a favourite */
+  .rec-card.fav-active.conf-high,
+  .rec-card.fav-active.conf-medium,
+  .rec-card.fav-active.conf-low   { border-left-color: var(--amber); }
+
   /* Shimmer on skeleton rows */
   .rec-skel {
     border-radius: 4px;

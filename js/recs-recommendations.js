@@ -46,6 +46,7 @@ function renderRecCard(r, ai) {
   const hasAlert = typeof _alerts    !== 'undefined' && _alerts.has(r.ticker);
   const nameEsc  = (r.name || r.ticker).replace(/'/g, "\'");
   const priceVal = hasPrice ? r.price : '0';
+  const confClass = !loading ? (conf === 'High' ? ' conf-high' : conf === 'Medium' ? ' conf-medium' : ' conf-low') : '';
 
   const volRatio = r.volRatio || 1;
   const volPct   = Math.min(100, Math.round((volRatio / 3) * 100));
@@ -72,7 +73,7 @@ function renderRecCard(r, ai) {
     : `<span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>${conf ? `<span style="font-size:10px;color:var(--text-dim);">${conf} confidence</span>` : ''}`;
 
   return `
-    <div class="rec-card${loading ? ' analysing' : ''}${isFav ? ' fav-active' : ''}" data-ticker="${r.ticker}">
+    <div class="rec-card${loading ? ' analysing' : ''}${isFav ? ' fav-active' : ''}${confClass}" data-ticker="${r.ticker}">
       <div class="rec-top">
         <div>
           <div class="rec-ticker">${r.ticker.replace('-USD','')}</div>
