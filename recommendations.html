@@ -174,6 +174,49 @@
   }
   .analysing-dots span:nth-child(2) { animation-delay: 0.2s; }
   .analysing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* ── Star / Favourite button ── */
+  .fav-btn {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; cursor: pointer; padding: 3px;
+    color: var(--text-dim); transition: color 0.15s, transform 0.15s;
+    line-height: 1; z-index: 2;
+  }
+  .fav-btn:hover { color: var(--amber); transform: scale(1.15); }
+  .fav-btn.fav-active { color: var(--amber); }
+  .fav-btn.fav-active svg { fill: var(--amber); }
+  .rec-card { position: relative; }
+
+  /* ── Favourites section ── */
+  .favs-section {
+    margin-bottom: 1.75rem;
+  }
+  .favs-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none;
+    padding: 10px 14px; background: var(--surface);
+    border: 1px solid var(--border2); border-radius: var(--radius-lg);
+    transition: border-color 0.15s;
+  }
+  .favs-toggle-row:hover { border-color: var(--amber); }
+  .favs-toggle-left { display: flex; align-items: center; gap: 9px; }
+  .favs-toggle-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .favs-toggle-count {
+    font-size: 11px; font-weight: 600; background: rgba(245,158,11,0.12);
+    color: var(--amber); border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 10px; padding: 1px 7px;
+  }
+  .favs-toggle-chevron { color: var(--text-dim); transition: transform 0.2s; }
+  .favs-toggle-row.open .favs-toggle-chevron { transform: rotate(180deg); }
+  .favs-body { overflow: hidden; transition: max-height 0.3s ease; max-height: 0; }
+  .favs-body.open { max-height: 2000px; }
+  .favs-inner { padding-top: 12px; }
+  .favs-empty {
+    text-align: center; padding: 28px 16px;
+    font-size: 13px; color: var(--text-dim);
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius); margin-top: 0;
+  }
   </style>
 </head>
 
@@ -283,6 +326,11 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                   Recommendations
                 </a>
+                <a class="adp-nav-item" href="#" onclick="closeAuthPanel();scrollToFavourites();return false;" style="text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="var(--amber)" stroke="var(--amber)"/></svg>
+                  <span style="color:var(--amber);">My Favourites</span>
+                  <span id="nav-fav-count" class="adp-badge" style="background:rgba(245,158,11,0.12);color:var(--amber);border-color:rgba(245,158,11,0.25);display:none;"></span>
+                </a>
                 <a class="adp-nav-item" href="profile.html" style="text-decoration:none;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                   Profile settings
@@ -367,6 +415,25 @@
       <div class="lookup-results" id="lookup-results"></div>
     </div>
 
+    <!-- Favourites section -->
+    <div class="favs-section" id="favs-section">
+      <div class="favs-toggle-row" id="favs-toggle-row" onclick="toggleFavsSection()">
+        <div class="favs-toggle-left">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="var(--amber)" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span class="favs-toggle-title">My Favourites</span>
+          <span class="favs-toggle-count" id="favs-count">0</span>
+        </div>
+        <svg class="favs-toggle-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="favs-body" id="favs-body">
+        <div class="favs-inner">
+          <div class="recs-3col" id="recs-grid-favs">
+            <div class="favs-empty">Star any stock card to add it to your favourites list.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Stocks -->
     <div class="recs-sub-header">
       <span class="recs-sub-label">
@@ -431,6 +498,159 @@
   let _currentUser = null;
   let _panelOpen   = false;
   const liveMarketData = {};
+
+  /* ── Favourites ── */
+  let _favourites = new Set(); // Set of tickers
+
+  async function loadFavourites() {
+    if (!_currentUser) return;
+    try {
+      const { data, error } = await db.from('stock_favourites').select('ticker').eq('user_id', _currentUser.id);
+      if (error) throw error;
+      _favourites = new Set((data || []).map(r => r.ticker));
+      renderFavsSection();
+      updateFavCount();
+    } catch (e) { /* silent */ }
+  }
+
+  async function toggleFavourite(ticker, name, e) {
+    if (e) e.stopPropagation();
+    if (!_currentUser) return;
+    const isFav = _favourites.has(ticker);
+    if (isFav) {
+      _favourites.delete(ticker);
+      await db.from('stock_favourites').delete().eq('user_id', _currentUser.id).eq('ticker', ticker);
+    } else {
+      _favourites.add(ticker);
+      await db.from('stock_favourites').upsert({ user_id: _currentUser.id, ticker, name }, { onConflict: 'user_id,ticker' });
+    }
+    // Update all star buttons for this ticker everywhere on page
+    document.querySelectorAll(`[data-ticker="${ticker}"] .fav-btn`).forEach(btn => {
+      btn.classList.toggle('fav-active', !isFav);
+      const svg = btn.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', !isFav ? 'var(--amber)' : 'none');
+        svg.setAttribute('stroke', !isFav ? 'var(--amber)' : 'currentColor');
+      }
+    });
+    renderFavsSection();
+    updateFavCount();
+  }
+
+  function updateFavCount() {
+    const n = _favourites.size;
+    const countEl = $('favs-count');
+    if (countEl) countEl.textContent = n;
+    const navCount = $('nav-fav-count');
+    if (navCount) { navCount.textContent = n; navCount.style.display = n ? 'inline' : 'none'; }
+  }
+
+  async function renderFavsSection() {
+    const grid = $('recs-grid-favs');
+    if (!grid) return;
+    if (!_favourites.size) {
+      grid.innerHTML = '<div class="favs-empty">Star any stock card to add it to your favourites list.</div>';
+      return;
+    }
+    // Show loading placeholders for tickers not yet in grid
+    const existing = new Set([...document.querySelectorAll('#recs-grid-favs [data-ticker]')].map(el => el.dataset.ticker));
+    // Rebuild from scratch each time for simplicity
+    const tickers = [..._favourites];
+    grid.innerHTML = tickers.map(ticker => {
+      // Try to find existing card data from liveMarketData
+      const md = liveMarketData[ticker];
+      const placeholder = {
+        ticker, name: ticker, price: md?.price || '—',
+        change: md?.change || '—', direction: 'up',
+        weekData: [], rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
+        weekPct: 0, weekTrend: 'up',
+      };
+      return renderRecCard(placeholder, null);
+    }).join('');
+    // Enrich each card
+    for (const ticker of tickers) {
+      enrichFavCard(ticker);
+    }
+  }
+
+  async function enrichFavCard(ticker) {
+    const grid = $('recs-grid-favs');
+    if (!grid) return;
+    const placeholderR = {
+      ticker, name: ticker, price: '—', change: '—', direction: 'up',
+      weekData: [], rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
+      weekPct: 0, weekTrend: 'up',
+    };
+    try {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=5d&interval=1d&includeAdjustedClose=true`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        const result = json.chart?.result?.[0];
+        if (result) {
+          const meta   = result.meta || {};
+          const closes = result.indicators?.adjclose?.[0]?.adjclose || result.indicators?.quote?.[0]?.close || [];
+          const vols   = result.indicators?.quote?.[0]?.volume || [];
+          const price  = meta.regularMarketPrice || closes[closes.length-1] || 0;
+          const prev   = meta.chartPreviousClose || closes[0] || price;
+          const todayPct = prev ? ((price - prev) / prev) * 100 : 0;
+          const weekPct  = closes.length > 1 ? ((closes[closes.length-1] - closes[0]) / Math.abs(closes[0])) * 100 : 0;
+          const gains = []; for (let i=1;i<closes.length;i++) gains.push(closes[i]-closes[i-1]>0?closes[i]-closes[i-1]:0);
+          const losses= []; for (let i=1;i<closes.length;i++) losses.push(closes[i]-closes[i-1]<0?Math.abs(closes[i]-closes[i-1]):0);
+          const avgG=gains.reduce((a,b)=>a+b,0)/Math.max(gains.length,1), avgL=losses.reduce((a,b)=>a+b,0)/Math.max(losses.length,1);
+          const rsi = Math.round(avgL===0 ? 100 : 100-(100/(1+(avgG/avgL))));
+          const todayVol = vols[vols.length-1]||0, avgVol = vols.slice(0,-1).reduce((a,b)=>a+b,0)/Math.max(vols.length-1,1);
+          const volRatio = avgVol>0 ? parseFloat((todayVol/avgVol).toFixed(2)) : 1;
+          const high5=Math.max(...closes), low5=Math.min(...closes);
+          const rangePct = high5>low5 ? Math.round(((price-low5)/(high5-low5))*100) : 50;
+          let streak=1; for (let i=closes.length-2;i>0;i--) { if((closes[i]>closes[i-1])===(todayPct>=0))streak++;else break; }
+          const sign=todayPct>=0?'+':'';
+          placeholderR.price    = price.toFixed(2);
+          placeholderR.change   = `${sign}${todayPct.toFixed(2)}%`;
+          placeholderR.weekData = closes.slice(-5).map(p=>parseFloat(p.toFixed(2)));
+          placeholderR.direction= todayPct>=0?'up':'down';
+          placeholderR.weekTrend= weekPct>=0?'up':'down';
+          placeholderR.weekPct  = parseFloat(weekPct.toFixed(2));
+          placeholderR.rsi=rsi; placeholderR.volRatio=volRatio;
+          placeholderR.rangePct=rangePct; placeholderR.streak=streak;
+          placeholderR.name = meta.longName || meta.shortName || ticker;
+          liveMarketData[ticker] = { price: placeholderR.price, change: placeholderR.change };
+        }
+      }
+    } catch(e) { /* use placeholder */ }
+    const ai = await fetchAISignal(ticker, placeholderR.price, placeholderR.change, placeholderR.name, {
+      rsi: placeholderR.rsi, volRatio: placeholderR.volRatio, rangePct: placeholderR.rangePct,
+      streak: placeholderR.streak, weekPct: placeholderR.weekPct, weekTrend: placeholderR.weekTrend, direction: placeholderR.direction
+    });
+    const resolvedAi = ai || { signal: placeholderR.direction==='up'?'BUY':'SELL', confidence:'Low', rationale:'Signal temporarily unavailable.', action:'', entry:'', stopLoss:'', positionSize:'' };
+    if (grid) {
+      const card = grid.querySelector(`[data-ticker="${ticker}"]`);
+      if (card) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = renderRecCard(placeholderR, resolvedAi);
+        card.replaceWith(tmp.firstElementChild);
+      }
+    }
+  }
+
+  function toggleFavsSection() {
+    const row  = $('favs-toggle-row');
+    const body = $('favs-body');
+    if (!row || !body) return;
+    const isOpen = body.classList.toggle('open');
+    row.classList.toggle('open', isOpen);
+    if (isOpen) renderFavsSection();
+  }
+
+  function scrollToFavourites() {
+    const section = $('favs-section');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Open if closed
+      const body = $('favs-body');
+      if (body && !body.classList.contains('open')) toggleFavsSection();
+    }
+  }
 
   /* ── Theme ── */
   function toggleTheme() {
@@ -515,13 +735,11 @@
   });
 
   /* ── Auth gate ── */
-  let _pageShown = false;
   function showPage() {
-    if (_pageShown) return;
-    _pageShown = true;
     $('auth-gate').style.display = 'none';
     $('recs-page').style.display = 'block';
     loadRecommendations();
+    loadFavourites();
     loadExchangeTicker();
     // Auto-run lookup if arriving from profile page recent searches
     const urlParams = new URLSearchParams(window.location.search);
@@ -622,6 +840,9 @@
 
     return `
       <div class="rec-card${loading ? ' analysing' : ''}" data-ticker="${r.ticker}">
+        <button class="fav-btn${_favourites.has(r.ticker) ? ' fav-active' : ''}" title="Add to favourites" onclick="toggleFavourite('${r.ticker}','${(r.name||'').replace(/'/g,'&#39;')}',event)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${_favourites.has(r.ticker) ? 'var(--amber)' : 'none'}" stroke="${_favourites.has(r.ticker) ? 'var(--amber)' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
         <div class="rec-top">
           <div>
             <div class="rec-ticker">${r.ticker.replace('-USD','')}</div>
