@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css" />
   <script src="config.js"></script>
@@ -694,6 +695,24 @@
               <div class="profile-stat-label">Sell signals</div>
             </div>
           </div>
+          <div style="margin-top:1.25rem;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.6rem;">Analyses — last 30 days</div>
+            <canvas id="activity-chart" height="90" style="width:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Favourites -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--amber)" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <div class="profile-card-title">Favourites</div>
+        </div>
+        <div class="profile-card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:0.9rem;">Stocks you've starred on the Recommendations page.</p>
+          <div id="profile-favs-list">
+            <div style="font-size:13px;color:var(--text-dim);font-style:italic;">No favourites yet.</div>
+          </div>
         </div>
       </div>
 
@@ -1090,6 +1109,7 @@
     renderProfile(user);
     loadStats(user);
     loadRecentSearches();
+    loadFavourites(user);
     loadWhatsApp(user);
     loadEtoroKeys(user);
   }
@@ -1132,10 +1152,12 @@
   }
 
   async function loadStats(user) {
+    const since = new Date(); since.setDate(since.getDate() - 30);
     const { data } = await db
       .from('stock_analyses')
-      .select('signal')
-      .eq('user_id', user.id);
+      .select('signal, created_at')
+      .eq('user_id', user.id)
+      .gte('created_at', since.toISOString());
 
     const rows  = data || [];
     const buys  = rows.filter(r => r.signal === 'BUY').length;
@@ -1144,6 +1166,84 @@
     document.getElementById('stat-analyses').textContent = rows.length;
     document.getElementById('stat-buys').textContent     = buys;
     document.getElementById('stat-sells').textContent    = sells;
+
+    loadActivityChart(rows);
+  }
+
+  function loadActivityChart(rows) {
+    const canvas = document.getElementById('activity-chart');
+    if (!canvas) return;
+    // Build last-30-days labels and counts
+    const days = 30;
+    const labels = [], counts = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      labels.push(d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
+      counts.push(0);
+    }
+    rows.forEach(r => {
+      const d = new Date(r.created_at);
+      const daysAgo = Math.floor((Date.now() - d.getTime()) / 86400000);
+      const idx = days - 1 - daysAgo;
+      if (idx >= 0 && idx < days) counts[idx]++;
+    });
+    const isDark = !document.body.classList.contains('light');
+    const gridColor  = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const labelColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+    // Destroy previous instance if exists
+    if (canvas._chartInstance) canvas._chartInstance.destroy();
+    canvas._chartInstance = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: counts,
+          backgroundColor: 'rgba(108,99,255,0.55)',
+          borderColor: 'rgba(108,99,255,0.9)',
+          borderWidth: 1,
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: items => items[0].label,
+              label: item => item.raw + ' ' + (item.raw === 1 ? 'analysis' : 'analyses'),
+            },
+            backgroundColor: isDark ? '#1e1e2e' : '#fff',
+            titleColor: isDark ? '#e2e8f0' : '#1a1a2e',
+            bodyColor:  isDark ? '#a0aec0' : '#4a5568',
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+            borderWidth: 1,
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: labelColor,
+              font: { size: 9, family: 'Inter, sans-serif' },
+              maxRotation: 0,
+              maxTicksLimit: 6,
+            }
+          },
+          y: {
+            grid: { color: gridColor },
+            ticks: {
+              color: labelColor,
+              font: { size: 9 },
+              stepSize: 1,
+              maxTicksLimit: 4,
+            },
+            beginAtZero: true,
+          }
+        }
+      }
+    });
   }
 
   async function loadRecentSearches() {
@@ -1295,6 +1395,30 @@
     const { error } = await db.from('profiles').upsert({ id: _currentUser.id, etoro_api_key: apiKey, etoro_user_key: userKey }, { onConflict: 'id' });
     if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
     else { okEl.textContent = '✓ eToro API keys saved.'; okEl.style.display = 'block'; }
+  }
+
+  /* ── Favourites ── */
+  async function loadFavourites(user) {
+    const el = document.getElementById('profile-favs-list');
+    if (!el) return;
+    const { data, error } = await db
+      .from('stock_favourites')
+      .select('ticker, name')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (error || !data?.length) {
+      el.innerHTML = '<div style="font-size:13px;color:var(--text-dim);font-style:italic;">No favourites yet. Star stocks on the <a href="recommendations.html" style="color:var(--accent);text-decoration:none;">Recommendations</a> page.</div>';
+      return;
+    }
+    el.innerHTML = data.map(item => `
+      <a href="recommendations.html"
+         style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;transition:border-color 0.15s;margin-bottom:6px;"
+         onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--border)'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--amber)" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);min-width:52px;">${item.ticker.replace('-USD','')}</span>
+        <span style="font-size:12px;color:var(--text-muted);flex:1;">${item.name || ''}</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>`).join('');
   }
 
   /* ── Sign out ── */
