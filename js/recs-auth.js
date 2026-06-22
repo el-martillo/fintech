@@ -111,22 +111,24 @@ function showPage() {
   }
 }
 
-db.auth.onAuthStateChange((event, session) => {
-  _currentUser = session?.user ?? null;
-  _renderTrigger(_currentUser);
-  _renderLoggedIn(_currentUser);
-  if (_currentUser) {
-    showPage();
-    if (window.location.hash.includes('access_token'))
-      history.replaceState(null, '', window.location.pathname);
-    setTimeout(closeAuthPanel, 700);
-  }
-});
-db.auth.getSession().then(({ data: { session } }) => {
-  if (session?.user) {
-    _currentUser = session.user;
+function initAuth() {
+  db.auth.onAuthStateChange((event, session) => {
+    _currentUser = session?.user ?? null;
     _renderTrigger(_currentUser);
     _renderLoggedIn(_currentUser);
-    showPage();
-  }
-});
+    if (_currentUser) {
+      showPage();
+      if (window.location.hash.includes('access_token'))
+        history.replaceState(null, '', window.location.pathname);
+      setTimeout(closeAuthPanel, 700);
+    }
+  });
+  db.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      _currentUser = session.user;
+      _renderTrigger(_currentUser);
+      _renderLoggedIn(_currentUser);
+      showPage();
+    }
+  });
+}

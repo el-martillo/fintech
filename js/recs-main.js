@@ -354,4 +354,7 @@ function loadExchangeTicker() {
   renderTickerTrack(items);
   setInterval(() => renderTickerTrack(items), 60000);
 }
+
+// ── Boot — all scripts loaded, safe to initialise ──
+initAuth();
 loadExchangeTicker();
