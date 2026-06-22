@@ -793,6 +793,7 @@
           </div>
           <div class="profile-btn-row">
             <button class="profile-btn" onclick="saveWhatsApp()">Save</button>
+            <button class="profile-btn secondary" onclick="testWhatsApp()">Send test message</button>
           </div>
           <div id="wa-alerts-list" style="margin-top:1rem;"></div>
         </div>
@@ -1375,6 +1376,32 @@
     const { error } = await db.from('profiles').upsert({ id: _currentUser.id, whatsapp_number: num, callmebot_apikey: apikey }, { onConflict: 'id' });
     if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
     else { okEl.textContent = '✓ WhatsApp details saved.'; okEl.style.display = 'block'; }
+  }
+
+  async function testWhatsApp() {
+    const num    = document.getElementById('wa-number')?.value?.trim();
+    const apikey = document.getElementById('wa-apikey')?.value?.trim();
+    const errEl  = document.getElementById('wa-error');
+    const okEl   = document.getElementById('wa-success');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    if (!num || !num.startsWith('+')) { errEl.textContent = 'Enter your WhatsApp number first.'; errEl.style.display = 'block'; return; }
+    if (!apikey) { errEl.textContent = 'Enter your CallMeBot API key first.'; errEl.style.display = 'block'; return; }
+    okEl.textContent = 'Sending test message…'; okEl.style.display = 'block';
+    try {
+      const msg = encodeURIComponent('🤖 eToro Stock Advisor — test message. Your price alerts are working!');
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(num)}&text=${msg}&apikey=${encodeURIComponent(apikey)}`;
+      const res = await fetch(url);
+      const text = await res.text();
+      if (text.toLowerCase().includes('message queued') || text.toLowerCase().includes('success') || res.ok) {
+        okEl.textContent = '✓ Test message sent — check your WhatsApp.';
+      } else {
+        errEl.textContent = 'CallMeBot error: ' + text.slice(0, 120);
+        errEl.style.display = 'block'; okEl.style.display = 'none';
+      }
+    } catch(e) {
+      errEl.textContent = 'Could not reach CallMeBot — try again.';
+      errEl.style.display = 'block'; okEl.style.display = 'none';
+    }
   }
 
   /* ── eToro API keys ── */
