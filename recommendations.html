@@ -897,7 +897,7 @@
   }
 
   /* ── Recommendations cache ── */
-  const RECS_CACHE_KEY = 'recs_cache_v2';
+  const RECS_CACHE_KEY = 'recs_cache_v3';
   const RECS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
   function _saveRecsCache(stocksHtml, cryptoHtml) {
@@ -968,6 +968,8 @@
         document.querySelectorAll('#recs-grid-stocks [data-ticker], #recs-grid-crypto [data-ticker]').forEach(card => {
           if (card.dataset.ticker) liveMarketData[card.dataset.ticker] = { price: '', change: '' };
         });
+        _sortAndDivideGrid('recs-grid-stocks');
+        _sortAndDivideGrid('recs-grid-crypto');
         return;
       }
     }
