@@ -839,7 +839,7 @@
 
     const signalEl = loading
       ? `<span class="analysing-badge"><span class="analysing-dots"><span></span><span></span><span></span></span> Analysing</span>`
-      : `<span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>${conf ? `<span style="font-size:10px;color:var(--text-dim);">${conf} confidence</span>` : ''}`;
+      : `<span class="signal-pill ${sigClass}" style="font-size:11px;padding:3px 10px;">${signal}</span>${conf ? `<span class="rec-conf-label" style="font-size:10px;color:var(--text-dim);">${conf} confidence</span>` : ''}`;
 
     return `
       <div class="rec-card${loading ? ' analysing' : ''}" data-ticker="${r.ticker}">
@@ -879,17 +879,15 @@
       </div>`;
   }
 
-  const RECS_CACHE_KEY = 'recs_cache_v1';
+  /* ── Recommendations cache ── */
+  const RECS_CACHE_KEY = 'recs_cache_v2';
   const RECS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
   function _saveRecsCache(stocksHtml, cryptoHtml) {
     try {
-      sessionStorage.setItem(RECS_CACHE_KEY, JSON.stringify({
-        ts: Date.now(), stocksHtml, cryptoHtml
-      }));
-    } catch(e) { /* quota exceeded — ignore */ }
+      sessionStorage.setItem(RECS_CACHE_KEY, JSON.stringify({ ts: Date.now(), stocksHtml, cryptoHtml }));
+    } catch(e) { /* quota */ }
   }
-
   function _loadRecsCache() {
     try {
       const raw = sessionStorage.getItem(RECS_CACHE_KEY);
@@ -899,7 +897,6 @@
       return c;
     } catch(e) { return null; }
   }
-
   function _updateRefreshBtn(ts) {
     const btn = $('recs-refresh-btn');
     if (!btn) return;
@@ -908,19 +905,51 @@
     btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refreshed ${label}`;
   }
 
+  /* ── Expanded watchlist — sampled randomly each load for variety ── */
+  // (Sampling now handled server-side in the Edge Function)
+
+  /* Sort cards: High > Medium > Low confidence, add dividers */
+  function _sortAndDivideGrid(gridId) {
+    const grid = $(gridId);
+    if (!grid) return;
+    const cards = [...grid.querySelectorAll('.rec-card[data-ticker]')];
+    if (!cards.length) return;
+
+    const buckets = { High: [], Medium: [], Low: [] };
+    cards.forEach(card => {
+      const confText = card.querySelector('.rec-conf-label')?.textContent?.trim() || '';
+      const conf = confText.replace(' confidence','').replace(' Confidence','');
+      if (conf === 'High') buckets.High.push(card);
+      else if (conf === 'Medium') buckets.Medium.push(card);
+      else buckets.Low.push(card);
+    });
+
+    grid.innerHTML = '';
+    const add = (label, color, items) => {
+      if (!items.length) return;
+      const divider = document.createElement('div');
+      divider.style.cssText = `grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:4px 0 2px;`;
+      divider.innerHTML = `
+        <span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${color};">${label}</span>
+        <span style="flex:1;height:1px;background:var(--border);"></span>
+        <span style="font-size:10px;color:var(--text-dim);">${items.length} signal${items.length>1?'s':''}</span>`;
+      grid.appendChild(divider);
+      items.forEach(c => grid.appendChild(c));
+    };
+    add('High Confidence', 'var(--green)', buckets.High);
+    add('Medium Confidence', 'var(--amber)', buckets.Medium);
+    add('Low Confidence', 'var(--text-dim)', buckets.Low);
+  }
+
   async function loadRecommendations(forceRefresh = false) {
-    // Restore from cache unless forced refresh
     if (!forceRefresh) {
       const cached = _loadRecsCache();
       if (cached) {
         $('recs-grid-stocks').innerHTML = cached.stocksHtml;
         $('recs-grid-crypto').innerHTML = cached.cryptoHtml;
         _updateRefreshBtn(cached.ts);
-        // Restore liveMarketData from rendered cards
         document.querySelectorAll('#recs-grid-stocks [data-ticker], #recs-grid-crypto [data-ticker]').forEach(card => {
-          const ticker = card.dataset.ticker;
-          const priceEl = card.querySelector('.rec-price');
-          if (priceEl && ticker) liveMarketData[ticker] = { price: '', change: '' };
+          if (card.dataset.ticker) liveMarketData[card.dataset.ticker] = { price: '', change: '' };
         });
         return;
       }
@@ -930,6 +959,7 @@
     $('recs-grid-crypto').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening crypto…</div>';
     const btn = $('recs-refresh-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="adp-spin" style="border-color:rgba(255,255,255,0.2);border-top-color:var(--text-muted);"></span> Loading…'; }
+
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
@@ -940,9 +970,8 @@
       const data = await res.json();
       const picks = data.picks || [];
       const stocks = picks.filter(r => !isCrypto(r.ticker)).slice(0, 12);
-      const crypto = picks.filter(r =>  isCrypto(r.ticker)).slice(0, 12);
+      const crypto = picks.filter(r =>  isCrypto(r.ticker)).slice(0, 9);
 
-      // Placeholders
       const renderGrid = (gridId, items) => {
         if (!items.length) { $(gridId).innerHTML = `<div class="movers-empty" style="grid-column:1/-1">No momentum picks right now.</div>`; return; }
         $(gridId).innerHTML = items.map(r => renderRecCard(r, null)).join('');
@@ -950,7 +979,6 @@
       renderGrid('recs-grid-stocks', stocks);
       renderGrid('recs-grid-crypto', crypto);
 
-      // Enrich sequentially — remove HOLDs as they resolve
       const enrichGrid = async (gridId, items) => {
         for (const r of items) {
           const metrics = { rsi: r.rsi, volRatio: r.volRatio, rangePct: r.rangePct, streak: r.streak, weekPct: r.weekPct, weekTrend: r.weekTrend, direction: r.direction };
@@ -959,16 +987,11 @@
           const card = $(gridId).querySelector(`[data-ticker="${r.ticker}"]`);
           if (!card) continue;
 
-          const signal = ai && ai.signal ? ai.signal : (r.direction === 'up' ? 'BUY' : 'SELL');
-
-          if (signal === 'HOLD') {
-            card.remove();
-            continue;
-          }
+          const signal = ai?.signal || (r.direction === 'up' ? 'BUY' : 'SELL');
+          if (signal === 'HOLD') { card.remove(); continue; }
 
           const resolvedAi = ai || {
-            signal,
-            confidence: 'Low',
+            signal, confidence: 'Low',
             rationale: 'Signal temporarily unavailable — check back after refresh.',
             action: '', entry: '', stopLoss: '', positionSize: '',
           };
@@ -979,15 +1002,16 @@
         }
         if (!$(gridId).children.length) {
           $(gridId).innerHTML = '<div class="movers-empty" style="grid-column:1/-1">No strong BUY or SELL signals right now — check back later.</div>';
+          return;
         }
+        _sortAndDivideGrid(gridId);
       };
+
       await enrichGrid('recs-grid-stocks', stocks);
       await enrichGrid('recs-grid-crypto', crypto);
 
-      // Save fully-rendered HTML to cache
       _saveRecsCache($('recs-grid-stocks').innerHTML, $('recs-grid-crypto').innerHTML);
-      const now = Date.now();
-      _updateRefreshBtn(now);
+      _updateRefreshBtn(Date.now());
 
     } catch(e) {
       const err = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">Could not load recommendations. <button onclick="loadRecommendations(true)" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);">Retry</button></div>`;
