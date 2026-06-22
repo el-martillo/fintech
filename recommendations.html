@@ -735,7 +735,10 @@
   });
 
   /* ── Auth gate ── */
+  let _pageShown = false;
   function showPage() {
+    if (_pageShown) return;
+    _pageShown = true;
     $('auth-gate').style.display = 'none';
     $('recs-page').style.display = 'block';
     loadRecommendations();
@@ -876,11 +879,57 @@
       </div>`;
   }
 
-  async function loadRecommendations() {
+  const RECS_CACHE_KEY = 'recs_cache_v1';
+  const RECS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+  function _saveRecsCache(stocksHtml, cryptoHtml) {
+    try {
+      sessionStorage.setItem(RECS_CACHE_KEY, JSON.stringify({
+        ts: Date.now(), stocksHtml, cryptoHtml
+      }));
+    } catch(e) { /* quota exceeded — ignore */ }
+  }
+
+  function _loadRecsCache() {
+    try {
+      const raw = sessionStorage.getItem(RECS_CACHE_KEY);
+      if (!raw) return null;
+      const c = JSON.parse(raw);
+      if (Date.now() - c.ts > RECS_CACHE_TTL) { sessionStorage.removeItem(RECS_CACHE_KEY); return null; }
+      return c;
+    } catch(e) { return null; }
+  }
+
+  function _updateRefreshBtn(ts) {
+    const btn = $('recs-refresh-btn');
+    if (!btn) return;
+    const mins = Math.round((Date.now() - ts) / 60000);
+    const label = mins < 1 ? 'just now' : mins === 1 ? '1 min ago' : `${mins} min ago`;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refreshed ${label}`;
+  }
+
+  async function loadRecommendations(forceRefresh = false) {
+    // Restore from cache unless forced refresh
+    if (!forceRefresh) {
+      const cached = _loadRecsCache();
+      if (cached) {
+        $('recs-grid-stocks').innerHTML = cached.stocksHtml;
+        $('recs-grid-crypto').innerHTML = cached.cryptoHtml;
+        _updateRefreshBtn(cached.ts);
+        // Restore liveMarketData from rendered cards
+        document.querySelectorAll('#recs-grid-stocks [data-ticker], #recs-grid-crypto [data-ticker]').forEach(card => {
+          const ticker = card.dataset.ticker;
+          const priceEl = card.querySelector('.rec-price');
+          if (priceEl && ticker) liveMarketData[ticker] = { price: '', change: '' };
+        });
+        return;
+      }
+    }
+
     $('recs-grid-stocks').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening markets…</div>';
     $('recs-grid-crypto').innerHTML = '<div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening crypto…</div>';
     const btn = $('recs-refresh-btn');
-    if (btn) btn.disabled = true;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="adp-spin" style="border-color:rgba(255,255,255,0.2);border-top-color:var(--text-muted);"></span> Loading…'; }
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
@@ -903,39 +952,31 @@
 
       // Enrich sequentially — remove HOLDs as they resolve
       const enrichGrid = async (gridId, items) => {
-        // Use data-ticker attributes to find each card reliably regardless of removals
         for (const r of items) {
           const metrics = { rsi: r.rsi, volRatio: r.volRatio, rangePct: r.rangePct, streak: r.streak, weekPct: r.weekPct, weekTrend: r.weekTrend, direction: r.direction };
           const ai = await fetchAISignal(r.ticker, r.price, r.change, r.name, metrics);
 
-          // Find this card's placeholder by its ticker data attribute
           const card = $(gridId).querySelector(`[data-ticker="${r.ticker}"]`);
           if (!card) continue;
 
           const signal = ai && ai.signal ? ai.signal : (r.direction === 'up' ? 'BUY' : 'SELL');
 
-          // Drop HOLDs — only show actionable BUY/SELL
           if (signal === 'HOLD') {
             card.remove();
             continue;
           }
 
-          // If AI failed, show a fallback so card never stays "Analysing"
           const resolvedAi = ai || {
             signal,
             confidence: 'Low',
             rationale: 'Signal temporarily unavailable — check back after refresh.',
-            action: '',
-            entry: '',
-            stopLoss: '',
-            positionSize: '',
+            action: '', entry: '', stopLoss: '', positionSize: '',
           };
 
           const tmp = document.createElement('div');
           tmp.innerHTML = renderRecCard(r, resolvedAi);
           card.replaceWith(tmp.firstElementChild);
         }
-        // If grid is now empty, show a message
         if (!$(gridId).children.length) {
           $(gridId).innerHTML = '<div class="movers-empty" style="grid-column:1/-1">No strong BUY or SELL signals right now — check back later.</div>';
         }
@@ -943,8 +984,13 @@
       await enrichGrid('recs-grid-stocks', stocks);
       await enrichGrid('recs-grid-crypto', crypto);
 
+      // Save fully-rendered HTML to cache
+      _saveRecsCache($('recs-grid-stocks').innerHTML, $('recs-grid-crypto').innerHTML);
+      const now = Date.now();
+      _updateRefreshBtn(now);
+
     } catch(e) {
-      const err = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">Could not load recommendations. <button onclick="loadRecommendations()" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);">Retry</button></div>`;
+      const err = `<div class="movers-empty" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;">Could not load recommendations. <button onclick="loadRecommendations(true)" style="padding:4px 12px;font-size:12px;cursor:pointer;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);color:var(--text-muted);">Retry</button></div>`;
       $('recs-grid-stocks').innerHTML = err;
       $('recs-grid-crypto').innerHTML = '';
     } finally {
@@ -952,7 +998,10 @@
     }
   }
 
-  function refreshRecs() { loadRecommendations(); }
+  function refreshRecs() {
+    sessionStorage.removeItem(RECS_CACHE_KEY);
+    loadRecommendations(true);
+  }
 
   /* ── Stock Lookup panel ── */
   function toggleLookupPanel() {
