@@ -187,6 +187,15 @@
   .fav-btn.fav-active svg { fill: var(--amber); }
   .rec-card { position: relative; }
 
+  /* ── Remove (×) button on search cards ── */
+  .search-remove-btn {
+    position: absolute; top: 10px; left: 10px;
+    background: none; border: none; cursor: pointer; padding: 3px;
+    color: var(--text-dim); transition: color 0.15s, transform 0.15s;
+    line-height: 1; z-index: 2; font-size: 14px;
+  }
+  .search-remove-btn:hover { color: var(--red); transform: scale(1.15); }
+
   /* ── Favourites section ── */
   .favs-section {
     margin-bottom: 1.75rem;
@@ -458,16 +467,23 @@
       <div class="movers-loading" style="grid-column:1/-1"><div class="spinner-sm"></div> Screening…</div>
     </div>
 
-    <!-- Searches section — shown when user looks up a stock -->
-    <div id="searches-section" style="display:none;margin-top:1.5rem;">
+    <!-- Searches section — permanent, always shown -->
+    <div id="searches-section" style="margin-top:2rem;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;">
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap;">My Searches</span>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+      </div>
       <div class="recs-sub-header">
         <span class="recs-sub-label">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Searches
+          Saved lookups
         </span>
-        <button onclick="clearSearches()" style="font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">Clear all</button>
+        <button onclick="clearSearches()" id="searches-clear-btn" style="font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px;transition:color 0.15s;display:none;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">Clear all</button>
       </div>
-      <div class="recs-3col" id="recs-grid-searches"></div>
+      <div class="recs-3col" id="recs-grid-searches">
+        <div class="movers-empty" style="grid-column:1/-1;font-size:13px;color:var(--text-dim);font-style:italic;">Use the Stock Lookup above to analyse any stock — searches are saved here.</div>
+      </div>
     </div>
 
     <div class="disclaimer" style="margin-top:2rem;">
@@ -743,6 +759,7 @@
     $('recs-page').style.display = 'block';
     loadRecommendations();
     loadFavourites();
+    loadSavedSearches();
     loadExchangeTicker();
     // Auto-run lookup if arriving from profile page recent searches
     const urlParams = new URLSearchParams(window.location.search);
@@ -1092,56 +1109,87 @@
 
   const _searchedTickers = new Set();
 
-  async function useLookupResult(ticker, name) {
-    // Deduplicate
-    if (_searchedTickers.has(ticker)) {
-      $('lookup-results').innerHTML = `<div class="lookup-empty" style="color:var(--text-dim);">${ticker} is already in Searches.</div>`;
-      setTimeout(closeLookupPanel, 1400);
-      return;
-    }
-    _searchedTickers.add(ticker);
+  function _updateSearchesClearBtn() {
+    const btn = $('searches-clear-btn');
+    const grid = $('recs-grid-searches');
+    if (!btn || !grid) return;
+    btn.style.display = grid.querySelectorAll('.rec-card[data-ticker]').length ? 'inline' : 'none';
+  }
 
-    // Save to Supabase (fire-and-forget — don't block the UI)
+  function _wrapSearchCard(html, ticker) {
+    // Injects a remove (×) button into a rendered card's HTML string
+    return html.replace(
+      `data-ticker="${ticker}">`,
+      `data-ticker="${ticker}" data-search="true">
+        <button class="search-remove-btn" title="Remove" onclick="removeSearch('${ticker}',event)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>`
+    );
+  }
+
+  async function removeSearch(ticker, e) {
+    if (e) e.stopPropagation();
+    _searchedTickers.delete(ticker);
+    // Remove from DB
     if (_currentUser) {
-      // Delete any existing row for this ticker first (keeps it deduped + updates timestamp)
-      db.from('stock_searches')
-        .delete()
-        .eq('user_id', _currentUser.id)
-        .eq('ticker', ticker)
-        .then(() => {
-          db.from('stock_searches').insert({
-            user_id: _currentUser.id,
-            ticker,
-            name: name || ticker,
-          });
-        });
+      await db.from('stock_searches').delete().eq('user_id', _currentUser.id).eq('ticker', ticker);
     }
+    // Remove card from DOM
+    const card = $('recs-grid-searches').querySelector(`[data-ticker="${ticker}"]`);
+    if (card) card.remove();
+    // Show empty state if no cards left
+    const grid = $('recs-grid-searches');
+    if (!grid.querySelectorAll('.rec-card[data-ticker]').length) {
+      grid.innerHTML = '<div class="movers-empty" style="grid-column:1/-1;font-size:13px;color:var(--text-dim);font-style:italic;">Use the Stock Lookup above to analyse any stock — searches are saved here.</div>';
+    }
+    _updateSearchesClearBtn();
+  }
 
-    // Show confirmation and close panel
-    $('lookup-results').innerHTML = `<div class="lookup-empty" style="color:var(--green);">✓ Analysing <strong style="font-family:var(--mono)">${ticker}</strong>…</div>`;
-    setTimeout(closeLookupPanel, 900);
+  async function clearSearches() {
+    _searchedTickers.clear();
+    if (_currentUser) {
+      await db.from('stock_searches').delete().eq('user_id', _currentUser.id);
+    }
+    $('recs-grid-searches').innerHTML = '<div class="movers-empty" style="grid-column:1/-1;font-size:13px;color:var(--text-dim);font-style:italic;">Use the Stock Lookup above to analyse any stock — searches are saved here.</div>';
+    _updateSearchesClearBtn();
+  }
 
-    // Show Searches section
-    const section = $('searches-section');
-    const grid    = $('recs-grid-searches');
-    section.style.display = 'block';
+  async function loadSavedSearches() {
+    if (!_currentUser) return;
+    const { data, error } = await db
+      .from('stock_searches')
+      .select('ticker, name')
+      .eq('user_id', _currentUser.id)
+      .order('searched_at', { ascending: false })
+      .limit(12);
+    if (error || !data || !data.length) return;
+    const grid = $('recs-grid-searches');
+    grid.innerHTML = ''; // clear placeholder text
+    for (const row of data) {
+      _searchedTickers.add(row.ticker);
+      const placeholderR = {
+        ticker: row.ticker, name: row.name || row.ticker,
+        price: '—', change: '+0.00%', weekData: [], direction: 'up',
+        weekTrend: 'up', weekPct: 0, rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
+      };
+      const tmp = document.createElement('div');
+      tmp.innerHTML = _wrapSearchCard(renderRecCard(placeholderR, null), row.ticker);
+      grid.appendChild(tmp.firstElementChild);
+    }
+    _updateSearchesClearBtn();
+    // Enrich sequentially
+    for (const row of data) {
+      await _enrichSearchCard(row.ticker, row.name || row.ticker);
+    }
+  }
 
-    // Build a placeholder r object and render loading card
+  async function _enrichSearchCard(ticker, name) {
+    const grid = $('recs-grid-searches');
+    if (!grid) return;
     const placeholderR = {
-      ticker, name: name || ticker,
-      price: '—', change: '+0.00%',
-      weekData: [], direction: 'up',
-      weekTrend: 'up', weekPct: 0,
-      rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
+      ticker, name, price: '—', change: '+0.00%', weekData: [], direction: 'up',
+      weekTrend: 'up', weekPct: 0, rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
     };
-    const placeholder = document.createElement('div');
-    placeholder.innerHTML = renderRecCard(placeholderR, null);
-    grid.appendChild(placeholder.firstElementChild);
-
-    // Scroll searches section into view
-    setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-
-    // Fetch real Yahoo price data
     try {
       const yRes = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
@@ -1156,34 +1204,27 @@
           const closes = raw.filter(p => p != null && !isNaN(p) && p > 0);
           const vols   = (result.indicators?.quote?.[0]?.volume || []).filter(v => v != null && v > 0);
           const meta   = result.meta || {};
-
           if (closes.length >= 2) {
-            const price   = meta.regularMarketPrice ?? closes[closes.length - 1];
-            const prev    = closes[closes.length - 2];
-            const todayPct = ((price - prev) / prev) * 100;
-            const weekStart = closes[0];
-            const weekPct  = ((price - weekStart) / weekStart) * 100;
-
-            // RSI(5)
+            const price      = meta.regularMarketPrice ?? closes[closes.length - 1];
+            const prev       = closes[closes.length - 2];
+            const todayPct   = ((price - prev) / prev) * 100;
+            const weekPct    = ((price - closes[0]) / closes[0]) * 100;
             let gains = 0, losses = 0;
             const period = Math.min(5, closes.length - 1);
             for (let i = closes.length - period; i < closes.length; i++) {
-              const d = closes[i] - closes[i-1];
+              const d = closes[i] - closes[i - 1];
               if (d > 0) gains += d; else losses += Math.abs(d);
             }
             const rsi = losses === 0 ? 100 : Math.round(100 - 100 / (1 + gains / losses));
-
             const todayVol = vols[vols.length - 1] ?? 0;
-            const avgVol   = vols.length > 1 ? vols.slice(0,-1).reduce((a,b)=>a+b,0)/(vols.length-1) : todayVol;
+            const avgVol   = vols.length > 1 ? vols.slice(0, -1).reduce((a, b) => a + b, 0) / (vols.length - 1) : todayVol;
             const volRatio = avgVol > 0 ? parseFloat((todayVol / avgVol).toFixed(2)) : 1;
-            const high5    = Math.max(...closes), low5 = Math.min(...closes);
+            const high5 = Math.max(...closes), low5 = Math.min(...closes);
             const rangePct = high5 > low5 ? Math.round(((price - low5) / (high5 - low5)) * 100) : 50;
-
             let streak = 1;
             for (let i = closes.length - 2; i > 0; i--) {
-              if ((closes[i] > closes[i-1]) === (todayPct >= 0)) streak++; else break;
+              if ((closes[i] > closes[i - 1]) === (todayPct >= 0)) streak++; else break;
             }
-
             const sign = todayPct >= 0 ? '+' : '';
             placeholderR.price     = price.toFixed(2);
             placeholderR.change    = `${sign}${todayPct.toFixed(2)}%`;
@@ -1191,45 +1232,70 @@
             placeholderR.direction = todayPct >= 0 ? 'up' : 'down';
             placeholderR.weekTrend = weekPct >= 0 ? 'up' : 'down';
             placeholderR.weekPct   = parseFloat(weekPct.toFixed(2));
-            placeholderR.rsi       = rsi;
-            placeholderR.volRatio  = volRatio;
-            placeholderR.rangePct  = rangePct;
-            placeholderR.streak    = streak;
-            placeholderR.name      = meta.longName || meta.shortName || name || ticker;
+            placeholderR.rsi = rsi; placeholderR.volRatio = volRatio;
+            placeholderR.rangePct = rangePct; placeholderR.streak = streak;
+            placeholderR.name = meta.longName || meta.shortName || name || ticker;
           }
         }
       }
-    } catch (e) { /* use placeholder data */ }
-
-    // Fetch AI signal
-    const metrics = {
-      rsi: placeholderR.rsi, volRatio: placeholderR.volRatio,
-      rangePct: placeholderR.rangePct, streak: placeholderR.streak,
-      weekPct: placeholderR.weekPct, weekTrend: placeholderR.weekTrend,
-      direction: placeholderR.direction,
-    };
-    const ai = await fetchAISignal(ticker, placeholderR.price, placeholderR.change, placeholderR.name, metrics);
-
+    } catch { /* use placeholder */ }
+    const ai = await fetchAISignal(ticker, placeholderR.price, placeholderR.change, placeholderR.name, {
+      rsi: placeholderR.rsi, volRatio: placeholderR.volRatio, rangePct: placeholderR.rangePct,
+      streak: placeholderR.streak, weekPct: placeholderR.weekPct,
+      weekTrend: placeholderR.weekTrend, direction: placeholderR.direction,
+    });
     const resolvedAi = ai || {
       signal: placeholderR.direction === 'up' ? 'BUY' : 'SELL',
-      confidence: 'Low',
-      rationale: 'Signal temporarily unavailable.',
+      confidence: 'Low', rationale: 'Signal temporarily unavailable.',
       action: '', entry: '', stopLoss: '', positionSize: '',
     };
-
-    // Replace the placeholder card
-    const card = grid.querySelector(`[data-ticker="${ticker}"]`);
+    const card = grid?.querySelector(`[data-ticker="${ticker}"]`);
     if (card) {
       const tmp = document.createElement('div');
-      tmp.innerHTML = renderRecCard(placeholderR, resolvedAi);
+      tmp.innerHTML = _wrapSearchCard(renderRecCard(placeholderR, resolvedAi), ticker);
       card.replaceWith(tmp.firstElementChild);
     }
   }
 
-  function clearSearches() {
-    _searchedTickers.clear();
-    $('recs-grid-searches').innerHTML = '';
-    $('searches-section').style.display = 'none';
+  async function useLookupResult(ticker, name) {
+    if (_searchedTickers.has(ticker)) {
+      $('lookup-results').innerHTML = `<div class="lookup-empty" style="color:var(--text-dim);">${ticker} is already in Searches.</div>`;
+      setTimeout(closeLookupPanel, 1400);
+      return;
+    }
+    _searchedTickers.add(ticker);
+
+    // Save to Supabase
+    if (_currentUser) {
+      db.from('stock_searches').delete()
+        .eq('user_id', _currentUser.id).eq('ticker', ticker)
+        .then(() => db.from('stock_searches').insert({
+          user_id: _currentUser.id, ticker, name: name || ticker,
+        }));
+    }
+
+    $('lookup-results').innerHTML = `<div class="lookup-empty" style="color:var(--green);">✓ Analysing <strong style="font-family:var(--mono)">${ticker}</strong>…</div>`;
+    setTimeout(closeLookupPanel, 900);
+
+    // Add placeholder card to top of searches grid
+    const grid = $('recs-grid-searches');
+    // Remove empty-state message if present
+    const emptyMsg = grid.querySelector('.movers-empty');
+    if (emptyMsg) emptyMsg.remove();
+
+    const placeholderR = {
+      ticker, name: name || ticker, price: '—', change: '+0.00%',
+      weekData: [], direction: 'up', weekTrend: 'up', weekPct: 0,
+      rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
+    };
+    const tmp = document.createElement('div');
+    tmp.innerHTML = _wrapSearchCard(renderRecCard(placeholderR, null), ticker);
+    grid.insertBefore(tmp.firstElementChild, grid.firstChild);
+
+    _updateSearchesClearBtn();
+    setTimeout(() => $('searches-section').scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+
+    await _enrichSearchCard(ticker, name || ticker);
   }
 
   function clearLookup() {
