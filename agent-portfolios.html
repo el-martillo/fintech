@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Portfolios — Stock Advisor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+
+  <style id="auth-styles">
+  /* ── Auth trigger wrap ── */
+  .auth-trigger-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* ── Auth dropdown ── */
+  .auth-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 300px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.25);
+    z-index: 9999;
+    animation: adpIn 0.18s cubic-bezier(.22,.68,0,1.15) forwards;
+  }
+  .auth-dropdown.open { display: block; }
+
+  @keyframes adpIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  }
+
+  /* ── Header ── */
+  .adp-header { margin-bottom: 0.9rem; }
+  .adp-logo {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+
+  /* ── Tab bar ── */
+  .adp-tabs {
+    display: flex;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 3px; gap: 2px;
+    margin-bottom: 0.85rem;
+  }
+  .adp-tab {
+    flex: 1; padding: 6px 8px;
+    font-size: 12.5px; font-weight: 500;
+    border: none; border-radius: 6px;
+    background: transparent; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+    font-family: inherit;
+  }
+  .adp-tab.active {
+    background: var(--surface); color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .adp-tab:hover:not(.active) { color: var(--text); }
+
+  /* ── Messages ── */
+  .adp-msg {
+    display: none; border-radius: 7px;
+    padding: 8px 11px; font-size: 12px;
+    margin-bottom: 0.7rem; line-height: 1.45;
+  }
+  .adp-err { background: var(--red-bg); border: 1px solid rgba(239,68,68,.22); color: var(--red); }
+  .adp-ok  { background: var(--green-bg); border: 1px solid rgba(34,197,94,.22); color: var(--green); }
+
+  /* ── Fields ── */
+  .adp-field { margin-bottom: 0.65rem; }
+  .adp-field label {
+    display: block; font-size: 11px; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 4px;
+    letter-spacing: 0.03em;
+  }
+  .adp-field input {
+    width: 100%; height: 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    padding: 0 11px;
+    font-size: 13px; color: var(--text);
+    outline: none; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .adp-field input::placeholder { color: var(--text-dim); }
+  .adp-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,.13);
+  }
+
+  /* Password eye toggle */
+  .adp-pw { position: relative; }
+  .adp-pw input { padding-right: 36px; }
+  .adp-eye {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 36px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); display: flex; align-items: center; justify-content: center;
+    transition: color .15s;
+  }
+  .adp-eye:hover { color: var(--text-muted); }
+
+  /* Forgot */
+  .adp-forgot { text-align: right; margin: -2px 0 0.55rem; }
+  .adp-link {
+    background: none; border: none; padding: 0;
+    font-size: 11.5px; color: var(--text-dim);
+    cursor: pointer; transition: color .15s; font-family: inherit;
+  }
+  .adp-link:hover { color: var(--accent); }
+
+  /* Back button */
+  .adp-back {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: none; padding: 0;
+    font-size: 12px; color: var(--text-muted);
+    cursor: pointer; margin-bottom: 0.6rem;
+    transition: color .15s; font-family: inherit;
+  }
+  .adp-back:hover { color: var(--text); }
+  .adp-reset-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 0.65rem; line-height: 1.5; }
+
+  /* Submit button */
+  .adp-btn {
+    width: 100%; height: 40px; margin-top: 2px;
+    background: var(--accent); border: none; border-radius: 7px;
+    font-size: 13.5px; font-weight: 600; color: #fff;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity .15s, transform .1s; font-family: inherit;
+  }
+  .adp-btn:hover  { opacity: .88; }
+  .adp-btn:active { transform: scale(.98); }
+  .adp-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+  /* Spinner */
+  .adp-spin {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+
+  /* OR divider */
+  .adp-or {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10.5px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin: 0.7rem 0;
+  }
+  .adp-or::before, .adp-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Google */
+  .adp-google {
+    width: 100%; height: 38px;
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px;
+    font-size: 12.5px; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .15s; font-family: inherit;
+  }
+  .adp-google:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── Logged-in ── */
+  .adp-user-header {
+    display: flex; align-items: center; gap: 11px;
+    padding-bottom: 0.85rem; margin-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .adp-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .adp-user-email { font-size: 12.5px; font-weight: 500; color: var(--text); word-break: break-all; }
+  .adp-user-since { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Nav items */
+  .adp-nav { display: flex; flex-direction: column; gap: 1px; }
+  .adp-nav-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 9px; border: none; border-radius: 7px;
+    background: transparent; font-size: 12.5px; color: var(--text-muted);
+    cursor: pointer; width: 100%; text-align: left;
+    transition: all .12s; font-family: inherit;
+  }
+  .adp-nav-item:hover { background: var(--surface2); color: var(--text); }
+  .adp-nav-item svg { flex-shrink: 0; }
+  .adp-badge {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    background: var(--accent-dim); color: #a9a3ff;
+    border: 1px solid rgba(108,99,255,.25);
+    border-radius: 4px; padding: 1px 5px;
+  }
+  .adp-divider { height: 1px; background: var(--border); margin: 6px 0; }
+  .adp-signout:hover { background: var(--red-bg) !important; color: var(--red) !important; }
+
+  /* ── Logged-in avatar button in navbar ── */
+  .adp-user-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid var(--accent); background: var(--accent-dim);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .15s; padding: 0;
+    font-size: 11px; font-weight: 700; color: #a9a3ff;
+    font-family: inherit;
+  }
+  .adp-user-btn:hover { background: var(--accent); color: #fff; }
+
+  /* ── Mobile: full-width card below navbar ── */
+  @media (max-width: 520px) {
+    .auth-dropdown {
+      position: fixed;
+      top: 60px; left: 0; right: 0;
+      width: 100%; border-radius: 0 0 14px 14px;
+      border-left: none; border-right: none; border-top: none;
+      max-height: calc(100dvh - 60px);
+      overflow-y: auto;
+    }
+  }
+
+  /* Light mode */
+  body.light .auth-dropdown {
+    box-shadow: 0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.06);
+  }
+  </style>
+
+  <style id="agent-styles">
+    /* Auth gate */
+    .agent-gate { position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center; }
+    .agent-gate-card { background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2.5rem 2rem;text-align:center;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+    .agent-gate-title { font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:0.4rem; }
+    .agent-gate-sub { font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem; }
+    .agent-gate-btn { display:inline-flex;align-items:center;gap:7px;padding:9px 20px;background:var(--accent);border:none;border-radius:8px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;text-decoration:none;font-family:inherit;transition:opacity 0.15s; }
+    .agent-gate-btn:hover { opacity:0.85; }
+    /* Page */
+    .agent-page { max-width:1100px;margin:0 auto;padding:2rem 1.25rem 4rem; }
+    .agent-back { display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);text-decoration:none;margin-bottom:1.5rem;transition:color 0.15s; }
+    .agent-back:hover { color:var(--text); }
+    /* Setup card */
+    .setup-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem; }
+    .setup-card h3 { font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px; }
+    .setup-card p { font-size:12px;color:var(--text-dim);margin-bottom:1rem;line-height:1.6; }
+    .setup-field { margin-bottom:0.75rem; }
+    .setup-field label { display:block;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px; }
+    .setup-field input { width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;transition:border-color 0.15s; }
+    .setup-field input:focus { border-color:var(--accent); }
+    .setup-msg { font-size:12px;padding:7px 10px;border-radius:6px;margin-top:8px;display:none; }
+    .setup-msg.ok  { background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,0.2); }
+    .setup-msg.err { background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2); }
+    /* Summary */
+    .portfolio-summary { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem; }
+    @media (max-width:600px) { .portfolio-summary { grid-template-columns:repeat(2,1fr); } }
+    .summary-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:0.85rem 1rem; }
+    .summary-label { font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px; }
+    .summary-value { font-size:20px;font-weight:700;font-family:var(--mono);color:var(--text); }
+    .summary-sub { font-size:11px;color:var(--text-dim);margin-top:2px; }
+    /* Positions */
+    .positions-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;flex-wrap:wrap;gap:8px; }
+    .positions-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim); }
+    .positions-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+    @media (max-width:900px) { .positions-grid { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:480px) { .positions-grid { grid-template-columns:1fr; } }
+    /* Position card */
+    .pos-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem;transition:border-color 0.15s; }
+    .pos-card.pos-up   { border-left:3px solid var(--green); }
+    .pos-card.pos-down { border-left:3px solid var(--red); }
+    .pos-top { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px; }
+    .pos-ticker { font-size:15px;font-weight:700;font-family:var(--mono);color:var(--text); }
+    .pos-name { font-size:11px;color:var(--text-dim);margin-top:1px; }
+    .pos-pnl { text-align:right; }
+    .pos-pnl-value { font-size:14px;font-weight:700;font-family:var(--mono); }
+    .pos-pnl-pct { font-size:11px;margin-top:1px; }
+    .pos-meta { display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap; }
+    .pos-meta-item { font-size:11px;color:var(--text-dim); }
+    .pos-meta-item strong { color:var(--text-muted);font-weight:600; }
+    .pos-signal { display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--surface2);border-radius:6px;margin-bottom:10px;min-height:30px; }
+    .pos-signal-text { font-size:11px;color:var(--text-muted);line-height:1.4;flex:1; }
+    .pos-actions { display:flex;gap:6px; }
+    .pos-btn { flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
+    .pos-btn:hover { opacity:0.8; }
+    .pos-btn.close-btn { background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.25); }
+    .pos-btn.etoro-btn { background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2);text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px; }
+    /* Env toggle */
+    .env-toggle { display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:2px; }
+    .env-btn { padding:5px 14px;border:none;border-radius:6px;background:transparent;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s; }
+    .env-btn.active { background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+    /* States */
+    .agent-loading { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;gap:0.75rem;color:var(--text-dim);font-size:13px; }
+    .agent-empty { text-align:center;padding:3rem 1rem;color:var(--text-dim);font-size:13px;font-style:italic; }
+    .agent-error { background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:1rem;display:none; }
+    /* Confirm modal */
+    .confirm-overlay { position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:1rem; }
+    .confirm-modal { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+    .confirm-modal h3 { font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px; }
+    .confirm-modal p { font-size:13px;color:var(--text-muted);margin-bottom:1rem;line-height:1.5; }
+    .confirm-row { display:flex;gap:8px; }
+    .confirm-cancel { flex:1;padding:9px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;color:var(--text-muted);cursor:pointer;font-family:inherit; }
+    .confirm-ok { flex:1;padding:9px;background:var(--red);border:none;border-radius:var(--radius);font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
+    .confirm-ok:hover { opacity:0.85; }
+  </style>
+</head>
+<body>
+
+  <!-- Auth gate — shown until session verified -->
+  <div class="agent-gate" id="agent-gate">
+    <div class="agent-gate-card">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(108,99,255,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="agent-gate-title" id="gate-title">Checking session…</div>
+      <div class="agent-gate-sub"   id="gate-sub">Please wait.</div>
+      <a href="index.html" class="agent-gate-btn" id="gate-btn" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to app
+      </a>
+    </div>
+  </div>
+
+  <!-- Main content — hidden until auth confirmed -->
+  <div id="agent-content" style="display:none;">
+
+    <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-logo">
+        <svg class="etoro-spin" width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="17" cy="17" r="15.5" stroke="#2bbc76" stroke-width="2.5"/>
+          <text x="17" y="22" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="12" fill="#2bbc76">eT</text>
+        </svg>
+      </div>
+      <div class="navbar-title">
+        <h1>Stock <span>Advisor</span></h1>
+        <p>AI-powered · eToro ready</p>
+      </div>
+      <div class="navbar-actions">
+        <button class="theme-toggle navbar-theme-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+          <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span id="theme-label">Light</span>
+        </button>
+        <div class="auth-trigger-wrap" id="auth-trigger-wrap">
+          <!-- Logged-out: person icon -->
+          <button class="navbar-account auth-trigger" id="auth-trigger-btn"
+                  onclick="toggleAuthPanel()" title="Sign in / Register"
+                  aria-haspopup="true" aria-expanded="false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </button>
+
+          <!-- Auth dropdown panel -->
+          <div class="auth-dropdown" id="auth-dropdown" role="dialog" aria-label="Account">
+
+            <!-- ▸ LOGGED-OUT VIEW ◂ -->
+            <div id="auth-logged-out">
+              <div class="adp-header">
+                <div class="adp-logo">
+                  <svg width="18" height="18" viewBox="0 0 34 34" fill="none">
+                    <circle cx="17" cy="17" r="15.5" stroke="var(--accent)" stroke-width="2.5"/>
+                    <text x="17" y="22" text-anchor="middle" font-family="Inter,sans-serif"
+                          font-weight="700" font-size="12" fill="var(--accent)">eT</text>
+                  </svg>
+                  <span>Stock Advisor</span>
+                </div>
+              </div>
+
+              <div class="adp-tabs">
+                <button class="adp-tab active" id="tab-signin" onclick="adpTab('signin')">Sign in</button>
+                <button class="adp-tab" id="tab-signup" onclick="adpTab('signup')">Register</button>
+              </div>
+
+              <div class="adp-msg adp-err" id="adp-err"></div>
+              <div class="adp-msg adp-ok"  id="adp-ok"></div>
+
+              <!-- Sign-in -->
+              <div id="adp-signin">
+                <div class="adp-field">
+                  <label>Email</label>
+                  <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email"/>
+                </div>
+                <div class="adp-field">
+                  <label>Password</label>
+                  <div class="adp-pw">
+                    <input type="password" id="si-pw" placeholder="••••••••" autocomplete="current-password"/>
+                    <button type="button" class="adp-eye" onclick="adpTogglePw('si-pw',this)" tabindex="-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="adp-forgot">
+                  <button type="button" class="adp-link" onclick="adpTab('reset')">Forgot password?</button>
+                </div>
+                <button class="adp-btn" id="si-btn" onclick="adpSignIn()">Sign in</button>
+                <div class="adp-or"><span>or</span></div>
+                <button class="adp-google" onclick="adpGoogle()">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                  Continue with Google
+                </button>
+              </div>
+
+              <!-- Register -->
+              <div id="adp-signup" style="display:none">
+                <div class="adp-field">
+                  <label>Email</label>
+                  <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email"/>
+                </div>
+                <div class="adp-field">
+                  <label>Password</label>
+                  <div class="adp-pw">
+                    <input type="password" id="su-pw" placeholder="Min 8 characters" autocomplete="new-password"/>
+                    <button type="button" class="adp-eye" onclick="adpTogglePw('su-pw',this)" tabindex="-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="adp-field">
+                  <label>Confirm password</label>
+                  <input type="password" id="su-pw2" placeholder="Repeat password" autocomplete="new-password"/>
+                </div>
+                <button class="adp-btn" id="su-btn" onclick="adpSignUp()">Create account</button>
+                <div class="adp-or"><span>or</span></div>
+                <button class="adp-google" onclick="adpGoogle()">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                  Continue with Google
+                </button>
+              </div>
+
+              <!-- Reset password -->
+              <div id="adp-reset" style="display:none">
+                <button type="button" class="adp-back" onclick="adpTab('signin')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  Back to sign in
+                </button>
+                <p class="adp-reset-hint">We'll send a reset link to your inbox.</p>
+                <div class="adp-field">
+                  <label>Email</label>
+                  <input type="email" id="rp-email" placeholder="you@example.com" autocomplete="email"/>
+                </div>
+                <button class="adp-btn" id="rp-btn" onclick="adpResetPw()">Send reset link</button>
+              </div>
+            </div><!-- /logged-out -->
+
+            <!-- ▸ LOGGED-IN VIEW ◂ -->
+            <div id="auth-logged-in" style="display:none">
+              <div class="adp-user-header">
+                <div class="adp-avatar" id="adp-avatar"></div>
+                <div class="adp-user-info">
+                  <div class="adp-user-email" id="adp-user-email"></div>
+                  <div class="adp-user-since" id="adp-user-since"></div>
+                </div>
+              </div>
+              <nav class="adp-nav">
+                <a class="adp-nav-item" href="index.html" style="text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  Dashboard
+                </a>
+                <a class="adp-nav-item" href="recommendations.html" style="text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  Recommendations
+                </a>
+                <a class="adp-nav-item" href="profile.html" style="text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  Profile settings
+                </a>
+                <a class="adp-nav-item" href="agent-portfolios.html" style="text-decoration:none;color:var(--accent);">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                  Agent Portfolios
+                </a>
+                <a class="adp-nav-item" id="adp-admin-link" href="admin.html"
+                   style="display:none;text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Admin Console
+                  <span class="adp-badge" style="margin-left:auto;background:rgba(239,68,68,0.12);color:var(--red);border-color:rgba(239,68,68,0.2);">Admin</span>
+                </a>
+              </nav>
+
+    <div class="agent-page">
+
+      <a href="index.html" class="agent-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to app
+      </a>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem;">
+        <div>
+          <h2 style="font-size:20px;font-weight:600;color:var(--text);letter-spacing:-0.02em;margin:0;">Agent Portfolios</h2>
+          <p style="font-size:12px;color:var(--text-dim);margin-top:3px;">AI-managed sub-portfolios via eToro Agent API</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="env-toggle">
+            <button class="env-btn active" id="env-real" onclick="switchEnv('real')">Real</button>
+            <button class="env-btn"        id="env-demo" onclick="switchEnv('demo')">Demo</button>
+          </div>
+          <button onclick="loadPortfolio()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-muted)'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- API key setup — hidden once keys saved -->
+      <div class="setup-card" id="setup-card">
+        <h3>🔑 Connect your eToro API keys</h3>
+        <p>Get your keys from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>. Keys are stored in your profile and proxied server-side — they never appear in the browser.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="setup-field"><label>API Key (x-api-key)</label><input type="password" id="etoro-api-key" placeholder="Your eToro API key" autocomplete="off"/></div>
+          <div class="setup-field"><label>User Key (x-user-key)</label><input type="password" id="etoro-user-key" placeholder="Your eToro user key" autocomplete="off"/></div>
+        </div>
+        <div class="setup-msg" id="setup-msg"></div>
+        <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;">
+          <button onclick="saveApiKeys()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:var(--radius);font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:opacity 0.15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Save &amp; connect</button>
+          <a href="https://api-portal.etoro.com/get-started" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;color:var(--text-muted);text-decoration:none;font-family:inherit;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            API docs
+          </a>
+        </div>
+      </div>
+
+      <div class="agent-error" id="agent-error"></div>
+
+      <!-- Portfolio content — shown after load -->
+      <div id="portfolio-section" style="display:none;">
+        <div class="portfolio-summary">
+          <div class="summary-card"><div class="summary-label">Available cash</div><div class="summary-value" id="sum-cash">—</div><div class="summary-sub">USD</div></div>
+          <div class="summary-card"><div class="summary-label">Total equity</div><div class="summary-value" id="sum-equity">—</div><div class="summary-sub">USD</div></div>
+          <div class="summary-card"><div class="summary-label">Open P&amp;L</div><div class="summary-value" id="sum-pnl">—</div><div class="summary-sub">unrealised</div></div>
+          <div class="summary-card"><div class="summary-label">Positions</div><div class="summary-value" id="sum-count">—</div><div class="summary-sub">open</div></div>
+        </div>
+        <div class="positions-header">
+          <div class="positions-title">Open positions</div>
+          <div style="font-size:11px;color:var(--text-dim);" id="positions-ts"></div>
+        </div>
+        <div id="positions-loading" class="agent-loading" style="display:none;"><div class="spinner-sm"></div>Loading positions…</div>
+        <div id="positions-empty"  class="agent-empty"   style="display:none;">No open positions in this portfolio.</div>
+        <div class="positions-grid" id="positions-grid"></div>
+      </div>
+
+      <footer class="site-footer" style="margin-top:3rem;">
+        <span class="footer-left">© 2025 eToro Stock Advisor · Agent Portfolios powered by eToro API</span>
+        <a class="footer-top-btn" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          Top
+        </a>
+      </footer>
+
+    </div><!-- /agent-page -->
+  </div><!-- /agent-content -->
+
+<script>
+  const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuZHhsaWh0eGpsbnRtaXhjZHNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDE1MjIsImV4cCI6MjA5NzI3NzUyMn0.pQ2lHoYfnvhET561Zuc-gWL-IQtfIsHrWNLj8oCDEmI';
+  const ADMIN_EMAILS = ['giacomo.medici@gmail.com'];
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
+  const $ = id => document.getElementById(id);
+  const isAdmin = () => ADMIN_EMAILS.includes(_currentUser?.email);
+
+  let _currentUser = null;
+  let _panelOpen   = false;
+  let _etoroApiKey  = '';
+  let _etoroUserKey = '';
+  let _env = 'real';
+
+  /* ── Theme ── */
+  function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    $('icon-moon').style.display = isLight ? 'none' : '';
+    $('icon-sun').style.display  = isLight ? ''     : 'none';
+    $('theme-label').textContent = isLight ? 'Dark' : 'Light';
+  }
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', () => {
+      if ($('icon-moon')) $('icon-moon').style.display = 'none';
+      if ($('icon-sun'))  $('icon-sun').style.display  = '';
+      if ($('theme-label')) $('theme-label').textContent = 'Dark';
+    });
+  }
+
+  /* ── Auth panel ── */
+  function toggleAuthPanel() { _panelOpen ? closeAuthPanel() : openAuthPanel(); }
+  function openAuthPanel() { $('auth-dropdown').classList.add('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','true'); _panelOpen = true; setTimeout(() => document.addEventListener('click', _outsideClick), 0); }
+  function closeAuthPanel() { $('auth-dropdown').classList.remove('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','false'); _panelOpen = false; document.removeEventListener('click', _outsideClick); adpClearMsg(); }
+  function _outsideClick(e) { if (!e.target.closest('.auth-trigger-wrap')) closeAuthPanel(); }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuthPanel(); });
+
+  function adpTab(tab) { adpClearMsg(); ['signin','signup','reset'].forEach(t => { $(('adp-' + t)).style.display = t === tab ? 'block' : 'none'; }); $('adp-tabs')?.style.setProperty('display', tab === 'reset' ? 'none' : 'flex'); ['signin','signup'].forEach(t => { $('tab-' + t)?.classList.toggle('active', t === tab); }); }
+  function adpClearMsg() { const e=$('adp-err'),s=$('adp-ok'); if(e){e.style.display='none';e.textContent='';} if(s){s.style.display='none';s.textContent='';} }
+  function adpErr(msg){const el=$('adp-err');if(!el)return;el.textContent=msg;el.style.display='block';$('adp-ok').style.display='none';}
+  function adpOk(msg){const el=$('adp-ok');if(!el)return;el.textContent=msg;el.style.display='block';$('adp-err').style.display='none';}
+  function adpSpin(id,loading,label){const b=$(id);if(!b)return;b.disabled=loading;b.innerHTML=loading?'<span class="adp-spin"></span>':label;}
+  function adpTogglePw(id,btn){const inp=$(id);const show=inp.type==='password';inp.type=show?'text':'password';btn.innerHTML=show?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';}
+  async function adpSignIn(){const email=$('si-email')?.value.trim(),pw=$('si-pw')?.value;if(!email||!pw){adpErr('Please fill in all fields.');return;}adpClearMsg();adpSpin('si-btn',true,'Sign in');try{const{error}=await db.auth.signInWithPassword({email,password:pw});if(error)throw error;}catch(e){adpErr(e.message||'Sign in failed.');adpSpin('si-btn',false,'Sign in');}}
+  async function adpSignUp(){const email=$('su-email')?.value.trim(),pw=$('su-pw')?.value,pw2=$('su-pw2')?.value;if(!email||!pw){adpErr('Please fill in all fields.');return;}if(pw.length<8){adpErr('Password must be at least 8 characters.');return;}if(pw!==pw2){adpErr('Passwords do not match.');return;}adpClearMsg();adpSpin('su-btn',true,'Create account');try{const{error}=await db.auth.signUp({email,password:pw});if(error)throw error;adpOk('✓ Check your email to confirm, then sign in.');}catch(e){adpErr(e.message||'Sign up failed.');}adpSpin('su-btn',false,'Create account');}
+  async function adpResetPw(){const email=$('rp-email')?.value.trim();if(!email){adpErr('Please enter your email.');return;}adpClearMsg();adpSpin('rp-btn',true,'Sending…');try{const{error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});if(error)throw error;adpOk('✓ Reset link sent — check your inbox.');}catch(e){adpErr(e.message||'Could not send reset email.');}adpSpin('rp-btn',false,'Send reset link');}
+  async function adpGoogle(){adpClearMsg();try{const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://el-martillo.github.io/fintech/',queryParams:{access_type:'offline',prompt:'consent'}}});if(error){if(error.message?.includes('provider is not enabled')||error.status===400)adpErr('Google sign-in not yet configured — use email/password for now.');else adpErr(error.message);}}catch(e){adpErr('Google sign-in unavailable — use email/password.');}}
+  async function adpSignOut(){closeAuthPanel();await db.auth.signOut();window.location.href='index.html';}
+
+  function _renderTrigger(user) {
+    const wrap=$('auth-trigger-btn');if(!wrap)return;
+    if(!user){wrap.className='navbar-account auth-trigger';wrap.title='Sign in / Register';wrap.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;}
+    else{const ini=(user.email||'U').slice(0,2).toUpperCase();wrap.className='adp-user-btn';wrap.title='My account';wrap.innerHTML=ini;}
+  }
+  function _renderLoggedIn(user) {
+    const lo=$('auth-logged-out'),li=$('auth-logged-in');if(!lo||!li)return;
+    if(!user){lo.style.display='block';li.style.display='none';adpTab('signin');return;}
+    lo.style.display='none';li.style.display='block';
+    const ini=(user.email||'U').slice(0,2).toUpperCase();
+    const av=$('adp-avatar'),em=$('adp-user-email'),si=$('adp-user-since');
+    if(av)av.textContent=ini;if(em)em.textContent=user.email;
+    if(si&&user.created_at)si.textContent='Member since '+new Date(user.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    const adminLink=$('adp-admin-link');
+    if(adminLink)adminLink.style.display=isAdmin()?'flex':'none';
+  }
+  document.addEventListener('keydown', e => { if(e.key!=='Enter')return; const id=document.activeElement?.id; if(id==='si-email'||id==='si-pw')adpSignIn(); else if(id==='su-email'||id==='su-pw'||id==='su-pw2')adpSignUp(); else if(id==='rp-email')adpResetPw(); });
+
+  /* ── Auth gate — verified server-side via getSession ── */
+  async function initPage() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.user) {
+      $('gate-title').textContent = 'Sign in required';
+      $('gate-sub').textContent   = 'Please sign in to access Agent Portfolios.';
+      $('gate-btn').style.display = 'inline-flex';
+      return;
+    }
+    _currentUser = session.user;
+    _renderTrigger(_currentUser);
+    _renderLoggedIn(_currentUser);
+    if (window.location.hash.includes('access_token'))
+      history.replaceState(null, '', window.location.pathname);
+    $('agent-gate').style.display    = 'none';
+    $('agent-content').style.display = 'block';
+    await loadSavedKeys();
+    if (_etoroApiKey && _etoroUserKey) loadPortfolio();
+  }
+
+  db.auth.onAuthStateChange((event, session) => {
+    _currentUser = session?.user ?? null;
+    _renderTrigger(_currentUser);
+    _renderLoggedIn(_currentUser);
+    if (event === 'SIGNED_IN') {
+      if (window.location.hash.includes('access_token'))
+        history.replaceState(null, '', window.location.pathname);
+      setTimeout(closeAuthPanel, 700);
+    }
+    if (event === 'SIGNED_OUT') window.location.href = 'index.html';
+  });
+
+  /* ── Keys ── */
+  async function loadSavedKeys() {
+    const { data } = await db.from('profiles').select('etoro_api_key, etoro_user_key').eq('id', _currentUser.id).single();
+    if (data?.etoro_api_key)  { _etoroApiKey  = data.etoro_api_key;  $('etoro-api-key').value  = '•'.repeat(24); }
+    if (data?.etoro_user_key) { _etoroUserKey = data.etoro_user_key; $('etoro-user-key').value = '•'.repeat(24); }
+    if (_etoroApiKey && _etoroUserKey) $('setup-card').style.display = 'none';
+  }
+
+  async function saveApiKeys() {
+    const apiKey  = $('etoro-api-key')?.value?.trim();
+    const userKey = $('etoro-user-key')?.value?.trim();
+    const msgEl   = $('setup-msg');
+    if (!apiKey  || apiKey.startsWith('•'))  { showSetupMsg('Enter your API key.',  'err'); return; }
+    if (!userKey || userKey.startsWith('•')) { showSetupMsg('Enter your user key.', 'err'); return; }
+    showSetupMsg('Saving…', 'ok');
+    const { error } = await db.from('profiles').upsert(
+      { id: _currentUser.id, etoro_api_key: apiKey, etoro_user_key: userKey },
+      { onConflict: 'id' }
+    );
+    if (error) { showSetupMsg('Save failed: ' + error.message, 'err'); return; }
+    _etoroApiKey  = apiKey;
+    _etoroUserKey = userKey;
+    showSetupMsg('✓ Keys saved — loading portfolio…', 'ok');
+    setTimeout(() => { $('setup-card').style.display = 'none'; loadPortfolio(); }, 600);
+  }
+
+  function showSetupMsg(msg, type) {
+    const el = $('setup-msg'); if (!el) return;
+    el.textContent = msg; el.className = 'setup-msg ' + type; el.style.display = 'block';
+  }
+
+  /* ── Environment toggle ── */
+  function switchEnv(env) {
+    _env = env;
+    $('env-real').classList.toggle('active', env === 'real');
+    $('env-demo').classList.toggle('active', env === 'demo');
+    loadPortfolio();
+  }
+
+  /* ── eToro API via Edge Function proxy ── */
+  async function etoroCall(path, method = 'GET', body = null) {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ ticker: '__etoro__', etoroPath: path, etoroMethod: method, etoroBody: body, etoroApiKey: _etoroApiKey, etoroUserKey: _etoroUserKey })
+    });
+    if (!res.ok) throw new Error(`Proxy error ${res.status}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    if (json.status >= 400) throw new Error(`eToro ${json.status}: ${JSON.stringify(json.data).slice(0,120)}`);
+    return json.data;
+  }
+
+  /* ── Load portfolio ── */
+  async function loadPortfolio() {
+    if (!_etoroApiKey || !_etoroUserKey) return;
+    const errEl = $('agent-error');
+    errEl.style.display = 'none';
+    $('portfolio-section').style.display = 'none';
+    $('positions-loading').style.display = 'flex';
+    $('positions-empty').style.display   = 'none';
+    $('positions-grid').innerHTML = '';
+
+    try {
+      const envPath = _env === 'demo' ? 'demo' : 'real';
+      // Single endpoint returns full account state incl. positions and P&L
+      const data = await etoroCall(`/trading/info/${envPath}/pnl`);
+      const cp = data?.clientPortfolio ?? data;
+
+      const available = cp?.availableCash ?? cp?.availableAmount ?? cp?.available ?? 0;
+      const equity    = cp?.equity ?? cp?.totalBalance ?? 0;
+      const pnl       = cp?.totalUnrealizedPnl ?? cp?.currentPNL ?? cp?.unrealizedPnl ?? 0;
+      const positions = (cp?.positions || []).filter(p => p && (p.positionId || p.PositionID || p.id));
+
+      const fmt = n => '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
+      $('sum-cash').textContent   = fmt(available);
+      $('sum-equity').textContent = fmt(equity);
+      const pnlEl = $('sum-pnl');
+      pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmt(Math.abs(pnl)).replace('$','') ;
+      pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      // Re-add dollar sign after setting color
+      pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      $('sum-count').textContent  = positions.length;
+      $('positions-ts').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      $('portfolio-section').style.display = 'block';
+      $('positions-loading').style.display = 'none';
+
+      if (!positions.length) { $('positions-empty').style.display = 'block'; return; }
+
+      const grid = $('positions-grid');
+      for (const pos of positions.slice(0, 24)) renderPositionCard(pos, grid);
+      for (const pos of positions.slice(0, 24)) enrichPositionCard(pos);
+
+    } catch(e) {
+      $('positions-loading').style.display = 'none';
+      errEl.textContent = '⚠️ Could not load portfolio: ' + e.message + ' — check your API keys below.';
+      errEl.style.display = 'block';
+      $('setup-card').style.display = 'block';
+    }
+  }
+
+  function renderPositionCard(pos, grid) {
+    const posId   = String(pos.positionId || pos.PositionID || pos.id || '');
+    const ticker  = String(pos.instrumentName || pos.symbol || pos.Instrument || posId || '?').toUpperCase();
+    const name    = pos.instrumentDisplayName || pos.displayName || ticker;
+    const openRate = Number(pos.openRate || pos.openPrice || pos.OpenRate || 0);
+    const curRate  = Number(pos.currentRate || pos.currentPrice || pos.CurrentRate || openRate);
+    const pnl      = Number(pos.pnl ?? pos.profit ?? pos.unrealizedPnl ?? pos.NetProfit ?? 0);
+    const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
+    const amount   = Number(pos.investedAmount || pos.amount || pos.Amount || pos.notionalValue || 0);
+    const isBuy    = pos.isBuy !== false && pos.direction !== 'SELL';
+    const isUp     = pnl >= 0;
+    const pnlColor = isUp ? 'var(--green)' : 'var(--red)';
+    const sign     = isUp ? '+' : '-';
+    const etoroUrl = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
+    const signalId = `signal-${posId || ticker}`;
+
+    const card = document.createElement('div');
+    card.className = `pos-card ${isUp ? 'pos-up' : 'pos-down'}`;
+    card.dataset.positionId = posId;
+    card.dataset.ticker     = ticker;
+    card.innerHTML = `
+      <div class="pos-top">
+        <div>
+          <div class="pos-ticker">${ticker.replace('-USD','')}</div>
+          <div class="pos-name">${name.length > 30 ? name.slice(0,28)+'…' : name}</div>
+        </div>
+        <div class="pos-pnl">
+          <div class="pos-pnl-value" style="color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
+          <div class="pos-pnl-pct"   style="color:${pnlColor};">${sign}${Math.abs(pnlPct).toFixed(2)}%</div>
+        </div>
+      </div>
+      <div class="pos-meta">
+        <div class="pos-meta-item"><strong>Open</strong> $${openRate.toFixed(openRate < 10 ? 4 : 2)}</div>
+        <div class="pos-meta-item"><strong>Now</strong>  $${curRate.toFixed(curRate < 10 ? 4 : 2)}</div>
+        <div class="pos-meta-item"><strong>Size</strong> $${amount.toFixed(0)}</div>
+        <div class="pos-meta-item"><strong>${isBuy ? '↑ BUY' : '↓ SELL'}</strong></div>
+      </div>
+      <div class="pos-signal" id="${signalId}">
+        <span style="font-size:10px;color:var(--text-dim);font-style:italic;">Analysing…</span>
+      </div>
+      <div class="pos-actions">
+        ${posId ? `<button class="pos-btn close-btn" onclick="confirmClose('${posId}','${ticker}',${pnl.toFixed(2)})">Close position</button>` : ''}
+        <a class="pos-btn etoro-btn" href="${etoroUrl}" target="_blank" rel="noopener">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          eToro
+        </a>
+      </div>`;
+    grid.appendChild(card);
+  }
+
+  async function enrichPositionCard(pos) {
+    const posId   = String(pos.positionId || pos.PositionID || pos.id || '');
+    const ticker  = String(pos.instrumentName || pos.symbol || '').toUpperCase();
+    const name    = pos.instrumentDisplayName || pos.displayName || ticker;
+    const openRate = Number(pos.openRate || 0);
+    const curRate  = Number(pos.currentRate || openRate);
+    const changePct = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
+    const signalEl  = document.getElementById(`signal-${posId || ticker}`);
+    if (!signalEl) return;
+    try {
+      const metrics = {
+        rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
+        weekPct: changePct, weekTrend: changePct >= 0 ? 'up' : 'down',
+        direction: changePct >= 0 ? 'up' : 'down'
+      };
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price: curRate.toFixed(2), change: (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%', name, metrics })
+      });
+      if (!res.ok) return;
+      const ai = await res.json();
+      if (!ai?.signal) return;
+      const cls = ai.signal === 'BUY' ? 'signal-BUY' : ai.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
+      signalEl.innerHTML = `<span class="signal-pill ${cls}" style="font-size:10px;padding:2px 8px;flex-shrink:0;">${ai.signal}</span><span class="pos-signal-text">${ai.rationale || ''}</span>`;
+    } catch { signalEl.innerHTML = '<span style="font-size:10px;color:var(--text-dim);">Signal unavailable</span>'; }
+  }
+
+  /* ── Close position ── */
+  function confirmClose(positionId, ticker, pnl) {
+    document.getElementById('confirm-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'confirm-overlay';
+    overlay.className = 'confirm-overlay';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const sign = pnl >= 0 ? '+$' : '-$';
+    overlay.innerHTML = `
+      <div class="confirm-modal">
+        <h3>Close ${ticker} position?</h3>
+        <p>Closes your <strong>${ticker}</strong> position at current market price.<br>
+        P&amp;L: <strong style="color:${pnlColor};">${sign}${Math.abs(pnl).toFixed(2)}</strong></p>
+        <p style="font-size:12px;padding:8px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:1rem;">⚠️ This trades with ${_env} money and cannot be undone.</p>
+        <div class="confirm-row">
+          <button class="confirm-cancel" onclick="document.getElementById('confirm-overlay').remove()">Cancel</button>
+          <button class="confirm-ok" onclick="closePosition('${positionId}','${ticker}')">Close position</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+
+  async function closePosition(positionId, ticker) {
+    document.getElementById('confirm-overlay')?.remove();
+    const card = document.querySelector(`[data-position-id="${positionId}"]`);
+    if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
+    try {
+      const envPath = _env === 'demo' ? 'demo' : 'real';
+      await etoroCall(`/trading/execution/${envPath}/market-close-orders/${positionId}`, 'POST');
+      if (card) {
+        card.style.transition = 'all 0.35s';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => { card.remove(); $('sum-count').textContent = $('positions-grid').querySelectorAll('.pos-card').length; }, 350);
+      }
+    } catch(e) {
+      if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+      alert('Failed to close: ' + e.message);
+    }
+  }
+
+  initPage();
+</script>
+</body>
+</html>

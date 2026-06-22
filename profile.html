@@ -605,10 +605,10 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                   Profile settings
                 </a>
-                <button class="adp-nav-item" onclick="closeAuthPanel()">
+                <a class="adp-nav-item" href="agent-portfolios.html" style="text-decoration:none;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                  Agent Portfolios <span class="adp-badge">Soon</span>
-                </button>
+                  Agent Portfolios
+                </a>
                 <a class="adp-nav-item" id="adp-admin-link" href="admin.html"
                    style="display:none;text-decoration:none;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -694,54 +694,6 @@
               <div class="profile-stat-label">Sell signals</div>
             </div>
           </div>
-
-          <!-- Dashboard analysis history -->
-          <div style="margin-top:1rem;">
-            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Dashboard analyses (last 30 days)</div>
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">BUY/SELL signals from manual ticker lookups on the dashboard.</div>
-            <div style="position:relative;">
-              <div id="signal-history-tooltip" style="display:none;position:absolute;top:-52px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:11px;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:10;text-align:center;"></div>
-              <div id="signal-history-chart" style="min-height:56px;display:flex;align-items:flex-end;gap:2px;"></div>
-            </div>
-            <div style="display:flex;gap:14px;margin-top:8px;">
-              <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:2px;background:var(--green);display:inline-block;"></span>BUY</span>
-              <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:2px;background:var(--red);display:inline-block;"></span>SELL</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notifications / WhatsApp -->
-      <div class="profile-card">
-        <div class="profile-card-header">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.56 3.38 2 2 0 0 1 3.53 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16z"/></svg>
-          <div class="profile-card-title">WhatsApp Alerts</div>
-        </div>
-        <div class="profile-card-body">
-          <p style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">Get notified on WhatsApp when a stock hits your price target. Uses <strong>CallMeBot</strong> — free, no account needed.</p>
-          <div style="background:var(--accent-dim);border:1px solid rgba(108,99,255,0.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--text-muted);line-height:1.7;">
-            <strong style="color:var(--text);">One-time setup:</strong> WhatsApp <strong>+34 644 81 58 78</strong> with the message <em style="color:var(--text);">"I allow callmebot to send me messages"</em> — you'll receive your API key within 2 minutes. If no response, try <strong>+34 621 331 709</strong> as a backup.
-          </div>
-          <div class="profile-msg error"   id="wa-error"></div>
-          <div class="profile-msg success" id="wa-success"></div>
-          <div class="profile-field">
-            <label>WhatsApp number (with country code)</label>
-            <input type="tel" id="wa-number" placeholder="+447911123456" autocomplete="tel"/>
-            <div class="profile-hint">E.g. +44 for UK, +1 for US, +39 for Italy.</div>
-          </div>
-          <div class="profile-field">
-            <label>CallMeBot API Key</label>
-            <input type="text" id="wa-apikey" placeholder="e.g. 1234567"/>
-            <div class="profile-hint">Sent to you by CallMeBot after the activation message.</div>
-          </div>
-          <div id="wa-alerts-list" style="margin-top:1rem;"></div>
-          <div class="profile-btn-row">
-            <button class="profile-btn" onclick="saveWhatsApp()">Save number</button>
-            <a class="profile-btn secondary" href="recommendations.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              Set alerts
-            </a>
-          </div>
         </div>
       </div>
 
@@ -797,6 +749,34 @@
                 Update password
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- eToro Agent API keys -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <div class="profile-card-title">eToro Agent API</div>
+        </div>
+        <div class="profile-card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:0.9rem;line-height:1.6;">Connect your eToro API keys to use <a href="agent-portfolios.html" style="color:var(--accent);text-decoration:none;">Agent Portfolios</a> — view live positions and P&amp;L with AI signals. Get your keys from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">eToro Settings → Trade</a>.</p>
+          <div class="profile-msg error"   id="etoro-error"></div>
+          <div class="profile-msg success" id="etoro-success"></div>
+          <div class="profile-field">
+            <label>API Key (x-api-key)</label>
+            <input type="password" id="etoro-api-key-profile" placeholder="Your eToro API key" autocomplete="off"/>
+          </div>
+          <div class="profile-field">
+            <label>User Key (x-user-key)</label>
+            <input type="password" id="etoro-user-key-profile" placeholder="Your eToro user key" autocomplete="off"/>
+          </div>
+          <div class="profile-btn-row">
+            <button class="profile-btn" onclick="saveEtoroKeys()">Save keys</button>
+            <a href="agent-portfolios.html" class="profile-btn secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              Open portfolios
+            </a>
           </div>
         </div>
       </div>
@@ -1084,7 +1064,7 @@
     renderProfile(user);
     loadStats(user);
     loadRecentSearches();
-    loadWhatsApp(user);
+    loadEtoroKeys(user);
   }
 
   function renderProfile(user) {
@@ -1125,145 +1105,18 @@
   }
 
   async function loadStats(user) {
-    const [analysesRes, favsRes] = await Promise.all([
-      db.from('stock_analyses').select('signal, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
-      db.from('stock_favourites').select('ticker', { count: 'exact', head: true }).eq('user_id', user.id)
-    ]);
+    const { data } = await db
+      .from('stock_analyses')
+      .select('signal')
+      .eq('user_id', user.id);
 
-    const rows  = analysesRes.data || [];
+    const rows  = data || [];
     const buys  = rows.filter(r => r.signal === 'BUY').length;
     const sells = rows.filter(r => r.signal === 'SELL').length;
-    const favs  = favsRes.count ?? 0;
 
     document.getElementById('stat-analyses').textContent = rows.length;
     document.getElementById('stat-buys').textContent     = buys;
     document.getElementById('stat-sells').textContent    = sells;
-
-    // Signal history chart — bucket by day for last 30 days
-    renderSignalHistoryChart(rows);
-  }
-
-  function renderSignalHistoryChart(rows) {
-    const el = document.getElementById('signal-history-chart');
-    const tip = document.getElementById('signal-history-tooltip');
-    if (!el) return;
-    if (!rows.length) {
-      el.innerHTML = '<span style="font-size:12px;color:var(--text-dim);font-style:italic;">No analysis history yet. Analyse a stock on the dashboard to get started.</span>';
-      return;
-    }
-
-    // Build daily buckets for last 30 days
-    const buckets = {};
-    const today = new Date(); today.setHours(0,0,0,0);
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      buckets[d.toISOString().slice(0,10)] = { buy: 0, sell: 0, date: new Date(d) };
-    }
-    rows.forEach(r => {
-      const day = (r.created_at || '').slice(0,10);
-      if (buckets[day]) {
-        if (r.signal === 'BUY')  buckets[day].buy++;
-        if (r.signal === 'SELL') buckets[day].sell++;
-      }
-    });
-
-    const days   = Object.entries(buckets);
-    const maxVal = Math.max(1, ...days.map(([,v]) => v.buy + v.sell));
-    const barH   = 52;
-
-    // Show a month label every time the month changes
-    let lastMonth = null;
-
-    el.innerHTML = days.map(([day, v], idx) => {
-      const total   = v.buy + v.sell;
-      const buyH    = total ? Math.round((v.buy  / maxVal) * barH) : 0;
-      const sellH   = total ? Math.round((v.sell / maxVal) * barH) : 0;
-      const d       = v.date;
-      const month   = d.toLocaleDateString('en-GB', { month: 'short' });
-      const dayNum  = d.getDate();
-      const showLbl = month !== lastMonth;
-      if (showLbl) lastMonth = month;
-
-      const activeCls = total ? 'style="opacity:1;"' : 'style="opacity:0.35;"';
-
-      return `<div
-          data-day="${day}"
-          data-buy="${v.buy}"
-          data-sell="${v.sell}"
-          data-label="${d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' })}"
-          onmouseenter="showChartTip(this)"
-          onmouseleave="hideChartTip()"
-          style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1px;height:${barH + 14}px;cursor:default;padding-bottom:2px;"
-          ${activeCls}>
-          <div style="width:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;height:${barH}px;">
-            ${buyH  ? `<div style="width:100%;height:${buyH}px;background:var(--green);border-radius:2px 2px 0 0;opacity:0.85;"></div>` : ''}
-            ${sellH ? `<div style="width:100%;height:${sellH}px;background:var(--red);border-radius:${buyH?'0':'2px 2px'} 0 0;opacity:0.85;"></div>` : ''}
-            ${!total ? `<div style="width:100%;height:2px;background:var(--border);border-radius:1px;margin-bottom:0;"></div>` : ''}
-          </div>
-          <div style="font-size:9px;color:${showLbl ? 'var(--text-dim)' : 'transparent'};line-height:1;margin-top:2px;white-space:nowrap;">${showLbl ? month : '·'}</div>
-        </div>`;
-    }).join('');
-  }
-
-  function showChartTip(el) {
-    const tip = document.getElementById('signal-history-tooltip');
-    if (!tip) return;
-    const label = el.dataset.label;
-    const buy   = parseInt(el.dataset.buy)  || 0;
-    const sell  = parseInt(el.dataset.sell) || 0;
-    const total = buy + sell;
-    if (!total) {
-      tip.style.display = 'none';
-      return;
-    }
-    tip.innerHTML = `<span style="color:var(--text-muted);font-weight:600;">${label}</span><br>`
-      + (buy  ? `<span style="color:var(--green);">▲ ${buy} BUY</span>  ` : '')
-      + (sell ? `<span style="color:var(--red);">▼ ${sell} SELL</span>` : '');
-
-    // Position tooltip above the hovered bar
-    const chartEl = document.getElementById('signal-history-chart');
-    const barRect  = el.getBoundingClientRect();
-    const chartRect = chartEl.getBoundingClientRect();
-    const leftPct = ((barRect.left + barRect.width / 2 - chartRect.left) / chartRect.width) * 100;
-    tip.style.left = `${leftPct}%`;
-    tip.style.display = 'block';
-  }
-
-  function hideChartTip() {
-    const tip = document.getElementById('signal-history-tooltip');
-    if (tip) tip.style.display = 'none';
-  }
-
-  async function loadWhatsApp(user) {
-    const { data } = await db.from('profiles').select('whatsapp_number, callmebot_apikey').eq('id', user.id).single();
-    if (data?.whatsapp_number) document.getElementById('wa-number').value = data.whatsapp_number;
-    if (data?.callmebot_apikey) document.getElementById('wa-apikey').value = data.callmebot_apikey;
-
-    const { data: alerts } = await db.from('price_alerts').select('*').eq('user_id', user.id).eq('triggered', false).order('created_at', { ascending: false });
-    const listEl = document.getElementById('wa-alerts-list');
-    if (!listEl) return;
-    if (!alerts?.length) { listEl.innerHTML = '<p style="font-size:12px;color:var(--text-dim);font-style:italic;">No active price alerts.</p>'; return; }
-    listEl.innerHTML = `
-      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Active alerts (${alerts.length})</div>` +
-      alerts.map(a => `
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;">
-          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);min-width:52px;">${a.ticker.replace('-USD','')}</span>
-          <span style="font-size:12px;color:var(--text-muted);flex:1;">${a.direction === 'above' ? '↑' : '↓'} $${a.target_price}</span>
-          <span style="font-size:11px;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(108,99,255,0.2);border-radius:4px;padding:2px 7px;">Active</span>
-        </div>`).join('');
-  }
-
-  async function saveWhatsApp() {
-    const num    = document.getElementById('wa-number')?.value?.trim();
-    const apikey = document.getElementById('wa-apikey')?.value?.trim();
-    const errEl  = document.getElementById('wa-error');
-    const okEl   = document.getElementById('wa-success');
-    errEl.style.display = 'none'; okEl.style.display = 'none';
-    if (!num || !num.startsWith('+')) { errEl.textContent = 'Enter number with country code e.g. +447911123456'; errEl.style.display = 'block'; return; }
-    if (!apikey) { errEl.textContent = 'Enter your CallMeBot API key.'; errEl.style.display = 'block'; return; }
-    const { error } = await db.from('profiles').upsert({ id: _currentUser.id, whatsapp_number: num, callmebot_apikey: apikey }, { onConflict: 'id' });
-    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
-    else { okEl.textContent = '✓ WhatsApp details saved.'; okEl.style.display = 'block'; }
   }
 
   async function loadRecentSearches() {
@@ -1361,6 +1214,26 @@
       document.getElementById('pw-bar').style.width = '0%';
       document.getElementById('pw-label').textContent = '';
     }
+  }
+
+  /* ── eToro API keys ── */
+  async function loadEtoroKeys(user) {
+    const { data } = await db.from('profiles').select('etoro_api_key, etoro_user_key').eq('id', user.id).single();
+    if (data?.etoro_api_key)  document.getElementById('etoro-api-key-profile').value  = '•'.repeat(20);
+    if (data?.etoro_user_key) document.getElementById('etoro-user-key-profile').value = '•'.repeat(20);
+  }
+
+  async function saveEtoroKeys() {
+    const apiKey  = document.getElementById('etoro-api-key-profile')?.value?.trim();
+    const userKey = document.getElementById('etoro-user-key-profile')?.value?.trim();
+    const errEl   = document.getElementById('etoro-error');
+    const okEl    = document.getElementById('etoro-success');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    if (!apiKey  || apiKey.startsWith('•'))  { errEl.textContent = 'Enter your eToro API key.';  errEl.style.display = 'block'; return; }
+    if (!userKey || userKey.startsWith('•')) { errEl.textContent = 'Enter your eToro user key.'; errEl.style.display = 'block'; return; }
+    const { error } = await db.from('profiles').upsert({ id: _currentUser.id, etoro_api_key: apiKey, etoro_user_key: userKey }, { onConflict: 'id' });
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
+    else { okEl.textContent = '✓ eToro API keys saved.'; okEl.style.display = 'block'; }
   }
 
   /* ── Sign out ── */

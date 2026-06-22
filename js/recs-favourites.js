@@ -209,11 +209,15 @@ async function enrichFavCard(ticker) {
     weekPct: 0, weekTrend: 'up',
   };
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=5d&interval=1d&includeAdjustedClose=true`;
-    const res = await fetch(url);
+    // Route through Edge Function proxy — direct Yahoo calls are blocked by CORS/403
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ ticker: '__yahoo__', yTicker: ticker, range: '5d', interval: '1d' })
+    });
     if (res.ok) {
-      const json = await res.json();
-      const result = json.chart?.result?.[0];
+      const yData = await res.json();
+      const result = yData.result;
       if (result) {
         const meta   = result.meta || {};
         const closes = result.indicators?.adjclose?.[0]?.adjclose || result.indicators?.quote?.[0]?.close || [];
