@@ -299,15 +299,82 @@
     .agent-loading { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;gap:0.75rem;color:var(--text-dim);font-size:13px; }
     .agent-empty { text-align:center;padding:3rem 1rem;color:var(--text-dim);font-size:13px;font-style:italic; }
     .agent-error { background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:1rem;display:none; }
+    /* ── Two-column trading layout ── */
+    .trading-layout { display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start; }
+    @media (max-width:860px) { .trading-layout { grid-template-columns:1fr; } }
+
+    /* ── Trade panel (left column) ── */
+    .trade-panel { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;position:sticky;top:80px; }
+    .trade-panel-header { padding:1rem 1.25rem 0.75rem;border-bottom:1px solid var(--border); }
+    .trade-panel-title { font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px; }
+    .trade-panel-sub { font-size:11px;color:var(--text-dim); }
+    .trade-panel-body { padding:1rem 1.25rem; }
+
+    /* Direction toggle */
+    .dir-toggle { display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:1rem; }
+    .dir-btn { padding:9px;border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s;background:var(--surface2);color:var(--text-muted);letter-spacing:0.03em; }
+    .dir-btn.buy-active  { background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.4);color:var(--green); }
+    .dir-btn.sell-active { background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.4);color:var(--red); }
+    .dir-btn:hover:not(.buy-active):not(.sell-active) { border-color:var(--accent);color:var(--text); }
+
+    /* Trade field */
+    .trade-field { margin-bottom:0.85rem; }
+    .trade-field label { display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px; }
+    .trade-field label span { font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-dim); }
+    .trade-input { width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;font-size:14px;color:var(--text);outline:none;font-family:var(--mono);transition:border-color 0.15s,box-shadow 0.15s; }
+    .trade-input:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.1); }
+    .trade-input::placeholder { color:var(--text-dim);font-family:inherit; }
+
+    /* Quick amount chips */
+    .amount-chips { display:flex;gap:5px;margin-top:6px;flex-wrap:wrap; }
+    .amount-chip { padding:3px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:11px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all 0.12s;font-family:inherit; }
+    .amount-chip:hover { border-color:var(--accent);color:var(--accent); }
+
+    /* Leverage selector */
+    .lev-row { display:flex;gap:5px; }
+    .lev-btn { flex:1;padding:6px 4px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.12s;text-align:center; }
+    .lev-btn.active { background:var(--accent-dim);border-color:rgba(108,99,255,0.4);color:#a9a3ff; }
+    .lev-btn:hover:not(.active) { border-color:var(--accent);color:var(--text); }
+
+    /* AI signal preview inside panel */
+    .trade-signal-box { background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;margin-bottom:1rem;min-height:60px;display:flex;flex-direction:column;gap:5px; }
+    .trade-signal-row { display:flex;align-items:center;gap:8px; }
+    .trade-signal-rationale { font-size:11px;color:var(--text-muted);line-height:1.45; }
+    .trade-signal-meta { display:flex;gap:10px;margin-top:4px; }
+    .trade-signal-meta span { font-size:10px;color:var(--text-dim); }
+    .trade-signal-meta strong { color:var(--text-muted); }
+
+    /* Execute button */
+    .trade-exec-btn { width:100%;padding:11px;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity 0.15s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:8px; }
+    .trade-exec-btn.buy  { background:var(--green);color:#fff; }
+    .trade-exec-btn.sell { background:var(--red);  color:#fff; }
+    .trade-exec-btn:hover { opacity:0.88; }
+    .trade-exec-btn:active { transform:scale(0.98); }
+    .trade-exec-btn:disabled { opacity:0.4;cursor:not-allowed;transform:none; }
+    .trade-msg { font-size:12px;padding:7px 10px;border-radius:6px;margin-top:8px;display:none; }
+    .trade-msg.ok  { background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,0.2); }
+    .trade-msg.err { background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2); }
+
+    /* Positions right column */
+    .positions-col {}
+
     /* Confirm modal */
     .confirm-overlay { position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:1rem; }
-    .confirm-modal { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+    .confirm-modal { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5); }
     .confirm-modal h3 { font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px; }
-    .confirm-modal p { font-size:13px;color:var(--text-muted);margin-bottom:1rem;line-height:1.5; }
-    .confirm-row { display:flex;gap:8px; }
+    .confirm-modal p { font-size:13px;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.5; }
+    .confirm-detail { background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;margin-bottom:1rem; }
+    .confirm-detail-row { display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px; }
+    .confirm-detail-row:last-child { margin-bottom:0; }
+    .confirm-detail-row .label { color:var(--text-dim); }
+    .confirm-detail-row .val   { font-weight:600;color:var(--text);font-family:var(--mono); }
+    .confirm-row { display:flex;gap:8px;margin-top:1rem; }
     .confirm-cancel { flex:1;padding:9px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;color:var(--text-muted);cursor:pointer;font-family:inherit; }
-    .confirm-ok { flex:1;padding:9px;background:var(--red);border:none;border-radius:var(--radius);font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
+    .confirm-ok { flex:1;padding:9px;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
+    .confirm-ok.buy  { background:var(--green); }
+    .confirm-ok.sell { background:var(--red); }
     .confirm-ok:hover { opacity:0.85; }
+    .confirm-warn { font-size:11px;padding:7px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:0; }
   </style>
 </head>
 <body>
@@ -511,7 +578,10 @@
           <p style="font-size:12px;color:var(--text-dim);margin-top:3px;">AI-managed sub-portfolios via eToro Agent API</p>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="font-size:11px;font-weight:600;color:var(--text-dim);background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;letter-spacing:0.04em;">REAL ACCOUNT</div>
+          <div class="env-toggle">
+            <button class="env-btn active" id="env-real" onclick="switchEnv('real')">Real</button>
+            <button class="env-btn"        id="env-demo" onclick="switchEnv('demo')">Demo</button>
+          </div>
           <button onclick="loadPortfolio()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-muted)'">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             Refresh
@@ -521,10 +591,11 @@
 
       <!-- API key setup — hidden once keys saved -->
       <div class="setup-card" id="setup-card">
-        <h3>🔑 Connect your eToro Agent Portfolio</h3>
-        <p>Create an Agent Portfolio at <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>, then paste your <strong>User Key</strong> below. The developer API key is handled server-side — you only need your personal user key.</p>
-        <div style="max-width:480px;">
-          <div class="setup-field"><label>User Key (x-user-key)</label><input type="password" id="etoro-user-key" placeholder="Paste your agent portfolio user key" autocomplete="off"/></div>
+        <h3>🔑 Connect your eToro API keys</h3>
+        <p>Get your keys from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>. Keys are stored in your profile and proxied server-side — they never appear in the browser.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="setup-field"><label>API Key (x-api-key)</label><input type="password" id="etoro-api-key" placeholder="Your eToro API key" autocomplete="off"/></div>
+          <div class="setup-field"><label>User Key (x-user-key)</label><input type="password" id="etoro-user-key" placeholder="Your eToro user key" autocomplete="off"/></div>
         </div>
         <div class="setup-msg" id="setup-msg"></div>
         <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;">
@@ -540,20 +611,111 @@
 
       <!-- Portfolio content — shown after load -->
       <div id="portfolio-section" style="display:none;">
+
+        <!-- Summary bar -->
         <div class="portfolio-summary">
           <div class="summary-card"><div class="summary-label">Available cash</div><div class="summary-value" id="sum-cash">—</div><div class="summary-sub">USD</div></div>
           <div class="summary-card"><div class="summary-label">Total equity</div><div class="summary-value" id="sum-equity">—</div><div class="summary-sub">USD</div></div>
           <div class="summary-card"><div class="summary-label">Open P&amp;L</div><div class="summary-value" id="sum-pnl">—</div><div class="summary-sub">unrealised</div></div>
           <div class="summary-card"><div class="summary-label">Positions</div><div class="summary-value" id="sum-count">—</div><div class="summary-sub">open</div></div>
         </div>
-        <div class="positions-header">
-          <div class="positions-title">Open positions</div>
-          <div style="font-size:11px;color:var(--text-dim);" id="positions-ts"></div>
-        </div>
-        <div id="positions-loading" class="agent-loading" style="display:none;"><div class="spinner-sm"></div>Loading positions…</div>
-        <div id="positions-empty"  class="agent-empty"   style="display:none;">No open positions in this portfolio.</div>
-        <div class="positions-grid" id="positions-grid"></div>
-      </div>
+
+        <!-- Two-column layout -->
+        <div class="trading-layout">
+
+          <!-- ── LEFT: Trade Panel ── -->
+          <div class="trade-panel">
+            <div class="trade-panel-header">
+              <div class="trade-panel-title">New Trade</div>
+              <div class="trade-panel-sub">AI-assisted · real account</div>
+            </div>
+            <div class="trade-panel-body">
+
+              <!-- BUY / SELL toggle -->
+              <div class="dir-toggle">
+                <button class="dir-btn buy-active" id="dir-buy"  onclick="setDirection('BUY')">↑ BUY / LONG</button>
+                <button class="dir-btn"            id="dir-sell" onclick="setDirection('SELL')">↓ SELL / SHORT</button>
+              </div>
+
+              <!-- Ticker -->
+              <div class="trade-field">
+                <label>Ticker <span id="trade-resolve-status"></span></label>
+                <input class="trade-input" id="trade-ticker" placeholder="e.g. AAPL, BTC, NVDA"
+                       autocomplete="off" spellcheck="false"
+                       oninput="onTradeTickerInput()"
+                       onkeydown="if(event.key==='Enter')resolveTicker()"/>
+              </div>
+
+              <!-- AI signal box -->
+              <div class="trade-signal-box" id="trade-signal-box">
+                <div style="font-size:11px;color:var(--text-dim);font-style:italic;">Enter a ticker to get an AI signal.</div>
+              </div>
+
+              <!-- Amount -->
+              <div class="trade-field">
+                <label>Amount (USD) <span id="trade-avail-label"></span></label>
+                <input class="trade-input" id="trade-amount" type="number" min="1" placeholder="100"
+                       oninput="updateTradePreview()"/>
+                <div class="amount-chips">
+                  <button class="amount-chip" onclick="setAmountPct(5)">5%</button>
+                  <button class="amount-chip" onclick="setAmountPct(10)">10%</button>
+                  <button class="amount-chip" onclick="setAmountPct(25)">25%</button>
+                  <button class="amount-chip" onclick="setAmountPct(50)">50%</button>
+                  <button class="amount-chip" onclick="setAmountPct(100)">MAX</button>
+                </div>
+              </div>
+
+              <!-- Leverage -->
+              <div class="trade-field">
+                <label>Leverage</label>
+                <div class="lev-row">
+                  <button class="lev-btn active" id="lev-1"  onclick="setLeverage(1)">×1</button>
+                  <button class="lev-btn"         id="lev-2"  onclick="setLeverage(2)">×2</button>
+                  <button class="lev-btn"         id="lev-5"  onclick="setLeverage(5)">×5</button>
+                  <button class="lev-btn"         id="lev-10" onclick="setLeverage(10)">×10</button>
+                  <button class="lev-btn"         id="lev-20" onclick="setLeverage(20)">×20</button>
+                </div>
+              </div>
+
+              <!-- Trade preview row -->
+              <div id="trade-preview" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:0.65rem 0.85rem;margin-bottom:0.85rem;">
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+                  <span style="color:var(--text-dim);">Exposure</span>
+                  <span style="font-family:var(--mono);font-weight:600;color:var(--text);" id="prev-exposure">—</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+                  <span style="color:var(--text-dim);">% of portfolio</span>
+                  <span style="font-family:var(--mono);font-weight:600;color:var(--text);" id="prev-pct">—</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;">
+                  <span style="color:var(--text-dim);">Instrument ID</span>
+                  <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);" id="prev-instrId">—</span>
+                </div>
+              </div>
+
+              <!-- Execute button -->
+              <button class="trade-exec-btn buy" id="trade-exec-btn" onclick="showTradeConfirm()" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                <span id="trade-exec-label">Place BUY order</span>
+              </button>
+              <div class="trade-msg" id="trade-msg"></div>
+
+            </div>
+          </div><!-- /trade-panel -->
+
+          <!-- ── RIGHT: Positions ── -->
+          <div class="positions-col">
+            <div class="positions-header">
+              <div class="positions-title">Open positions</div>
+              <div style="font-size:11px;color:var(--text-dim);" id="positions-ts"></div>
+            </div>
+            <div id="positions-loading" class="agent-loading" style="display:none;"><div class="spinner-sm"></div>Loading positions…</div>
+            <div id="positions-empty"  class="agent-empty"   style="display:none;">No open positions yet. Use the trade panel to open your first position.</div>
+            <div class="positions-grid" id="positions-grid"></div>
+          </div>
+
+        </div><!-- /trading-layout -->
+      </div><!-- /portfolio-section -->
 
       <footer class="site-footer" style="margin-top:3rem;">
         <span class="footer-left">© 2025 eToro Stock Advisor · Agent Portfolios powered by eToro API</span>
@@ -565,6 +727,7 @@
 
     </div><!-- /agent-page -->
   </div><!-- /agent-content -->
+
 
 <script>
   const SUPABASE_URL      = 'https://undxlihtxjlntmixcdse.supabase.co';
@@ -578,8 +741,8 @@
   const $ = id => document.getElementById(id);
   const isAdmin = () => ADMIN_EMAILS.includes(_currentUser?.email);
 
-  let _currentUser = null;
-  let _panelOpen   = false;
+  let _currentUser  = null;
+  let _panelOpen    = false;
   let _etoroUserKey = '';
 
   /* ── Theme ── */
@@ -601,16 +764,14 @@
 
   /* ── Auth panel ── */
   function toggleAuthPanel() { _panelOpen ? closeAuthPanel() : openAuthPanel(); }
-  function openAuthPanel() { $('auth-dropdown').classList.add('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','true'); _panelOpen = true; setTimeout(() => document.addEventListener('click', _outsideClick), 0); }
-  function closeAuthPanel() { $('auth-dropdown').classList.remove('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','false'); _panelOpen = false; document.removeEventListener('click', _outsideClick); adpClearMsg(); }
-  function _outsideClick(e) { if (!e.target.closest('.auth-trigger-wrap')) closeAuthPanel(); }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuthPanel(); });
-
-  function adpTab(tab) { adpClearMsg(); ['signin','signup','reset'].forEach(t => { $(('adp-' + t)).style.display = t === tab ? 'block' : 'none'; }); $('adp-tabs')?.style.setProperty('display', tab === 'reset' ? 'none' : 'flex'); ['signin','signup'].forEach(t => { $('tab-' + t)?.classList.toggle('active', t === tab); }); }
-  function adpClearMsg() { const e=$('adp-err'),s=$('adp-ok'); if(e){e.style.display='none';e.textContent='';} if(s){s.style.display='none';s.textContent='';} }
-  function adpErr(msg){const el=$('adp-err');if(!el)return;el.textContent=msg;el.style.display='block';$('adp-ok').style.display='none';}
-  function adpOk(msg){const el=$('adp-ok');if(!el)return;el.textContent=msg;el.style.display='block';$('adp-err').style.display='none';}
-  function adpSpin(id,loading,label){const b=$(id);if(!b)return;b.disabled=loading;b.innerHTML=loading?'<span class="adp-spin"></span>':label;}
+  function openAuthPanel()  { $('auth-dropdown').classList.add('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','true'); _panelOpen = true; setTimeout(() => document.addEventListener('click', _outsideClick), 0); }
+  function closeAuthPanel() { $('auth-dropdown').classList.remove('open'); $('auth-trigger-btn')?.setAttribute('aria-expanded','false'); _panelOpen = false; document.removeEventListener('click', _outsideClick); }
+  function _outsideClick(e) { if (!$('auth-trigger-wrap')?.contains(e.target)) closeAuthPanel(); }
+  function adpTab(t) { $('adp-signin').style.display=t==='signin'?'block':'none'; $('adp-signup').style.display=t==='signup'?'block':'none'; $('adp-reset').style.display=t==='reset'?'block':'none'; $('tab-signin')?.classList.toggle('active',t==='signin'); $('tab-signup')?.classList.toggle('active',t==='signup'); adpClearMsg(); }
+  function adpErr(m){const e=$('adp-err');if(e){e.textContent=m;e.style.display='block';}}
+  function adpOk(m){const e=$('adp-ok');if(e){e.textContent=m;e.style.display='block';}}
+  function adpClearMsg(){[$('adp-err'),$('adp-ok')].forEach(e=>{if(e)e.style.display='none';});}
+  function adpSpin(id,on,label){const b=$(id);if(!b)return;b.disabled=on;b.innerHTML=on?`<span class="adp-spin"></span>`:(label||'');}
   function adpTogglePw(id,btn){const inp=$(id);const show=inp.type==='password';inp.type=show?'text':'password';btn.innerHTML=show?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';}
   async function adpSignIn(){const email=$('si-email')?.value.trim(),pw=$('si-pw')?.value;if(!email||!pw){adpErr('Please fill in all fields.');return;}adpClearMsg();adpSpin('si-btn',true,'Sign in');try{const{error}=await db.auth.signInWithPassword({email,password:pw});if(error)throw error;}catch(e){adpErr(e.message||'Sign in failed.');adpSpin('si-btn',false,'Sign in');}}
   async function adpSignUp(){const email=$('su-email')?.value.trim(),pw=$('su-pw')?.value,pw2=$('su-pw2')?.value;if(!email||!pw){adpErr('Please fill in all fields.');return;}if(pw.length<8){adpErr('Password must be at least 8 characters.');return;}if(pw!==pw2){adpErr('Passwords do not match.');return;}adpClearMsg();adpSpin('su-btn',true,'Create account');try{const{error}=await db.auth.signUp({email,password:pw});if(error)throw error;adpOk('✓ Check your email to confirm, then sign in.');}catch(e){adpErr(e.message||'Sign up failed.');}adpSpin('su-btn',false,'Create account');}
@@ -636,7 +797,7 @@
   }
   document.addEventListener('keydown', e => { if(e.key!=='Enter')return; const id=document.activeElement?.id; if(id==='si-email'||id==='si-pw')adpSignIn(); else if(id==='su-email'||id==='su-pw'||id==='su-pw2')adpSignUp(); else if(id==='rp-email')adpResetPw(); });
 
-  /* ── Auth gate — verified server-side via getSession ── */
+  /* ── Auth gate ── */
   async function initPage() {
     const { data: { session } } = await db.auth.getSession();
     if (!session?.user) {
@@ -694,8 +855,7 @@
     el.textContent = msg; el.className = 'setup-msg ' + type; el.style.display = 'block';
   }
 
-  /* ── Environment: agent portfolios always use real ── */
-  function switchEnv(env) { /* no-op — agent portfolios are always real */ }
+  function switchEnv() { /* no-op — agent portfolios are always real */ }
 
   /* ── eToro API via Edge Function proxy ── */
   async function etoroCall(path, method = 'GET', body = null) {
@@ -712,6 +872,8 @@
   }
 
   /* ── Load portfolio ── */
+  let _availableCash = 0;
+
   async function loadPortfolio() {
     if (!_etoroUserKey) return;
     const errEl = $('agent-error');
@@ -722,29 +884,20 @@
     $('positions-grid').innerHTML = '';
 
     try {
-      // Agent portfolios always use the real endpoint (per eToro SKILL.md)
       const data = await etoroCall('/trading/info/real/pnl');
       const cp = data?.clientPortfolio ?? data;
 
-      // ── Calculate figures per eToro SKILL.md formulas ──
       const credit        = Number(cp?.credit ?? 0);
       const positions     = (cp?.positions     || []).filter(p => p && (p.positionId || p.positionID || p.id));
-      const ordersForOpen = (cp?.ordersForOpen || []);
-      const orders        = (cp?.orders        || []);
+      const ordersForOpen = cp?.ordersForOpen || [];
+      const orders        = cp?.orders        || [];
 
-      // Available Cash = credit − pending open (mirrorID=0) − pending close amounts
       const pendingOpen  = ordersForOpen.filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0).reduce((s, o) => s + Number(o.amount || 0), 0);
       const pendingClose = orders.reduce((s, o) => s + Number(o.amount || 0), 0);
       const available    = credit - pendingOpen - pendingClose;
-
-      // Unrealised P&L = sum of positions[i].unrealizedPnL.pnL
-      const pnl = positions.reduce((s, p) => s + Number(p.unrealizedPnL?.pnL ?? p.unrealizedPnl?.pnl ?? p.pnl ?? 0), 0);
-
-      // Total invested = sum of position amounts
-      const invested = positions.reduce((s, p) => s + Number(p.amount || 0), 0) + pendingOpen + pendingClose;
-
-      // Equity = available + invested + pnl
-      const equity = available + invested + pnl;
+      const pnl          = positions.reduce((s, p) => s + Number(p.unrealizedPnL?.pnL ?? p.unrealizedPnl?.pnl ?? p.pnl ?? 0), 0);
+      const invested     = positions.reduce((s, p) => s + Number(p.amount || 0), 0) + pendingOpen + pendingClose;
+      const equity       = available + invested + pnl;
 
       const fmt = n => '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
       $('sum-cash').textContent   = fmt(available);
@@ -754,6 +907,11 @@
       pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
       $('sum-count').textContent  = positions.length;
       $('positions-ts').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+      _availableCash = available;
+      if ($('trade-avail-label')) $('trade-avail-label').textContent =
+        available > 0 ? `available ${fmt(available)}` : '';
+
       $('portfolio-section').style.display = 'block';
       $('positions-loading').style.display = 'none';
 
@@ -761,7 +919,6 @@
 
       const grid = $('positions-grid');
       for (const pos of positions.slice(0, 24)) renderPositionCard(pos, grid);
-      // Enrich cards with AI signals sequentially to avoid rate limits
       (async () => {
         for (const pos of positions.slice(0, 24)) {
           await enrichPositionCard(pos);
@@ -778,22 +935,21 @@
   }
 
   function renderPositionCard(pos, grid) {
-    // eToro uses uppercase-D suffix: positionId (info endpoints), InstrumentID (execution), instrumentID (PnL)
-    const posId      = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
-    const instrId    = String(pos.instrumentID ?? pos.instrumentId ?? '');
-    const ticker     = String(pos.instrumentName || pos.symbol || pos.Instrument || pos.internalSymbolFull || posId || '?').toUpperCase();
-    const name       = pos.instrumentDisplayName || pos.displayName || ticker;
-    const openRate   = Number(pos.openRate  || pos.openPrice  || 0);
-    const curRate    = Number(pos.currentRate || pos.currentPrice || openRate);
-    const pnl        = Number(pos.unrealizedPnL?.pnL ?? pos.unrealizedPnl?.pnl ?? pos.pnl ?? pos.profit ?? 0);
-    const pnlPct     = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
-    const amount     = Number(pos.amount || pos.investedAmount || pos.notionalValue || 0);
-    const isBuy      = pos.isBuy !== false && pos.direction !== 'SELL';
-    const isUp       = pnl >= 0;
-    const pnlColor   = isUp ? 'var(--green)' : 'var(--red)';
-    const sign       = isUp ? '+' : '-';
-    const etoroUrl   = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
-    const signalId   = `signal-${posId || ticker}`;
+    const posId    = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
+    const instrId  = String(pos.instrumentID ?? pos.instrumentId ?? '');
+    const ticker   = String(pos.instrumentName || pos.symbol || pos.internalSymbolFull || posId || '?').toUpperCase();
+    const name     = pos.instrumentDisplayName || pos.displayName || ticker;
+    const openRate = Number(pos.openRate || pos.openPrice || 0);
+    const curRate  = Number(pos.currentRate || pos.currentPrice || openRate);
+    const pnl      = Number(pos.unrealizedPnL?.pnL ?? pos.unrealizedPnl?.pnl ?? pos.pnl ?? pos.profit ?? 0);
+    const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
+    const amount   = Number(pos.amount || pos.investedAmount || 0);
+    const isBuy    = pos.isBuy !== false && pos.direction !== 'SELL';
+    const isUp     = pnl >= 0;
+    const pnlColor = isUp ? 'var(--green)' : 'var(--red)';
+    const sign     = isUp ? '+' : '-';
+    const etoroUrl = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
+    const signalId = `signal-${posId || ticker}`;
 
     const card = document.createElement('div');
     card.className = `pos-card ${isUp ? 'pos-up' : 'pos-down'}`;
@@ -831,24 +987,22 @@
   }
 
   async function enrichPositionCard(pos) {
-    const posId   = String(pos.positionId || pos.PositionID || pos.id || '');
-    const ticker  = String(pos.instrumentName || pos.symbol || '').toUpperCase();
-    const name    = pos.instrumentDisplayName || pos.displayName || ticker;
-    const openRate = Number(pos.openRate || 0);
-    const curRate  = Number(pos.currentRate || openRate);
+    const posId     = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
+    const ticker    = String(pos.instrumentName || pos.symbol || pos.internalSymbolFull || '').toUpperCase();
+    const name      = pos.instrumentDisplayName || pos.displayName || ticker;
+    const openRate  = Number(pos.openRate || 0);
+    const curRate   = Number(pos.currentRate || openRate);
     const changePct = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
     const signalEl  = document.getElementById(`signal-${posId || ticker}`);
-    if (!signalEl) return;
+    if (!signalEl || !ticker) return;
     try {
-      const metrics = {
-        rsi: 50, volRatio: 1, rangePct: 50, streak: 1,
-        weekPct: changePct, weekTrend: changePct >= 0 ? 'up' : 'down',
-        direction: changePct >= 0 ? 'up' : 'down'
-      };
+      const yTicker = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker.replace('-USD',''))
+        ? ticker.replace('-USD','') + '-USD' : ticker;
+      const metrics = { rsi:50, volRatio:1, rangePct:50, streak:1, weekPct:changePct, direction:changePct>=0?'up':'down' };
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__signal__', signalTicker: ticker, price: curRate.toFixed(2), change: (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%', name, metrics })
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: yTicker, price: curRate.toFixed(2), change: (changePct>=0?'+':'')+changePct.toFixed(2)+'%', name, metrics })
       });
       if (!res.ok) return;
       const ai = await res.json();
@@ -870,12 +1024,14 @@
     overlay.innerHTML = `
       <div class="confirm-modal">
         <h3>Close ${ticker} position?</h3>
-        <p>Closes your <strong>${ticker}</strong> position at current market price.<br>
-        P&amp;L: <strong style="color:${pnlColor};">${sign}${Math.abs(pnl).toFixed(2)}</strong></p>
-        <p style="font-size:12px;padding:8px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:1rem;">⚠️ This trades with real money and cannot be undone.</p>
+        <div class="confirm-detail">
+          <div class="confirm-detail-row"><span class="label">Instrument</span><span class="val">${ticker}</span></div>
+          <div class="confirm-detail-row"><span class="label">Unrealised P&L</span><span class="val" style="color:${pnlColor};">${sign}${Math.abs(pnl).toFixed(2)}</span></div>
+        </div>
+        <p class="confirm-warn">⚠️ This closes the position at market price with real money and cannot be undone.</p>
         <div class="confirm-row">
           <button class="confirm-cancel" onclick="document.getElementById('confirm-overlay').remove()">Cancel</button>
-          <button class="confirm-ok" onclick="closePosition('${positionId}','${instrumentId}','${ticker}')">Close position</button>
+          <button class="confirm-ok sell" onclick="closePosition('${positionId}','${instrumentId}','${ticker}')">Close position</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -894,7 +1050,7 @@
           etoroUserKey: _etoroUserKey,
           positionId,
           instrumentId: Number(instrumentId),
-          unitsToDeduct: null   // full close
+          unitsToDeduct: null
         })
       });
       const json = await res.json();
@@ -910,6 +1066,257 @@
       if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
       alert('Failed to close: ' + e.message);
     }
+  }
+
+  /* ════════════════════════════════════════
+     TRADING PANEL
+  ════════════════════════════════════════ */
+  let _tradeDir        = 'BUY';
+  let _tradeLeverage   = 1;
+  let _tradeInstrId    = null;
+  let _tradeInstrName  = '';
+  let _tradeSignal     = null;
+  let _tradeResolveTimer = null;
+
+  function setDirection(dir) {
+    _tradeDir = dir;
+    $('dir-buy').className  = 'dir-btn' + (dir === 'BUY'  ? ' buy-active'  : '');
+    $('dir-sell').className = 'dir-btn' + (dir === 'SELL' ? ' sell-active' : '');
+    const btn = $('trade-exec-btn');
+    if (btn) { btn.className = 'trade-exec-btn ' + (dir === 'BUY' ? 'buy' : 'sell'); }
+    const lbl = $('trade-exec-label');
+    if (lbl) lbl.textContent = `Place ${dir} order`;
+  }
+
+  function setLeverage(lev) {
+    _tradeLeverage = lev;
+    [1,2,5,10,20].forEach(l => { const b = $(`lev-${l}`); if(b) b.classList.toggle('active', l === lev); });
+  }
+
+  function setAmountPct(pct) {
+    if (!_availableCash) return;
+    const amt = Math.floor(_availableCash * pct / 100);
+    $('trade-amount').value = amt > 0 ? amt : 1;
+    updateTradePreview();
+  }
+
+  function updateTradePreview() {
+    const amt  = parseFloat($('trade-amount')?.value);
+    const prev = $('trade-preview');
+    if (!amt || amt <= 0 || !_tradeInstrId) { if(prev) prev.style.display = 'none'; return; }
+    const exposure = amt * _tradeLeverage;
+    const pct = _availableCash > 0 ? ((amt / _availableCash) * 100).toFixed(1) : '—';
+    $('prev-exposure').textContent = '$' + exposure.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    $('prev-pct').textContent      = pct + '%';
+    $('prev-instrId').textContent  = _tradeInstrId ?? '—';
+    if (prev) prev.style.display = 'block';
+    const execBtn = $('trade-exec-btn');
+    if (execBtn) execBtn.disabled = false;
+  }
+
+  function onTradeTickerInput() {
+    clearTimeout(_tradeResolveTimer);
+    _tradeInstrId = null; _tradeInstrName = ''; _tradeSignal = null;
+    const execBtn = $('trade-exec-btn');
+    if (execBtn) execBtn.disabled = true;
+    const prev = $('trade-preview');
+    if (prev) prev.style.display = 'none';
+    $('trade-signal-box').innerHTML = '<div style="font-size:11px;color:var(--text-dim);font-style:italic;">Enter a ticker to get an AI signal.</div>';
+    const val = $('trade-ticker').value.trim();
+    if (!val) { $('trade-resolve-status').textContent = ''; return; }
+    $('trade-resolve-status').innerHTML = '<span style="color:var(--text-dim)">resolving…</span>';
+    _tradeResolveTimer = setTimeout(() => resolveTicker(), 700);
+  }
+
+  async function resolveTicker() {
+    const raw    = $('trade-ticker').value.trim().toUpperCase();
+    if (!raw) return;
+    const symbol = raw.replace(/-?USD$/i, '');
+    $('trade-resolve-status').innerHTML = '<span style="color:var(--text-dim)">resolving…</span>';
+    $('trade-signal-box').innerHTML = '<div style="font-size:11px;color:var(--text-dim);font-style:italic;">Resolving instrument…</div>';
+    try {
+      const res  = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__etoro-search__', symbol, etoroUserKey: _etoroUserKey })
+      });
+      const json = await res.json();
+      if (json.error || !json.instrumentId) {
+        $('trade-resolve-status').innerHTML = '<span style="color:var(--red)">not found</span>';
+        $('trade-signal-box').innerHTML = `<div style="font-size:11px;color:var(--red);">⚠ "${symbol}" not found on eToro. Try the exact ticker (e.g. AAPL, BTC, ETH).</div>`;
+        return;
+      }
+      _tradeInstrId   = json.instrumentId;
+      _tradeInstrName = json.match?.displayname || symbol;
+      $('trade-resolve-status').innerHTML = `<span style="color:var(--green)">✓ ${_tradeInstrName}</span>`;
+      fetchTradeSignal(symbol);
+    } catch(e) {
+      $('trade-resolve-status').innerHTML = '<span style="color:var(--red)">error</span>';
+    }
+  }
+
+  async function fetchTradeSignal(symbol) {
+    $('trade-signal-box').innerHTML = '<div style="font-size:11px;color:var(--text-dim);font-style:italic;">Fetching AI signal…</div>';
+    try {
+      const isCrypto = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(symbol);
+      const yTicker  = isCrypto ? symbol + '-USD' : symbol;
+
+      const priceRes = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__yahoo__', yTicker, range: '5d', interval: '1d' })
+      });
+      const priceData = await priceRes.json();
+      const result    = priceData?.result;
+
+      let price = 0, change = '+0.00%';
+      let metrics = { rsi:50, volRatio:1, rangePct:50, streak:1, weekPct:0, direction:'up' };
+
+      if (result) {
+        const closes = (result.indicators?.adjclose?.[0]?.adjclose || result.indicators?.quote?.[0]?.close || []).filter(p => p != null && p > 0);
+        const vols   = (result.indicators?.quote?.[0]?.volume || []).filter(v => v != null && v > 0);
+        price        = result.meta?.regularMarketPrice ?? closes[closes.length-1] ?? 0;
+        if (closes.length >= 2 && price > 0) {
+          const prev     = closes[closes.length - 2];
+          const todayPct = ((price - prev) / prev) * 100;
+          const weekPct  = closes.length >= 3 ? ((price - closes[0]) / closes[0]) * 100 : todayPct;
+          change = (todayPct >= 0 ? '+' : '') + todayPct.toFixed(2) + '%';
+          const todayVol = vols[vols.length-1] ?? 0;
+          const avgVol   = vols.length > 1 ? vols.slice(0,-1).reduce((a,b)=>a+b,0)/(vols.length-1) : todayVol;
+          const volRatio = avgVol > 0 ? parseFloat((todayVol/avgVol).toFixed(2)) : 1;
+          const high5d   = Math.max(...closes), low5d = Math.min(...closes);
+          const rangePct = high5d > low5d ? Math.round(((price-low5d)/(high5d-low5d))*100) : 50;
+          let streak = 1;
+          for (let i = closes.length-2; i > 0; i--) { if((closes[i]>closes[i-1])===(todayPct>=0)) streak++; else break; }
+          metrics = { rsi:50, volRatio, rangePct, streak, weekPct: parseFloat(weekPct.toFixed(2)), direction: todayPct >= 0 ? 'up' : 'down' };
+        }
+      }
+
+      const sigRes = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: yTicker, price: price.toFixed(2), change, name: _tradeInstrName, metrics })
+      });
+      const sig = await sigRes.json();
+      _tradeSignal = sig;
+
+      const cls      = sig.signal === 'BUY' ? 'signal-BUY' : sig.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
+      const priceStr = price > 0 ? '$' + price.toFixed(price < 10 ? 4 : 2) : '—';
+      $('trade-signal-box').innerHTML = `
+        <div class="trade-signal-row">
+          <span class="signal-pill ${cls}" style="font-size:10px;padding:2px 8px;">${sig.signal}</span>
+          <span style="font-size:11px;color:var(--text-muted);font-weight:600;">${_tradeInstrName}</span>
+          <span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${priceStr} · ${change}</span>
+        </div>
+        <div class="trade-signal-rationale">${sig.rationale || ''}</div>
+        <div class="trade-signal-meta">
+          <span><strong>Entry</strong> ${sig.entry || '—'}</span>
+          <span><strong>Stop</strong> ${sig.stopLoss || '—'}</span>
+          <span><strong>Conf.</strong> ${sig.confidence || '—'}</span>
+        </div>`;
+
+      if (sig.signal === 'BUY' || sig.signal === 'SELL') setDirection(sig.signal);
+
+      if ($('trade-avail-label') && _availableCash > 0)
+        $('trade-avail-label').textContent = `available $${_availableCash.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+
+      updateTradePreview();
+    } catch(e) {
+      $('trade-signal-box').innerHTML = '<div style="font-size:11px;color:var(--text-dim);">Signal unavailable — you can still place the trade manually.</div>';
+      updateTradePreview();
+    }
+  }
+
+  /* ── Confirm & place order ── */
+  function showTradeConfirm() {
+    const amt = parseFloat($('trade-amount')?.value);
+    if (!amt || amt <= 0)         { showTradeMsg('Enter an amount.', 'err'); return; }
+    if (!_tradeInstrId)           { showTradeMsg('Resolve a ticker first.', 'err'); return; }
+    if (amt > _availableCash + 1) { showTradeMsg(`Insufficient cash — available $${_availableCash.toFixed(2)}.`, 'err'); return; }
+
+    document.getElementById('confirm-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'confirm-overlay';
+    overlay.className = 'confirm-overlay';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+    const isBuy    = _tradeDir === 'BUY';
+    const exposure = amt * _tradeLeverage;
+    const dirColor = isBuy ? 'var(--green)' : 'var(--red)';
+    const sigHtml  = _tradeSignal
+      ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:0.75rem;">AI: <strong style="color:${_tradeSignal.signal==='BUY'?'var(--green)':_tradeSignal.signal==='SELL'?'var(--red)':'var(--text-muted)'}">${_tradeSignal.signal}</strong> · ${_tradeSignal.confidence} — ${_tradeSignal.rationale||''}</div>` : '';
+
+    overlay.innerHTML = `
+      <div class="confirm-modal">
+        <h3>Confirm ${_tradeDir} order</h3>
+        ${sigHtml}
+        <div class="confirm-detail">
+          <div class="confirm-detail-row"><span class="label">Instrument</span><span class="val">${_tradeInstrName}</span></div>
+          <div class="confirm-detail-row"><span class="label">Direction</span><span class="val" style="color:${dirColor};">${_tradeDir}</span></div>
+          <div class="confirm-detail-row"><span class="label">Amount</span><span class="val">$${amt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+          <div class="confirm-detail-row"><span class="label">Leverage</span><span class="val">×${_tradeLeverage}</span></div>
+          <div class="confirm-detail-row"><span class="label">Exposure</span><span class="val">$${exposure.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+        </div>
+        <p class="confirm-warn">⚠️ This places a real trade on your eToro Agent Portfolio and cannot be undone.</p>
+        <div class="confirm-row">
+          <button class="confirm-cancel" onclick="document.getElementById('confirm-overlay').remove()">Cancel</button>
+          <button class="confirm-ok ${isBuy?'buy':'sell'}" onclick="placeOrder(${amt},${_tradeLeverage},${_tradeInstrId})">
+            ${isBuy ? '↑' : '↓'} Place ${_tradeDir}
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+
+  async function placeOrder(amount, leverage, instrumentId) {
+    document.getElementById('confirm-overlay')?.remove();
+    const btn = $('trade-exec-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<div class="adp-spin"></div> Placing order…'; }
+    showTradeMsg('Placing order…', 'ok');
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          ticker:       '__etoro-open__',
+          etoroUserKey: _etoroUserKey,
+          instrumentId: Number(instrumentId),
+          isBuy:        _tradeDir === 'BUY',
+          amount:       Number(amount),
+          leverage:     Number(leverage),
+        })
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      if (json.status >= 400) throw new Error(`eToro ${json.status}: ${JSON.stringify(json.data).slice(0,100)}`);
+
+      showTradeMsg(`✓ ${_tradeDir} order placed for ${_tradeInstrName}! Refreshing in 3s…`, 'ok');
+
+      // Reset panel
+      $('trade-ticker').value = '';
+      $('trade-amount').value = '';
+      $('trade-resolve-status').textContent = '';
+      $('trade-signal-box').innerHTML = '<div style="font-size:11px;color:var(--text-dim);font-style:italic;">Enter a ticker to get an AI signal.</div>';
+      const prev = $('trade-preview'); if(prev) prev.style.display = 'none';
+      _tradeInstrId = null; _tradeInstrName = ''; _tradeSignal = null;
+
+      setTimeout(() => loadPortfolio(), 3000);
+
+    } catch(e) {
+      showTradeMsg('Order failed: ' + e.message, 'err');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span id="trade-exec-label">Place ${_tradeDir} order</span>`;
+      }
+    }
+  }
+
+  function showTradeMsg(msg, type) {
+    const el = $('trade-msg'); if(!el) return;
+    el.textContent = msg; el.className = 'trade-msg ' + type; el.style.display = 'block';
+    if (type === 'ok') setTimeout(() => { if(el.textContent === msg) el.style.display = 'none'; }, 7000);
   }
 
   initPage();
