@@ -511,10 +511,7 @@
           <p style="font-size:12px;color:var(--text-dim);margin-top:3px;">AI-managed sub-portfolios via eToro Agent API</p>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div class="env-toggle">
-            <button class="env-btn active" id="env-real" onclick="switchEnv('real')">Real</button>
-            <button class="env-btn"        id="env-demo" onclick="switchEnv('demo')">Demo</button>
-          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-dim);background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:5px 12px;letter-spacing:0.04em;">REAL ACCOUNT</div>
           <button onclick="loadPortfolio()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-muted)'">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             Refresh
@@ -524,10 +521,10 @@
 
       <!-- API key setup — hidden once keys saved -->
       <div class="setup-card" id="setup-card">
-        <h3>🔑 Connect your eToro account</h3>
-        <p>Enter your <strong>User Key (x-user-key)</strong> from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>. It is stored in your profile and sent server-side only — never exposed in the browser.</p>
-        <div style="display:grid;grid-template-columns:1fr;gap:10px;max-width:420px;">
-          <div class="setup-field"><label>User Key (x-user-key)</label><input type="password" id="etoro-user-key" placeholder="Paste your eToro user key" autocomplete="off"/></div>
+        <h3>🔑 Connect your eToro Agent Portfolio</h3>
+        <p>Create an Agent Portfolio at <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>, then paste your <strong>User Key</strong> below. The developer API key is handled server-side — you only need your personal user key.</p>
+        <div style="max-width:480px;">
+          <div class="setup-field"><label>User Key (x-user-key)</label><input type="password" id="etoro-user-key" placeholder="Paste your agent portfolio user key" autocomplete="off"/></div>
         </div>
         <div class="setup-msg" id="setup-msg"></div>
         <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;">
@@ -584,7 +581,6 @@
   let _currentUser = null;
   let _panelOpen   = false;
   let _etoroUserKey = '';
-  let _env = 'real';
 
   /* ── Theme ── */
   function toggleTheme() {
@@ -675,17 +671,13 @@
   /* ── Keys ── */
   async function loadSavedKeys() {
     const { data } = await db.from('profiles').select('etoro_user_key').eq('id', _currentUser.id).single();
-    if (data?.etoro_user_key) {
-      _etoroUserKey = data.etoro_user_key;
-      $('etoro-user-key').value = '•'.repeat(24);
-    }
+    if (data?.etoro_user_key) { _etoroUserKey = data.etoro_user_key; if ($('etoro-user-key')) $('etoro-user-key').value = '•'.repeat(24); }
     if (_etoroUserKey) $('setup-card').style.display = 'none';
   }
 
   async function saveApiKeys() {
     const userKey = $('etoro-user-key')?.value?.trim();
-    const msgEl   = $('setup-msg');
-    if (!userKey || userKey.startsWith('•')) { showSetupMsg('Enter your eToro user key.', 'err'); return; }
+    if (!userKey || userKey.startsWith('•')) { showSetupMsg('Enter your user key.', 'err'); return; }
     showSetupMsg('Saving…', 'ok');
     const { error } = await db.from('profiles').upsert(
       { id: _currentUser.id, etoro_user_key: userKey },
@@ -693,7 +685,7 @@
     );
     if (error) { showSetupMsg('Save failed: ' + error.message, 'err'); return; }
     _etoroUserKey = userKey;
-    showSetupMsg('✓ User key saved — loading portfolio…', 'ok');
+    showSetupMsg('✓ Key saved — loading portfolio…', 'ok');
     setTimeout(() => { $('setup-card').style.display = 'none'; loadPortfolio(); }, 600);
   }
 
@@ -702,13 +694,8 @@
     el.textContent = msg; el.className = 'setup-msg ' + type; el.style.display = 'block';
   }
 
-  /* ── Environment toggle ── */
-  function switchEnv(env) {
-    _env = env;
-    $('env-real').classList.toggle('active', env === 'real');
-    $('env-demo').classList.toggle('active', env === 'demo');
-    loadPortfolio();
-  }
+  /* ── Environment: agent portfolios always use real ── */
+  function switchEnv(env) { /* no-op — agent portfolios are always real */ }
 
   /* ── eToro API via Edge Function proxy ── */
   async function etoroCall(path, method = 'GET', body = null) {
@@ -735,24 +722,36 @@
     $('positions-grid').innerHTML = '';
 
     try {
-      const envPath = _env === 'demo' ? 'demo' : 'real';
-      // Single endpoint returns full account state incl. positions and P&L
-      const data = await etoroCall(`/trading/info/${envPath}/pnl`);
+      // Agent portfolios always use the real endpoint (per eToro SKILL.md)
+      const data = await etoroCall('/trading/info/real/pnl');
       const cp = data?.clientPortfolio ?? data;
 
-      const available = cp?.availableCash ?? cp?.availableAmount ?? cp?.available ?? 0;
-      const equity    = cp?.equity ?? cp?.totalBalance ?? 0;
-      const pnl       = cp?.totalUnrealizedPnl ?? cp?.currentPNL ?? cp?.unrealizedPnl ?? 0;
-      const positions = (cp?.positions || []).filter(p => p && (p.positionId || p.PositionID || p.id));
+      // ── Calculate figures per eToro SKILL.md formulas ──
+      const credit        = Number(cp?.credit ?? 0);
+      const positions     = (cp?.positions     || []).filter(p => p && (p.positionId || p.positionID || p.id));
+      const ordersForOpen = (cp?.ordersForOpen || []);
+      const orders        = (cp?.orders        || []);
+
+      // Available Cash = credit − pending open (mirrorID=0) − pending close amounts
+      const pendingOpen  = ordersForOpen.filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0).reduce((s, o) => s + Number(o.amount || 0), 0);
+      const pendingClose = orders.reduce((s, o) => s + Number(o.amount || 0), 0);
+      const available    = credit - pendingOpen - pendingClose;
+
+      // Unrealised P&L = sum of positions[i].unrealizedPnL.pnL
+      const pnl = positions.reduce((s, p) => s + Number(p.unrealizedPnL?.pnL ?? p.unrealizedPnl?.pnl ?? p.pnl ?? 0), 0);
+
+      // Total invested = sum of position amounts
+      const invested = positions.reduce((s, p) => s + Number(p.amount || 0), 0) + pendingOpen + pendingClose;
+
+      // Equity = available + invested + pnl
+      const equity = available + invested + pnl;
 
       const fmt = n => '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
       $('sum-cash').textContent   = fmt(available);
       $('sum-equity').textContent = fmt(equity);
       const pnlEl = $('sum-pnl');
-      pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmt(Math.abs(pnl)).replace('$','') ;
-      pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-      // Re-add dollar sign after setting color
       pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
       $('sum-count').textContent  = positions.length;
       $('positions-ts').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       $('portfolio-section').style.display = 'block';
@@ -762,36 +761,45 @@
 
       const grid = $('positions-grid');
       for (const pos of positions.slice(0, 24)) renderPositionCard(pos, grid);
-      for (const pos of positions.slice(0, 24)) enrichPositionCard(pos);
+      // Enrich cards with AI signals sequentially to avoid rate limits
+      (async () => {
+        for (const pos of positions.slice(0, 24)) {
+          await enrichPositionCard(pos);
+          await new Promise(r => setTimeout(r, 400));
+        }
+      })();
 
     } catch(e) {
       $('positions-loading').style.display = 'none';
-      errEl.textContent = '⚠️ Could not load portfolio: ' + e.message + ' — check your API keys below.';
+      errEl.textContent = '⚠️ Could not load portfolio: ' + e.message + ' — check your user key below.';
       errEl.style.display = 'block';
       $('setup-card').style.display = 'block';
     }
   }
 
   function renderPositionCard(pos, grid) {
-    const posId   = String(pos.positionId || pos.PositionID || pos.id || '');
-    const ticker  = String(pos.instrumentName || pos.symbol || pos.Instrument || posId || '?').toUpperCase();
-    const name    = pos.instrumentDisplayName || pos.displayName || ticker;
-    const openRate = Number(pos.openRate || pos.openPrice || pos.OpenRate || 0);
-    const curRate  = Number(pos.currentRate || pos.currentPrice || pos.CurrentRate || openRate);
-    const pnl      = Number(pos.pnl ?? pos.profit ?? pos.unrealizedPnl ?? pos.NetProfit ?? 0);
-    const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
-    const amount   = Number(pos.investedAmount || pos.amount || pos.Amount || pos.notionalValue || 0);
-    const isBuy    = pos.isBuy !== false && pos.direction !== 'SELL';
-    const isUp     = pnl >= 0;
-    const pnlColor = isUp ? 'var(--green)' : 'var(--red)';
-    const sign     = isUp ? '+' : '-';
-    const etoroUrl = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
-    const signalId = `signal-${posId || ticker}`;
+    // eToro uses uppercase-D suffix: positionId (info endpoints), InstrumentID (execution), instrumentID (PnL)
+    const posId      = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
+    const instrId    = String(pos.instrumentID ?? pos.instrumentId ?? '');
+    const ticker     = String(pos.instrumentName || pos.symbol || pos.Instrument || pos.internalSymbolFull || posId || '?').toUpperCase();
+    const name       = pos.instrumentDisplayName || pos.displayName || ticker;
+    const openRate   = Number(pos.openRate  || pos.openPrice  || 0);
+    const curRate    = Number(pos.currentRate || pos.currentPrice || openRate);
+    const pnl        = Number(pos.unrealizedPnL?.pnL ?? pos.unrealizedPnl?.pnl ?? pos.pnl ?? pos.profit ?? 0);
+    const pnlPct     = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
+    const amount     = Number(pos.amount || pos.investedAmount || pos.notionalValue || 0);
+    const isBuy      = pos.isBuy !== false && pos.direction !== 'SELL';
+    const isUp       = pnl >= 0;
+    const pnlColor   = isUp ? 'var(--green)' : 'var(--red)';
+    const sign       = isUp ? '+' : '-';
+    const etoroUrl   = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
+    const signalId   = `signal-${posId || ticker}`;
 
     const card = document.createElement('div');
     card.className = `pos-card ${isUp ? 'pos-up' : 'pos-down'}`;
-    card.dataset.positionId = posId;
-    card.dataset.ticker     = ticker;
+    card.dataset.positionId   = posId;
+    card.dataset.instrumentId = instrId;
+    card.dataset.ticker       = ticker;
     card.innerHTML = `
       <div class="pos-top">
         <div>
@@ -813,7 +821,7 @@
         <span style="font-size:10px;color:var(--text-dim);font-style:italic;">Analysing…</span>
       </div>
       <div class="pos-actions">
-        ${posId ? `<button class="pos-btn close-btn" onclick="confirmClose('${posId}','${ticker}',${pnl.toFixed(2)})">Close position</button>` : ''}
+        ${posId ? `<button class="pos-btn close-btn" onclick="confirmClose('${posId}','${instrId}','${ticker}',${pnl.toFixed(2)})">Close position</button>` : ''}
         <a class="pos-btn etoro-btn" href="${etoroUrl}" target="_blank" rel="noopener">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           eToro
@@ -851,7 +859,7 @@
   }
 
   /* ── Close position ── */
-  function confirmClose(positionId, ticker, pnl) {
+  function confirmClose(positionId, instrumentId, ticker, pnl) {
     document.getElementById('confirm-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'confirm-overlay';
@@ -864,22 +872,34 @@
         <h3>Close ${ticker} position?</h3>
         <p>Closes your <strong>${ticker}</strong> position at current market price.<br>
         P&amp;L: <strong style="color:${pnlColor};">${sign}${Math.abs(pnl).toFixed(2)}</strong></p>
-        <p style="font-size:12px;padding:8px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:1rem;">⚠️ This trades with ${_env} money and cannot be undone.</p>
+        <p style="font-size:12px;padding:8px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:1rem;">⚠️ This trades with real money and cannot be undone.</p>
         <div class="confirm-row">
           <button class="confirm-cancel" onclick="document.getElementById('confirm-overlay').remove()">Cancel</button>
-          <button class="confirm-ok" onclick="closePosition('${positionId}','${ticker}')">Close position</button>
+          <button class="confirm-ok" onclick="closePosition('${positionId}','${instrumentId}','${ticker}')">Close position</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
   }
 
-  async function closePosition(positionId, ticker) {
+  async function closePosition(positionId, instrumentId, ticker) {
     document.getElementById('confirm-overlay')?.remove();
     const card = document.querySelector(`[data-position-id="${positionId}"]`);
     if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
     try {
-      const envPath = _env === 'demo' ? 'demo' : 'real';
-      await etoroCall(`/trading/execution/${envPath}/market-close-orders/${positionId}`, 'POST');
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          ticker: '__etoro-close__',
+          etoroUserKey: _etoroUserKey,
+          positionId,
+          instrumentId: Number(instrumentId),
+          unitsToDeduct: null   // full close
+        })
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      if (json.status >= 400) throw new Error(`eToro ${json.status}: ${JSON.stringify(json.data).slice(0,120)}`);
       if (card) {
         card.style.transition = 'all 0.35s';
         card.style.opacity = '0';
