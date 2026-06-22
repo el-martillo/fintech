@@ -96,7 +96,8 @@
   .recs-refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .recs-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   @media (max-width: 900px) { .recs-3col { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px) { .recs-3col { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .recs-3col { grid-template-columns: repeat(2, 1fr); gap: 7px; } }
+  @media (max-width: 360px) { .recs-3col { grid-template-columns: 1fr; } }
 
   /* Auth gate overlay */
   .auth-gate {
@@ -195,6 +196,51 @@
     line-height: 1; z-index: 2; font-size: 14px;
   }
   .search-remove-btn:hover { color: var(--red); transform: scale(1.15); }
+
+  /* ── Price alert bell button ── */
+  .alert-btn {
+    position: absolute; top: 10px; left: 32px;
+    background: none; border: none; cursor: pointer; padding: 3px;
+    color: var(--text-dim); transition: color 0.15s, transform 0.15s;
+    line-height: 1; z-index: 2;
+  }
+  .alert-btn:hover { color: var(--accent); transform: scale(1.15); }
+  .alert-btn.alert-active { color: var(--accent); }
+  .alert-btn.alert-active svg { fill: rgba(108,99,255,0.2); }
+
+  /* ── Alert modal ── */
+  .alert-modal-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+  }
+  .alert-modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 340px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .alert-modal h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .alert-modal p  { font-size: 12px; color: var(--text-dim); margin-bottom: 1.25rem; }
+  .alert-field { margin-bottom: 0.9rem; }
+  .alert-field label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+  .alert-field input, .alert-field select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 8px 11px; font-size: 13px; color: var(--text);
+    outline: none; font-family: inherit; transition: border-color 0.15s;
+  }
+  .alert-field input:focus, .alert-field select:focus { border-color: var(--accent); }
+  .alert-field select option { background: var(--surface2); }
+  .alert-btn-row { display: flex; gap: 8px; margin-top: 1.25rem; }
+  .alert-save-btn {
+    flex: 1; padding: 9px; background: var(--accent); border: none; border-radius: var(--radius);
+    font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+  }
+  .alert-save-btn:hover { opacity: 0.85; }
+  .alert-cancel-btn {
+    padding: 9px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius);
+    font-size: 13px; color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .alert-cancel-btn:hover { border-color: var(--border2); color: var(--text); }
 
   /* ── Favourites section ── */
   .favs-section {
@@ -515,7 +561,141 @@
   let _panelOpen   = false;
   const liveMarketData = {};
 
-  /* ── Favourites ── */
+  /* ── Price Alerts ── */
+  let _alerts = new Set(); // Set of tickers with active alerts
+
+  async function loadAlerts() {
+    if (!_currentUser) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__get-alerts__', userId: _currentUser.id })
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      _alerts = new Set((data.alerts || []).filter(a => !a.triggered).map(a => a.ticker));
+      // Refresh bell icons on visible cards
+      document.querySelectorAll('.alert-btn').forEach(btn => {
+        const card = btn.closest('[data-ticker]');
+        if (!card) return;
+        const t = card.dataset.ticker;
+        const active = _alerts.has(t);
+        btn.classList.toggle('alert-active', active);
+        const svg = btn.querySelector('svg');
+        if (svg) svg.setAttribute('fill', active ? 'rgba(108,99,255,0.2)' : 'none');
+      });
+    } catch { /* silent */ }
+  }
+
+  function openAlertModal(ticker, name, currentPrice, e) {
+    if (e) e.stopPropagation();
+    // Remove existing modal if any
+    document.getElementById('alert-modal-overlay')?.remove();
+
+    const existing = _alerts.has(ticker);
+    const overlay = document.createElement('div');
+    overlay.id = 'alert-modal-overlay';
+    overlay.className = 'alert-modal-overlay';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `
+      <div class="alert-modal">
+        <h3>🔔 Price Alert — ${ticker.replace('-USD','')}</h3>
+        <p>${name} · Current: $${currentPrice}</p>
+        ${existing ? `<p style="color:var(--accent);font-size:12px;margin-top:-8px;margin-bottom:12px;">⚡ Alert already set — saving will update it.</p>` : ''}
+        <div class="alert-field">
+          <label>Notify when price is</label>
+          <select id="alert-direction">
+            <option value="above">Above target</option>
+            <option value="below">Below target</option>
+          </select>
+        </div>
+        <div class="alert-field">
+          <label>Target price ($)</label>
+          <input type="number" id="alert-price" placeholder="e.g. 250.00" step="0.01" min="0" value="${existing ? '' : parseFloat(currentPrice).toFixed(2)}"/>
+        </div>
+        <div class="alert-field">
+          <label>WhatsApp number (with country code)</label>
+          <input type="tel" id="alert-phone" placeholder="e.g. +447911123456" value="${_whatsappNumber || ''}"/>
+        </div>
+        <div class="alert-field">
+          <label>CallMeBot API Key</label>
+          <input type="text" id="alert-apikey" placeholder="Your CallMeBot API key" value="${_callmebotKey || ''}"/>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
+            First time? WhatsApp <strong>+34 644 59 72 24</strong> with the message <em>"I allow callmebot to send me messages"</em> — you'll receive your API key instantly. Free, no signup.
+          </div>
+        </div>
+        <div id="alert-msg" style="display:none;font-size:12px;padding:7px 10px;border-radius:6px;margin-top:8px;"></div>
+        <div class="alert-btn-row">
+          <button class="alert-cancel-btn" onclick="document.getElementById('alert-modal-overlay').remove()">Cancel</button>
+          ${existing ? `<button class="alert-cancel-btn" style="color:var(--red);border-color:rgba(239,68,68,0.3);" onclick="deleteAlert('${ticker}')">Remove</button>` : ''}
+          <button class="alert-save-btn" onclick="saveAlert('${ticker}','${name.replace(/'/g,"\\'")}')">Save Alert</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+
+  let _whatsappNumber = '';
+  let _callmebotKey = '';
+
+  async function saveAlert(ticker, name) {
+    const price   = parseFloat(document.getElementById('alert-price')?.value);
+    const dir     = document.getElementById('alert-direction')?.value;
+    const phone   = document.getElementById('alert-phone')?.value?.trim();
+    const apikey  = document.getElementById('alert-apikey')?.value?.trim();
+
+    if (!price || price <= 0) { _alertMsg('Enter a valid price.', 'err'); return; }
+    if (!phone || !phone.startsWith('+')) { _alertMsg('Enter phone with country code e.g. +447911123456', 'err'); return; }
+    if (!apikey) { _alertMsg('Enter your CallMeBot API key.', 'err'); return; }
+
+    _whatsappNumber = phone;
+    _callmebotKey   = apikey;
+    if (_currentUser) {
+      db.from('profiles').upsert({ id: _currentUser.id, whatsapp_number: phone, callmebot_apikey: apikey }, { onConflict: 'id' });
+    }
+
+    _alertMsg('Saving…', 'ok');
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__set-alert__', alertTicker: ticker, alertName: name, targetPrice: price, direction: dir, userId: _currentUser.id })
+      });
+      if (!res.ok) throw new Error('Failed');
+      _alerts.add(ticker);
+      // Update bell icons
+      document.querySelectorAll(`[data-ticker="${ticker}"] .alert-btn`).forEach(btn => {
+        btn.classList.add('alert-active');
+        const svg = btn.querySelector('svg'); if (svg) svg.setAttribute('fill', 'rgba(108,99,255,0.2)');
+      });
+      _alertMsg(`✓ Alert set for $${price} (${dir})`, 'ok');
+      setTimeout(() => document.getElementById('alert-modal-overlay')?.remove(), 1200);
+    } catch { _alertMsg('Failed to save alert — try again.', 'err'); }
+  }
+
+  async function deleteAlert(ticker) {
+    await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ ticker: '__delete-alert__', alertTicker: ticker, userId: _currentUser.id })
+    });
+    _alerts.delete(ticker);
+    document.querySelectorAll(`[data-ticker="${ticker}"] .alert-btn`).forEach(btn => {
+      btn.classList.remove('alert-active');
+      const svg = btn.querySelector('svg'); if (svg) svg.setAttribute('fill', 'none');
+    });
+    document.getElementById('alert-modal-overlay')?.remove();
+  }
+
+  function _alertMsg(msg, type) {
+    const el = document.getElementById('alert-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    el.textContent = msg;
+    el.style.background = type === 'err' ? 'var(--red-bg)' : 'var(--green-bg)';
+    el.style.color = type === 'err' ? 'var(--red)' : 'var(--green)';
+    el.style.border = type === 'err' ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(34,197,94,0.2)';
+  }
   let _favourites = new Set(); // Set of tickers
 
   async function loadFavourites() {
@@ -759,8 +939,17 @@
     $('recs-page').style.display = 'block';
     loadRecommendations();
     loadFavourites();
+    loadAlerts();
     loadSavedSearches();
     loadExchangeTicker();
+    // Load saved WhatsApp number
+    if (_currentUser) {
+      db.from('profiles').select('whatsapp_number, callmebot_apikey').eq('id', _currentUser.id).single()
+        .then(({ data }) => {
+          if (data?.whatsapp_number) _whatsappNumber = data.whatsapp_number;
+          if (data?.callmebot_apikey) _callmebotKey = data.callmebot_apikey;
+        });
+    }
     // Auto-run lookup if arriving from profile page recent searches
     const urlParams = new URLSearchParams(window.location.search);
     const autoLookup = urlParams.get('lookup');
@@ -862,6 +1051,9 @@
       <div class="rec-card${loading ? ' analysing' : ''}" data-ticker="${r.ticker}">
         <button class="fav-btn${_favourites.has(r.ticker) ? ' fav-active' : ''}" title="Add to favourites" onclick="toggleFavourite('${r.ticker}','${(r.name||'').replace(/'/g,'&#39;')}',event)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="${_favourites.has(r.ticker) ? 'var(--amber)' : 'none'}" stroke="${_favourites.has(r.ticker) ? 'var(--amber)' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
+        <button class="alert-btn${_alerts.has(r.ticker) ? ' alert-active' : ''}" title="Set price alert" onclick="openAlertModal('${r.ticker}','${(r.name||'').replace(/'/g,'&#39;')}','${r.price}',event)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="${_alerts.has(r.ticker) ? 'rgba(108,99,255,0.2)' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         </button>
         <div class="rec-top">
           <div>
@@ -993,41 +1185,15 @@
 
       const renderGrid = (gridId, items) => {
         if (!items.length) { $(gridId).innerHTML = `<div class="movers-empty" style="grid-column:1/-1">No momentum picks right now.</div>`; return; }
-        $(gridId).innerHTML = items.map(r => renderRecCard(r, null)).join('');
+        // Signals are pre-baked server-side — render fully immediately, no loading state
+        $(gridId).innerHTML = items.map(r => {
+          const ai = r.signal ? { signal: r.signal, confidence: r.confidence, rationale: r.rationale, action: r.action, entry: r.entry, stopLoss: r.stopLoss, positionSize: r.positionSize } : null;
+          return renderRecCard(r, ai);
+        }).join('');
+        _sortAndDivideGrid(gridId);
       };
       renderGrid('recs-grid-stocks', stocks);
       renderGrid('recs-grid-crypto', crypto);
-
-      const enrichGrid = async (gridId, items) => {
-        for (const r of items) {
-          const metrics = { rsi: r.rsi, volRatio: r.volRatio, rangePct: r.rangePct, streak: r.streak, weekPct: r.weekPct, weekTrend: r.weekTrend, direction: r.direction };
-          const ai = await fetchAISignal(r.ticker, r.price, r.change, r.name, metrics);
-
-          const card = $(gridId).querySelector(`[data-ticker="${r.ticker}"]`);
-          if (!card) continue;
-
-          const signal = ai?.signal || (r.direction === 'up' ? 'BUY' : 'SELL');
-          if (signal === 'HOLD') { card.remove(); continue; }
-
-          const resolvedAi = ai || {
-            signal, confidence: 'Low',
-            rationale: 'Signal temporarily unavailable — check back after refresh.',
-            action: '', entry: '', stopLoss: '', positionSize: '',
-          };
-
-          const tmp = document.createElement('div');
-          tmp.innerHTML = renderRecCard(r, resolvedAi);
-          card.replaceWith(tmp.firstElementChild);
-        }
-        if (!$(gridId).children.length) {
-          $(gridId).innerHTML = '<div class="movers-empty" style="grid-column:1/-1">No strong BUY or SELL signals right now — check back later.</div>';
-          return;
-        }
-        _sortAndDivideGrid(gridId);
-      };
-
-      await enrichGrid('recs-grid-stocks', stocks);
-      await enrichGrid('recs-grid-crypto', crypto);
 
       _saveRecsCache($('recs-grid-stocks').innerHTML, $('recs-grid-crypto').innerHTML);
       _updateRefreshBtn(Date.now());

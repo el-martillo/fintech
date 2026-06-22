@@ -416,7 +416,7 @@
 
     /* Stats mini row */
     .profile-stats {
-      display: grid; grid-template-columns: repeat(4, 1fr);
+      display: grid; grid-template-columns: repeat(3, 1fr);
       gap: 8px; margin-bottom: 1rem;
     }
     .profile-stat {
@@ -693,10 +693,50 @@
               <div class="profile-stat-value" id="stat-sells">—</div>
               <div class="profile-stat-label">Sell signals</div>
             </div>
-            <div class="profile-stat">
-              <div class="profile-stat-value" id="stat-favs" style="color:var(--amber);">—</div>
-              <div class="profile-stat-label">Favourites</div>
+          </div>
+
+          <!-- Signal history sparkline -->
+          <div style="margin-top:1rem;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Signal history (last 30 days)</div>
+            <div id="signal-history-chart" style="min-height:56px;display:flex;align-items:flex-end;gap:3px;"></div>
+            <div style="display:flex;gap:14px;margin-top:8px;">
+              <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:2px;background:var(--green);display:inline-block;"></span>BUY</span>
+              <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:2px;background:var(--red);display:inline-block;"></span>SELL</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications / WhatsApp -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.56 3.38 2 2 0 0 1 3.53 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16z"/></svg>
+          <div class="profile-card-title">WhatsApp Alerts</div>
+        </div>
+        <div class="profile-card-body">
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">Get notified on WhatsApp when a stock hits your price target. Uses <strong>CallMeBot</strong> — free, no account needed.</p>
+          <div style="background:var(--accent-dim);border:1px solid rgba(108,99,255,0.2);border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--text-muted);line-height:1.7;">
+            <strong style="color:var(--text);">One-time setup:</strong> WhatsApp <strong>+34 644 59 72 24</strong> with the message <em style="color:var(--text);">"I allow callmebot to send me messages"</em> — you'll receive your API key within seconds.
+          </div>
+          <div class="profile-msg error"   id="wa-error"></div>
+          <div class="profile-msg success" id="wa-success"></div>
+          <div class="profile-field">
+            <label>WhatsApp number (with country code)</label>
+            <input type="tel" id="wa-number" placeholder="+447911123456" autocomplete="tel"/>
+            <div class="profile-hint">E.g. +44 for UK, +1 for US, +39 for Italy.</div>
+          </div>
+          <div class="profile-field">
+            <label>CallMeBot API Key</label>
+            <input type="text" id="wa-apikey" placeholder="e.g. 1234567"/>
+            <div class="profile-hint">Sent to you by CallMeBot after the activation message.</div>
+          </div>
+          <div id="wa-alerts-list" style="margin-top:1rem;"></div>
+          <div class="profile-btn-row">
+            <button class="profile-btn" onclick="saveWhatsApp()">Save number</button>
+            <a class="profile-btn secondary" href="recommendations.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Set alerts
+            </a>
           </div>
         </div>
       </div>
@@ -1040,6 +1080,7 @@
     renderProfile(user);
     loadStats(user);
     loadRecentSearches();
+    loadWhatsApp(user);
   }
 
   function renderProfile(user) {
@@ -1081,7 +1122,7 @@
 
   async function loadStats(user) {
     const [analysesRes, favsRes] = await Promise.all([
-      db.from('stock_analyses').select('signal').eq('user_id', user.id),
+      db.from('stock_analyses').select('signal, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
       db.from('stock_favourites').select('ticker', { count: 'exact', head: true }).eq('user_id', user.id)
     ]);
 
@@ -1093,7 +1134,78 @@
     document.getElementById('stat-analyses').textContent = rows.length;
     document.getElementById('stat-buys').textContent     = buys;
     document.getElementById('stat-sells').textContent    = sells;
-    document.getElementById('stat-favs').textContent     = favs;
+
+    // Signal history chart — bucket by day for last 30 days
+    renderSignalHistoryChart(rows);
+  }
+
+  function renderSignalHistoryChart(rows) {
+    const el = document.getElementById('signal-history-chart');
+    if (!el) return;
+    if (!rows.length) { el.innerHTML = '<span style="font-size:12px;color:var(--text-dim);font-style:italic;">No analysis history yet.</span>'; return; }
+
+    // Build daily buckets for last 30 days
+    const buckets = {};
+    const today = new Date(); today.setHours(0,0,0,0);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      buckets[d.toISOString().slice(0,10)] = { buy: 0, sell: 0 };
+    }
+    rows.forEach(r => {
+      const day = (r.created_at || '').slice(0,10);
+      if (buckets[day]) {
+        if (r.signal === 'BUY')  buckets[day].buy++;
+        if (r.signal === 'SELL') buckets[day].sell++;
+      }
+    });
+
+    const days   = Object.entries(buckets);
+    const maxVal = Math.max(1, ...days.map(([,v]) => v.buy + v.sell));
+    const barH   = 48;
+
+    el.innerHTML = days.map(([day, v]) => {
+      const total = v.buy + v.sell;
+      const buyH  = total ? Math.round((v.buy  / maxVal) * barH) : 0;
+      const sellH = total ? Math.round((v.sell / maxVal) * barH) : 0;
+      const title = `${day}: ${v.buy} BUY, ${v.sell} SELL`;
+      return `<div title="${title}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1px;height:${barH}px;cursor:default;">
+        ${buyH  ? `<div style="width:100%;height:${buyH}px;background:var(--green);border-radius:2px 2px 0 0;opacity:0.85;"></div>` : ''}
+        ${sellH ? `<div style="width:100%;height:${sellH}px;background:var(--red);border-radius:${buyH?'0':'2px 2px'} 0 0;opacity:0.85;"></div>` : ''}
+        ${!total ? `<div style="width:100%;height:2px;background:var(--border);border-radius:1px;"></div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  async function loadWhatsApp(user) {
+    const { data } = await db.from('profiles').select('whatsapp_number, callmebot_apikey').eq('id', user.id).single();
+    if (data?.whatsapp_number) document.getElementById('wa-number').value = data.whatsapp_number;
+    if (data?.callmebot_apikey) document.getElementById('wa-apikey').value = data.callmebot_apikey;
+
+    const { data: alerts } = await db.from('price_alerts').select('*').eq('user_id', user.id).eq('triggered', false).order('created_at', { ascending: false });
+    const listEl = document.getElementById('wa-alerts-list');
+    if (!listEl) return;
+    if (!alerts?.length) { listEl.innerHTML = '<p style="font-size:12px;color:var(--text-dim);font-style:italic;">No active price alerts.</p>'; return; }
+    listEl.innerHTML = `
+      <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Active alerts (${alerts.length})</div>` +
+      alerts.map(a => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;">
+          <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);min-width:52px;">${a.ticker.replace('-USD','')}</span>
+          <span style="font-size:12px;color:var(--text-muted);flex:1;">${a.direction === 'above' ? '↑' : '↓'} $${a.target_price}</span>
+          <span style="font-size:11px;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(108,99,255,0.2);border-radius:4px;padding:2px 7px;">Active</span>
+        </div>`).join('');
+  }
+
+  async function saveWhatsApp() {
+    const num    = document.getElementById('wa-number')?.value?.trim();
+    const apikey = document.getElementById('wa-apikey')?.value?.trim();
+    const errEl  = document.getElementById('wa-error');
+    const okEl   = document.getElementById('wa-success');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    if (!num || !num.startsWith('+')) { errEl.textContent = 'Enter number with country code e.g. +447911123456'; errEl.style.display = 'block'; return; }
+    if (!apikey) { errEl.textContent = 'Enter your CallMeBot API key.'; errEl.style.display = 'block'; return; }
+    const { error } = await db.from('profiles').upsert({ id: _currentUser.id, whatsapp_number: num, callmebot_apikey: apikey }, { onConflict: 'id' });
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; }
+    else { okEl.textContent = '✓ WhatsApp details saved.'; okEl.style.display = 'block'; }
   }
 
   async function loadRecentSearches() {
