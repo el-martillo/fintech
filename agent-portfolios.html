@@ -336,7 +336,7 @@
     .pos-meta { display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap; }
     .pos-meta-item { font-size:11px;color:var(--text-dim); }
     .pos-meta-item strong { color:var(--text-muted);font-weight:600; }
-    .pos-signal { padding:6px 8px;background:var(--surface2);border-radius:6px;margin-bottom:10px;min-height:38px; }
+    .pos-signal { flex-shrink:0;min-width:55px;text-align:center; }
     .pos-signal-loading { font-size:10px;color:var(--text-dim);font-style:italic;display:flex;align-items:center;gap:5px; }
     .pos-signal-text { font-size:11px;color:var(--text-muted);line-height:1.4; }
     .pos-actions { display:flex;gap:5px; }
@@ -1093,11 +1093,20 @@
           <!-- ── RIGHT: Positions ── -->
           <div class="positions-col">
             <div class="positions-header">
-              <div style="display:flex;align-items:center;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <div class="positions-title">Open positions</div>
                 <span id="positions-count" style="font-size:11px;font-weight:600;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:1px 8px;display:none;"></span>
               </div>
-              <div style="font-size:11px;color:var(--text-dim);" id="positions-ts"></div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:10px;color:var(--text-dim);" id="positions-ts"></span>
+                <select id="positions-sort" onchange="sortPositions()" style="font-size:11px;padding:2px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;color:var(--text-muted);font-family:inherit;cursor:pointer;">
+                  <option value="default">Default</option>
+                  <option value="name">Name A-Z</option>
+                  <option value="portfolio">% Portfolio</option>
+                  <option value="profit">Profit $</option>
+                  <option value="profit_pct">Profit %</option>
+                </select>
+              </div>
             </div>
             <div id="positions-loading" class="agent-loading" style="display:none;"><div class="spinner-sm"></div>Loading positions…</div>
             <div id="positions-empty"  class="agent-empty"   style="display:none;">No open positions yet. Use the trade panel to open your first position.</div>
@@ -1368,8 +1377,40 @@
     return json.data;
   }
 
+  /* ── Sort positions ── */
+  function sortPositions() {
+    const sel = $('positions-sort');
+    _positionsSort = sel ? sel.value : 'default';
+    renderSortedPositions();
+  }
+
+  function renderSortedPositions() {
+    const grid = $('positions-grid');
+    if (!grid || !_positionsData.length) return;
+    const sorted = [..._positionsData];
+    if (_positionsSort === 'name') {
+      sorted.sort((a, b) => (a._ticker || '').localeCompare(b._ticker || ''));
+    } else if (_positionsSort === 'portfolio') {
+      const total = sorted.reduce((s, p) => s + Number(p.amount || 0), 0);
+      sorted.sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0));
+    } else if (_positionsSort === 'profit') {
+      sorted.sort((a, b) => Number(b.unrealizedPnL?.pnL ?? 0) - Number(a.unrealizedPnL?.pnL ?? 0));
+    } else if (_positionsSort === 'profit_pct') {
+      const pct = p => { const o = Number(p.openRate||0), c = Number(p.unrealizedPnL?.closeRate||o); return o > 0 ? (c-o)/o*100 : 0; };
+      sorted.sort((a, b) => pct(b) - pct(a));
+    }
+    // Reorder DOM nodes to match sort (preserve enriched content)
+    sorted.forEach(pos => {
+      const posId = String(pos.positionID ?? pos.positionId ?? '');
+      const card = document.querySelector(`[data-position-id="${posId}"]`);
+      if (card) grid.appendChild(card);
+    });
+  }
+
   /* ── Load portfolio ── */
   let _availableCash = 0;
+  let _positionsData  = [];  // cached for sorting
+  let _positionsSort  = 'default';
 
   async function loadPortfolio() {
     if (!_etoroUserKey) return;
@@ -1387,7 +1428,7 @@
 
       const credit        = Number(cp?.credit ?? 0);
       const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0);
-      const positions     = (cp?.positions     || []).filter(p => p && (p.positionId || p.positionID || p.id));
+      const positions     = (cp?.positions     || []).filter(p => p && (p.positionID || p.positionId) && Number(p.positionID ?? p.positionId) > 0);
       const ordersForOpen = cp?.ordersForOpen || [];
 
       const pendingOpen = ordersForOpen
@@ -1432,9 +1473,10 @@
       if (!positions.length) { $('positions-empty').style.display = 'block'; return; }
 
       const grid = $('positions-grid');
-      for (const pos of positions.slice(0, 24)) renderPositionCard(pos, grid);
+      _positionsData = positions;
+      renderSortedPositions();
       (async () => {
-        for (const pos of positions.slice(0, 24)) {
+        for (const pos of positions) {
           await enrichPositionCard(pos);
           await new Promise(r => setTimeout(r, 400));
         }
@@ -1550,6 +1592,9 @@
           if (etoroLink) etoroLink.href = etoroUrl;
           if (closeBtn)  closeBtn.setAttribute('onclick', `confirmClose('${posId}','${instrId}','${ticker}',${pnl2.toFixed(2)},${amount2.toFixed(2)})`);
           card.dataset.ticker = ticker;
+          // Store on pos object for sorting
+          const posIdx = _positionsData.findIndex(p => String(p.positionID ?? p.positionId ?? '') === posId);
+          if (posIdx >= 0) _positionsData[posIdx]._ticker = ticker;
         }
       }
     } catch { /* proceed with empty ticker — signal will use instrumentID fallback */ }
@@ -1615,14 +1660,13 @@
   function renderSignalInCard(signalEl, ai, price, changeStr) {
     const cls = ai.signal === 'BUY' ? 'signal-BUY' : ai.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
     const confColor = ai.confidence === 'High' ? 'var(--green)' : ai.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
+    const tooltip = [ai.rationale, ai.action].filter(Boolean).join(' — ');
     signalEl.innerHTML = `
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-        <span class="signal-pill ${cls}" style="font-size:10px;padding:2px 8px;flex-shrink:0;">${ai.signal}</span>
-        <span style="font-size:10px;color:${confColor};font-weight:600;">${ai.confidence || ''}</span>
-        ${price > 0 ? `<span style="font-size:10px;color:var(--text-dim);margin-left:auto;">${changeStr}</span>` : ''}
-      </div>
-      <div class="pos-signal-text">${ai.rationale || ''}</div>
-      ${ai.action ? `<div style="font-size:10px;color:var(--text-dim);margin-top:3px;font-style:italic;">${ai.action}</div>` : ''}`;
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;" title="${tooltip.replace(/"/g,'&quot;')}">
+        <span class="signal-pill ${cls}" style="font-size:10px;padding:2px 7px;">${ai.signal}</span>
+        <span style="font-size:9.5px;color:${confColor};font-weight:600;">${ai.confidence || ''}</span>
+        ${price > 0 ? `<span style="font-size:9px;color:var(--text-dim);">${changeStr}</span>` : ''}
+      </div>`;
   }
 
   async function refreshCardSignal(btn, posId, instrId, ticker, name) {
