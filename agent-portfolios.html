@@ -305,9 +305,12 @@
 
     /* PnL chart card */
     .pnl-chart-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:0.85rem 1rem;display:flex;flex-direction:column; }
-    .pnl-chart-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem; }
+    .pnl-chart-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;gap:8px;flex-wrap:wrap; }
     .pnl-chart-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim); }
-    .pnl-chart-sub { font-size:10px;color:var(--text-dim); }
+    .pnl-range-tabs { display:flex;background:var(--surface2);border-radius:7px;padding:2px;gap:1px; }
+    .pnl-range-btn { padding:3px 8px;border:none;background:transparent;font-size:11px;font-weight:500;color:var(--text-muted);cursor:pointer;border-radius:5px;font-family:inherit;transition:all 0.12s; }
+    .pnl-range-btn.active { background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+    .pnl-range-btn:hover:not(.active) { color:var(--text); }
     .pnl-chart-wrap { position:relative;flex:1;min-height:120px; }
     .pnl-chart-wrap canvas { width:100%!important; }
     .pnl-chart-empty { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-dim);font-style:italic; }
@@ -787,7 +790,13 @@
           <div class="pnl-chart-card">
             <div class="pnl-chart-header">
               <span class="pnl-chart-title">P&amp;L over time</span>
-              <span class="pnl-chart-sub" id="pnl-chart-sub">live · 10s intervals</span>
+              <div class="pnl-range-tabs">
+                <button class="pnl-range-btn active" data-range="live" onclick="setPnlRange('live')">Live</button>
+                <button class="pnl-range-btn" data-range="1h"   onclick="setPnlRange('1h')">1h</button>
+                <button class="pnl-range-btn" data-range="6h"   onclick="setPnlRange('6h')">6h</button>
+                <button class="pnl-range-btn" data-range="24h"  onclick="setPnlRange('24h')">24h</button>
+                <button class="pnl-range-btn" data-range="7d"   onclick="setPnlRange('7d')">7d</button>
+              </div>
             </div>
             <div class="pnl-chart-wrap">
               <canvas id="pnl-chart"></canvas>
@@ -1269,8 +1278,11 @@
       $('portfolio-section').style.display = 'block';
       $('positions-loading').style.display = 'none';
 
-      // Push first PnL point and start live polling
-      pushPnlPoint(pnl);
+      // Seed chart from any existing session data, then push first live point
+      if (_livePoints.length > 0) {
+        renderPnlChart(_livePoints.map(p => ({ t: new Date(p.t), pnl: p.pnl })));
+      }
+      pushPnlPoint(pnl, equity);
       startPnlPolling();
 
       if (!positions.length) { $('positions-empty').style.display = 'block'; return; }
@@ -2236,86 +2248,179 @@
   }
 
   /* ══════════════════════════════════════════
+     PNL PERSISTENCE — localStorage + Supabase
+  ══════════════════════════════════════════ */
+  const LS_KEY = 'pnl_session';
+
+  function lsLoadSession() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  }
+
+  function lsSaveSession(pts) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(pts.slice(-360))); } catch {}
+  }
+
+  async function dbSaveSnapshot(pnl, equity) {
+    if (!_currentUser) return;
+    try {
+      await db.from('pnl_snapshots').insert({
+        user_id: _currentUser.id,
+        ts: new Date().toISOString(),
+        pnl, equity
+      });
+    } catch {}
+  }
+
+  async function dbLoadSnapshots(rangeHours) {
+    if (!_currentUser) return [];
+    try {
+      const since = new Date(Date.now() - rangeHours * 3600 * 1000).toISOString();
+      const { data } = await db.from('pnl_snapshots')
+        .select('ts, pnl, equity')
+        .eq('user_id', _currentUser.id)
+        .gte('ts', since)
+        .order('ts', { ascending: true });
+      return (data || []).map(r => ({ t: new Date(r.ts), pnl: Number(r.pnl) }));
+    } catch { return []; }
+  }
+
+  /* ══════════════════════════════════════════
      PNL CHART
   ══════════════════════════════════════════ */
-  let _pnlChart = null;
-  const _pnlHistory = []; // [{t: Date, pnl: number}]
+  let _pnlChart   = null;
+  let _pnlRange   = 'live';             // live | 1h | 6h | 24h | 7d
+  let _livePoints = lsLoadSession();    // [{t: string (ISO), pnl: number}]
 
   function initPnlChart() {
     const canvas = $('pnl-chart');
     if (!canvas || _pnlChart) return;
-    const isDark = !document.body.classList.contains('light');
+    const isDark     = !document.body.classList.contains('light');
     const gridColor  = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
     const labelColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
 
     _pnlChart = new Chart(canvas, {
       type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'P&L ($)',
-          data: [],
-          borderColor: '#6c63ff',
-          backgroundColor: 'rgba(108,99,255,0.08)',
-          borderWidth: 2,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          pointBackgroundColor: '#6c63ff',
-          fill: true,
-          tension: 0.35,
-        }]
-      },
+      data: { labels: [], datasets: [{
+        label: 'P&L ($)', data: [],
+        borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)',
+        borderWidth: 2, pointRadius: 2, pointHoverRadius: 5,
+        pointBackgroundColor: '#6c63ff', fill: true, tension: 0.35,
+      }]},
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 300 },
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 200 },
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => {
-                const v = ctx.parsed.y;
-                return (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2);
-              }
-            }
-          }
+          tooltip: { callbacks: { label: ctx => {
+            const v = ctx.parsed.y;
+            return (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2);
+          }}}
         },
         scales: {
           x: { grid: { color: gridColor }, ticks: { color: labelColor, font: { size: 10 }, maxTicksLimit: 8 } },
-          y: {
-            grid: { color: gridColor },
-            ticks: {
-              color: labelColor, font: { size: 10 },
-              callback: v => (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2)
-            }
-          }
+          y: { grid: { color: gridColor }, ticks: { color: labelColor, font: { size: 10 },
+            callback: v => (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2) }}
         }
       }
     });
   }
 
-  function pushPnlPoint(pnl) {
-    const now = new Date();
-    _pnlHistory.push({ t: now, pnl });
-    if (_pnlHistory.length > 60) _pnlHistory.shift(); // keep 10 min window
+  function formatChartLabel(t, rangeKey) {
+    const d = t instanceof Date ? t : new Date(t);
+    if (rangeKey === 'live' || rangeKey === '1h') {
+      return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    if (rangeKey === '6h' || rangeKey === '24h') {
+      return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+    return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
 
+  function renderPnlChart(points) {
     if (!_pnlChart) initPnlChart();
     if (!_pnlChart) return;
 
     const empty = $('pnl-chart-empty');
+
+    if (!points.length) {
+      if (empty) empty.style.display = 'flex';
+      _pnlChart.data.labels = [];
+      _pnlChart.data.datasets[0].data = [];
+      _pnlChart.update('none');
+      return;
+    }
     if (empty) empty.style.display = 'none';
 
-    _pnlChart.data.labels = _pnlHistory.map(p =>
-      p.t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    );
-    _pnlChart.data.datasets[0].data = _pnlHistory.map(p => p.pnl);
+    // Downsample if too many points (keep max 120 for performance)
+    let pts = points;
+    if (pts.length > 120) {
+      const step = Math.ceil(pts.length / 120);
+      pts = pts.filter((_, i) => i % step === 0 || i === pts.length - 1);
+    }
 
-    // Colour line green/red based on latest value
-    const colour = pnl >= 0 ? '#22c55e' : '#ef4444';
-    _pnlChart.data.datasets[0].borderColor = colour;
+    const latestPnl = Number(pts[pts.length - 1].pnl);
+    const colour    = latestPnl >= 0 ? '#22c55e' : '#ef4444';
+    const bgColour  = latestPnl >= 0 ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)';
+
+    _pnlChart.data.labels = pts.map(p => formatChartLabel(p.t, _pnlRange));
+    _pnlChart.data.datasets[0].data = pts.map(p => p.pnl);
+    _pnlChart.data.datasets[0].borderColor         = colour;
     _pnlChart.data.datasets[0].pointBackgroundColor = colour;
-    _pnlChart.data.datasets[0].backgroundColor = pnl >= 0 ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)';
+    _pnlChart.data.datasets[0].backgroundColor      = bgColour;
     _pnlChart.update('none');
+  }
+
+  async function setPnlRange(range) {
+    _pnlRange = range;
+    // Update tab active state
+    document.querySelectorAll('.pnl-range-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.range === range);
+    });
+
+    const empty = $('pnl-chart-empty');
+
+    if (range === 'live') {
+      // Use in-memory session points
+      const pts = _livePoints.map(p => ({ t: new Date(p.t), pnl: p.pnl }));
+      renderPnlChart(pts);
+      return;
+    }
+
+    // Show loading state
+    if (empty) { empty.textContent = 'Loading…'; empty.style.display = 'flex'; }
+
+    const hours = range === '1h' ? 1 : range === '6h' ? 6 : range === '24h' ? 24 : 168;
+    const pts   = await dbLoadSnapshots(hours);
+
+    if (empty) empty.textContent = 'No data for this range yet.';
+    renderPnlChart(pts);
+  }
+
+  /* ── Push a new live point ── */
+  let _lastDbSave = 0;
+
+  function pushPnlPoint(pnl, equity) {
+    const now = new Date();
+
+    // localStorage — always
+    _livePoints.push({ t: now.toISOString(), pnl });
+    if (_livePoints.length > 360) _livePoints.shift();
+    lsSaveSession(_livePoints);
+
+    // Supabase — throttled to once per minute
+    const nowMs = Date.now();
+    if (nowMs - _lastDbSave > 60000) {
+      _lastDbSave = nowMs;
+      dbSaveSnapshot(pnl, equity ?? 0);
+    }
+
+    // Only update chart if in live mode
+    if (_pnlRange === 'live') {
+      renderPnlChart(_livePoints.map(p => ({ t: new Date(p.t), pnl: p.pnl })));
+    }
   }
 
   /* ══════════════════════════════════════════
@@ -2369,26 +2474,26 @@
         const posId  = String(pos.positionID ?? pos.positionId ?? '');
         const cardEl = document.querySelector(`[data-position-id="${posId}"]`);
         if (!cardEl) continue;
-        const posPnl    = Number(pos.unrealizedPnL?.pnL ?? 0);
-        const openRate  = Number(pos.openRate || 0);
-        const curRate   = Number(pos.unrealizedPnL?.closeRate || openRate);
-        const pnlPct    = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
-        const isUp      = posPnl >= 0;
-        const color     = isUp ? 'var(--green)' : 'var(--red)';
-        const sign      = isUp ? '+' : '-';
-        const valEl     = cardEl.querySelector('.pos-pnl-value');
-        const pctEl     = cardEl.querySelector('.pos-pnl-pct');
-        const nowEl     = cardEl.querySelector('.pos-meta-item:nth-child(2)');
+        const posPnl   = Number(pos.unrealizedPnL?.pnL ?? 0);
+        const openRate = Number(pos.openRate || 0);
+        const curRate  = Number(pos.unrealizedPnL?.closeRate || openRate);
+        const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
+        const isUp     = posPnl >= 0;
+        const color    = isUp ? 'var(--green)' : 'var(--red)';
+        const sign     = isUp ? '+' : '-';
+        const valEl    = cardEl.querySelector('.pos-pnl-value');
+        const pctEl    = cardEl.querySelector('.pos-pnl-pct');
+        const nowEl    = cardEl.querySelector('.pos-meta-item:nth-child(2)');
         if (valEl) { valEl.textContent = sign + '$' + Math.abs(posPnl).toFixed(2); valEl.style.color = color; }
         if (pctEl) { pctEl.textContent = sign + Math.abs(pnlPct).toFixed(2) + '%'; pctEl.style.color = color; }
         if (nowEl) nowEl.innerHTML = `<strong>Now</strong>  $${curRate.toFixed(curRate < 10 ? 4 : 2)}`;
         cardEl.className = `pos-card ${isUp ? 'pos-up' : 'pos-down'}`;
       }
 
-      // Push to chart
-      pushPnlPoint(pnl);
+      // Push to chart + persist
+      pushPnlPoint(pnl, equity);
 
-    } catch { /* silent — don't disrupt UI on poll failure */ }
+    } catch { /* silent */ }
   }
 
   /* ══════════════════════════════════════════
