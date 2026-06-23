@@ -1470,6 +1470,8 @@
 
       const grid = $('positions-grid');
       _positionsData = positions;
+      // Render cards first, then sort
+      for (const pos of positions) renderPositionCard(pos, grid);
       renderSortedPositions();
       (async () => {
         for (const pos of positions) {
