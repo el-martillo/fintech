@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css" />
 
@@ -274,13 +275,31 @@
     .setup-bot-item { display:flex;flex-direction:column;gap:2px; }
     .setup-bot-item-label { font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim); }
     .setup-bot-item-value { font-size:12px;color:var(--text-muted);font-weight:500;word-break:break-word; }
-    /* Summary */
-    .portfolio-summary { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem; }
-    @media (max-width:600px) { .portfolio-summary { grid-template-columns:repeat(2,1fr); } }
+    /* eToro connected pill */
+    .etoro-connected-pill { display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:20px;font-size:12px;font-weight:500;color:var(--green); }
+    .etoro-pill-dot { width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px rgba(34,197,94,0.2);flex-shrink:0; }
+    .etoro-pill-edit { background:none;border:none;cursor:pointer;color:rgba(34,197,94,0.6);padding:1px 2px;display:flex;align-items:center;transition:color 0.12s; }
+    .etoro-pill-edit:hover { color:var(--green); }
+
+    /* Summary + chart row */
+    .summary-chart-row { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem; }
+    @media (max-width:780px) { .summary-chart-row { grid-template-columns:1fr; } }
+
+    /* Summary grid */
+    .portfolio-summary { display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start; }
     .summary-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:0.85rem 1rem; }
     .summary-label { font-size:10px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px; }
     .summary-value { font-size:20px;font-weight:700;font-family:var(--mono);color:var(--text); }
     .summary-sub { font-size:11px;color:var(--text-dim);margin-top:2px; }
+
+    /* PnL chart card */
+    .pnl-chart-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:0.85rem 1rem;display:flex;flex-direction:column; }
+    .pnl-chart-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem; }
+    .pnl-chart-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim); }
+    .pnl-chart-sub { font-size:10px;color:var(--text-dim); }
+    .pnl-chart-wrap { position:relative;flex:1;min-height:120px; }
+    .pnl-chart-wrap canvas { width:100%!important; }
+    .pnl-chart-empty { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-dim);font-style:italic; }
     /* Positions */
     .positions-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;flex-wrap:wrap;gap:8px; }
     .positions-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim); }
@@ -651,16 +670,25 @@
       </a>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem;">
-        <div>
-          <h2 style="font-size:20px;font-weight:600;color:var(--text);letter-spacing:-0.02em;margin:0;">Agent Portfolios</h2>
-          <p style="font-size:12px;color:var(--text-dim);margin-top:3px;">AI-managed sub-portfolios via eToro Agent API</p>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="font-size:20px;font-weight:600;color:var(--text);letter-spacing:-0.02em;margin:0;">Agent Portfolios</h2>
+            <p style="font-size:12px;color:var(--text-dim);margin-top:3px;">AI-managed sub-portfolios via eToro Agent API</p>
+          </div>
+          <div id="etoro-pill" style="display:none;" class="etoro-connected-pill">
+            <span class="etoro-pill-dot"></span>
+            <span id="etoro-pill-name">eToro connected</span>
+            <button class="etoro-pill-edit" onclick="setupEditKey(); $('setup-card').style.display='block';" title="Edit key">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+          </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="env-toggle">
             <button class="env-btn active" id="env-real" onclick="switchEnv('real')">Real</button>
             <button class="env-btn"        id="env-demo" onclick="switchEnv('demo')">Demo</button>
           </div>
-          <button onclick="loadPortfolio()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-muted)'">
+          <button onclick="loadPortfolio();refreshAllPositions();" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-muted)'">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             Refresh
           </button>
@@ -726,12 +754,29 @@
       <!-- Portfolio content — shown after load -->
       <div id="portfolio-section" style="display:none;">
 
-        <!-- Summary bar -->
-        <div class="portfolio-summary">
-          <div class="summary-card"><div class="summary-label">Available cash</div><div class="summary-value" id="sum-cash">—</div><div class="summary-sub">USD</div></div>
-          <div class="summary-card"><div class="summary-label">Total equity</div><div class="summary-value" id="sum-equity">—</div><div class="summary-sub">USD</div></div>
-          <div class="summary-card"><div class="summary-label">Open P&amp;L</div><div class="summary-value" id="sum-pnl">—</div><div class="summary-sub">unrealised</div></div>
-          <div class="summary-card"><div class="summary-label">Positions</div><div class="summary-value" id="sum-count">—</div><div class="summary-sub">open</div></div>
+        <!-- Summary + PnL chart row -->
+        <div class="summary-chart-row">
+
+          <!-- Left: 2x2 stats -->
+          <div class="portfolio-summary">
+            <div class="summary-card"><div class="summary-label">Available cash</div><div class="summary-value" id="sum-cash">—</div><div class="summary-sub">USD</div></div>
+            <div class="summary-card"><div class="summary-label">Total equity</div><div class="summary-value" id="sum-equity">—</div><div class="summary-sub">USD</div></div>
+            <div class="summary-card"><div class="summary-label">Open P&amp;L</div><div class="summary-value" id="sum-pnl">—</div><div class="summary-sub" id="sum-pnl-ts">unrealised</div></div>
+            <div class="summary-card"><div class="summary-label">Positions</div><div class="summary-value" id="sum-count">—</div><div class="summary-sub">open</div></div>
+          </div>
+
+          <!-- Right: P&L chart -->
+          <div class="pnl-chart-card">
+            <div class="pnl-chart-header">
+              <span class="pnl-chart-title">P&amp;L over time</span>
+              <span class="pnl-chart-sub" id="pnl-chart-sub">live · 10s intervals</span>
+            </div>
+            <div class="pnl-chart-wrap">
+              <canvas id="pnl-chart"></canvas>
+              <div class="pnl-chart-empty" id="pnl-chart-empty">Collecting data…</div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Two-column layout -->
@@ -1029,10 +1074,10 @@
       ? key.slice(0, 6) + '••••••••' + key.slice(-4)
       : '••••••••••••';
     $('setup-key-preview').textContent = 'Key: ' + preview;
-    // reset bot info until fresh fetch
     $('setup-bot-name').textContent = 'eToro connected';
     $('setup-bot-meta').style.display = 'none';
     $('setup-bot-grid').innerHTML = '';
+    showEtoroPill('eToro connected');
   }
 
   async function loadBotInfo() {
@@ -1050,7 +1095,10 @@
       const risk   = bot.riskScore != null ? bot.riskScore : (bot.risk ?? null);
       const copiers = bot.copiers ?? bot.copiersCount ?? null;
 
-      if (name) $('setup-bot-name').textContent = name;
+      if (name) {
+        $('setup-bot-name').textContent = name;
+        showEtoroPill(name);
+      }
 
       const items = [];
       if (status)  items.push(['Status',  status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()]);
@@ -1162,6 +1210,7 @@
 
   async function loadPortfolio() {
     if (!_etoroUserKey) return;
+    stopPnlPolling();
     const errEl = $('agent-error');
     errEl.style.display = 'none';
     $('portfolio-section').style.display = 'none';
@@ -1204,6 +1253,10 @@
 
       $('portfolio-section').style.display = 'block';
       $('positions-loading').style.display = 'none';
+
+      // Push first PnL point and start live polling
+      pushPnlPoint(pnl);
+      startPnlPolling();
 
       if (!positions.length) { $('positions-empty').style.display = 'block'; return; }
 
@@ -2110,6 +2163,198 @@
     el.textContent = msg; el.className = 'trade-msg ' + type; el.style.display = 'block';
   }
   function pbHideMsg(id) { const el = $(id); if (el) el.style.display = 'none'; }
+
+  /* ══════════════════════════════════════════
+     ETORO CONNECTED PILL
+  ══════════════════════════════════════════ */
+  function showEtoroPill(name) {
+    const pill = $('etoro-pill');
+    const nameEl = $('etoro-pill-name');
+    if (pill) pill.style.display = 'inline-flex';
+    if (nameEl) nameEl.textContent = name || 'eToro connected';
+  }
+
+  /* ══════════════════════════════════════════
+     PNL CHART
+  ══════════════════════════════════════════ */
+  let _pnlChart = null;
+  const _pnlHistory = []; // [{t: Date, pnl: number}]
+
+  function initPnlChart() {
+    const canvas = $('pnl-chart');
+    if (!canvas || _pnlChart) return;
+    const isDark = !document.body.classList.contains('light');
+    const gridColor  = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const labelColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+
+    _pnlChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'P&L ($)',
+          data: [],
+          borderColor: '#6c63ff',
+          backgroundColor: 'rgba(108,99,255,0.08)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#6c63ff',
+          fill: true,
+          tension: 0.35,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const v = ctx.parsed.y;
+                return (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2);
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: labelColor, font: { size: 10 }, maxTicksLimit: 8 } },
+          y: {
+            grid: { color: gridColor },
+            ticks: {
+              color: labelColor, font: { size: 10 },
+              callback: v => (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2)
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function pushPnlPoint(pnl) {
+    const now = new Date();
+    _pnlHistory.push({ t: now, pnl });
+    if (_pnlHistory.length > 60) _pnlHistory.shift(); // keep 10 min window
+
+    if (!_pnlChart) initPnlChart();
+    if (!_pnlChart) return;
+
+    const empty = $('pnl-chart-empty');
+    if (empty) empty.style.display = 'none';
+
+    _pnlChart.data.labels = _pnlHistory.map(p =>
+      p.t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    );
+    _pnlChart.data.datasets[0].data = _pnlHistory.map(p => p.pnl);
+
+    // Colour line green/red based on latest value
+    const colour = pnl >= 0 ? '#22c55e' : '#ef4444';
+    _pnlChart.data.datasets[0].borderColor = colour;
+    _pnlChart.data.datasets[0].pointBackgroundColor = colour;
+    _pnlChart.data.datasets[0].backgroundColor = pnl >= 0 ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)';
+    _pnlChart.update('none');
+  }
+
+  /* ══════════════════════════════════════════
+     LIVE PNL POLLING (every 10s)
+  ══════════════════════════════════════════ */
+  let _pnlPollTimer = null;
+
+  function startPnlPolling() {
+    stopPnlPolling();
+    _pnlPollTimer = setInterval(pollPnl, 10000);
+  }
+
+  function stopPnlPolling() {
+    if (_pnlPollTimer) { clearInterval(_pnlPollTimer); _pnlPollTimer = null; }
+  }
+
+  async function pollPnl() {
+    if (!_etoroUserKey) return;
+    try {
+      const data = await etoroCall('/trading/info/real/pnl');
+      const cp = data?.clientPortfolio ?? data;
+
+      const credit        = Number(cp?.credit ?? 0);
+      const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0);
+      const positions     = (cp?.positions || []).filter(p => p && (p.positionID || p.positionId));
+      const ordersForOpen = cp?.ordersForOpen || [];
+      const pendingOpen   = ordersForOpen
+        .filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0)
+        .reduce((s, o) => s + Number(o.amount || 0), 0);
+
+      const available = credit - pendingOpen;
+      const pnl       = unrealizedPnL;
+      const equity    = credit + pnl;
+
+      const fmt = n => '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
+      $('sum-cash').textContent   = fmt(available);
+      $('sum-equity').textContent = fmt(equity);
+
+      const pnlEl = $('sum-pnl');
+      pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+
+      const ts = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const tsEl = $('sum-pnl-ts');
+      if (tsEl) tsEl.textContent = 'live · ' + ts;
+
+      _availableCash = available;
+
+      // Update per-card P&L
+      for (const pos of positions) {
+        const posId  = String(pos.positionID ?? pos.positionId ?? '');
+        const cardEl = document.querySelector(`[data-position-id="${posId}"]`);
+        if (!cardEl) continue;
+        const posPnl    = Number(pos.unrealizedPnL?.pnL ?? 0);
+        const openRate  = Number(pos.openRate || 0);
+        const curRate   = Number(pos.unrealizedPnL?.closeRate || openRate);
+        const pnlPct    = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
+        const isUp      = posPnl >= 0;
+        const color     = isUp ? 'var(--green)' : 'var(--red)';
+        const sign      = isUp ? '+' : '-';
+        const valEl     = cardEl.querySelector('.pos-pnl-value');
+        const pctEl     = cardEl.querySelector('.pos-pnl-pct');
+        const nowEl     = cardEl.querySelector('.pos-meta-item:nth-child(2)');
+        if (valEl) { valEl.textContent = sign + '$' + Math.abs(posPnl).toFixed(2); valEl.style.color = color; }
+        if (pctEl) { pctEl.textContent = sign + Math.abs(pnlPct).toFixed(2) + '%'; pctEl.style.color = color; }
+        if (nowEl) nowEl.innerHTML = `<strong>Now</strong>  $${curRate.toFixed(curRate < 10 ? 4 : 2)}`;
+        cardEl.className = `pos-card ${isUp ? 'pos-up' : 'pos-down'}`;
+      }
+
+      // Push to chart
+      pushPnlPoint(pnl);
+
+    } catch { /* silent — don't disrupt UI on poll failure */ }
+  }
+
+  /* ══════════════════════════════════════════
+     FIX REFRESH BUTTON — re-enrich all cards
+  ══════════════════════════════════════════ */
+  async function refreshAllPositions() {
+    if (!_etoroUserKey) return;
+    try {
+      const data = await etoroCall('/trading/info/real/pnl');
+      const cp = data?.clientPortfolio ?? data;
+      const positions = (cp?.positions || []).filter(p => p && (p.positionID || p.positionId));
+      // Reset signal boxes to loading state
+      for (const pos of positions) {
+        const posId = String(pos.positionID ?? pos.positionId ?? '');
+        const sigEl = document.getElementById(`signal-${posId}`);
+        if (sigEl) sigEl.innerHTML = `<span class="pos-signal-loading"><span class="pb-spin-inline"></span> Fetching signal…</span>`;
+      }
+      // Re-enrich sequentially
+      for (const pos of positions) {
+        await enrichPositionCard(pos);
+        await new Promise(r => setTimeout(r, 400));
+      }
+    } catch(e) {
+      const errEl = $('agent-error');
+      if (errEl) { errEl.textContent = '⚠️ Refresh failed: ' + e.message; errEl.style.display = 'block'; }
+    }
+  }
 
   initPage();
 </script>
