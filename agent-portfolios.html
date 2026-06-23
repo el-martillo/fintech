@@ -1225,34 +1225,25 @@
   }
 
   function renderPositionCard(pos, grid) {
-    const posId    = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
+    const posId    = String(pos.positionID ?? pos.positionId ?? pos.id ?? '');
     const instrId  = String(pos.instrumentID ?? pos.instrumentId ?? '');
-    const ticker   = String(pos.instrumentName || pos.symbol || pos.internalSymbolFull || posId || '?').toUpperCase();
-    const name     = pos.instrumentDisplayName || pos.displayName || ticker;
     const openRate = Number(pos.openRate || pos.openPrice || 0);
     const curRate  = Number(pos.currentRate || pos.currentPrice || openRate);
-    const pnl      = Number(pos.unrealizedPnL?.pnL ?? pos.unrealizedPnl?.pnl ?? pos.pnl ?? pos.profit ?? 0);
+    const pnl      = Number(pos.unrealizedPnL ?? pos.pnl ?? pos.profit ?? 0);
     const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
-    const amount   = Number(pos.amount || pos.investedAmount || 0);
+    const amount   = Number(pos.amount || pos.initialAmountInDollars || 0);
     const leverage = Number(pos.leverage || pos.Leverage || 1);
-    const isBuy    = pos.isBuy !== false && pos.direction !== 'SELL';
+    const isBuy    = pos.isBuy !== false;
     const isUp     = pnl >= 0;
     const pnlColor = isUp ? 'var(--green)' : 'var(--red)';
     const sign     = isUp ? '+' : '-';
-    const etoroUrl = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
-    const signalId = `signal-${posId || ticker}`;
-    const cardId   = `poscard-${posId || ticker}`;
+    const signalId = `signal-${posId}`;
+    const cardId   = `poscard-${posId}`;
 
-    // Open date
-    const openTs = pos.openDateTime || pos.openDate || pos.createdDate || null;
+    const openTs = pos.openDateTime || pos.openDate || null;
     const openDateStr = openTs ? new Date(openTs).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : null;
 
-    // Direction pill
-    const dirPill = isBuy
-      ? `<span class="pos-dir-pill buy">↑ LONG</span>`
-      : `<span class="pos-dir-pill sell">↓ SHORT</span>`;
-
-    // Leverage badge
+    const dirPill  = isBuy ? `<span class="pos-dir-pill buy">↑ LONG</span>` : `<span class="pos-dir-pill sell">↓ SHORT</span>`;
     const levBadge = leverage > 1 ? `<span class="pos-lev-badge">×${leverage}</span>` : '';
 
     const card = document.createElement('div');
@@ -1260,15 +1251,15 @@
     card.id = cardId;
     card.dataset.positionId   = posId;
     card.dataset.instrumentId = instrId;
-    card.dataset.ticker       = ticker;
+    card.dataset.ticker       = '';
     card.innerHTML = `
       <div class="pos-top">
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <div class="pos-ticker">${ticker.replace('-USD','')}</div>
+            <div class="pos-ticker">…</div>
             ${dirPill}${levBadge}
           </div>
-          <div class="pos-name">${name.length > 32 ? name.slice(0,30)+'…' : name}${openDateStr ? `<span class="pos-open-date"> · ${openDateStr}</span>` : ''}</div>
+          <div class="pos-name" style="color:var(--text-dim);font-style:italic;">Resolving…${openDateStr ? `<span class="pos-open-date" style="font-style:normal;"> · ${openDateStr}</span>` : ''}</div>
         </div>
         <div class="pos-pnl">
           <div class="pos-pnl-value" style="color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
@@ -1279,19 +1270,18 @@
         <div class="pos-meta-item"><strong>Open</strong> $${openRate.toFixed(openRate < 10 ? 4 : 2)}</div>
         <div class="pos-meta-item"><strong>Now</strong>  $${curRate.toFixed(curRate < 10 ? 4 : 2)}</div>
         <div class="pos-meta-item"><strong>Size</strong> $${amount.toFixed(0)}</div>
+        <div class="pos-meta-item"><strong>Lev</strong> ×${leverage}</div>
       </div>
       <div class="pos-signal" id="${signalId}">
-        <span class="pos-signal-loading">
-          <span class="pb-spin-inline"></span> Fetching signal…
-        </span>
+        <span class="pos-signal-loading"><span class="pb-spin-inline"></span> Fetching signal…</span>
       </div>
       <div class="pos-actions">
-        ${posId ? `<button class="pos-btn close-btn" id="closebtn-${posId}" onclick="confirmClose('${posId}','${instrId}','${ticker}',${pnl.toFixed(2)},${amount.toFixed(2)})">Close</button>` : ''}
-        <a class="pos-btn etoro-btn" href="${etoroUrl}" target="_blank" rel="noopener">
+        ${posId ? `<button class="pos-btn close-btn" id="closebtn-${posId}" onclick="confirmClose('${posId}','${instrId}','ID ${instrId}',${pnl.toFixed(2)},${amount.toFixed(2)})">Close</button>` : ''}
+        <a class="pos-btn etoro-btn" href="https://www.etoro.com/portfolio" target="_blank" rel="noopener">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           eToro
         </a>
-        <button class="pos-btn pos-refresh-btn" onclick="refreshCardSignal(this,'${posId}','${instrId}','${ticker}','${name.replace(/'/g,'')}')" title="Refresh signal">
+        <button class="pos-btn pos-refresh-btn" id="refreshbtn-${posId}" onclick="enrichPositionCard(${JSON.stringify(pos).replace(/"/g,'&quot;')})" title="Refresh signal">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
       </div>
@@ -1300,25 +1290,57 @@
   }
 
   async function enrichPositionCard(pos) {
-    const posId    = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
-    console.log('[enrich] pos keys:', Object.keys(pos), '| posId:', posId, '| instrumentName:', pos.instrumentName, '| symbol:', pos.symbol, '| internalSymbolFull:', pos.internalSymbolFull);
-    const ticker   = String(pos.instrumentName || pos.symbol || pos.internalSymbolFull || pos.internalSymbol || pos.symbolFull || '').toUpperCase();
-    const name     = pos.instrumentDisplayName || pos.displayName || pos.name || ticker;
-    const openRate = Number(pos.openRate || 0);
-    const curRate  = Number(pos.currentRate || openRate);
-    const signalEl = document.getElementById(`signal-${posId || ticker}`);
-
-    // If ticker is empty or signal element missing, show unavailable rather than hanging
-    if (!signalEl) return;
-    if (!ticker) {
-      signalEl.innerHTML = `<span style="font-size:10px;color:var(--text-dim);">Signal unavailable — ticker unknown</span>`;
+    const posId   = String(pos.positionID ?? pos.positionId ?? pos.id ?? '');
+    const instrId = String(pos.instrumentID ?? pos.instrumentId ?? '');
+    const signalEl = document.getElementById(`signal-${posId}`);
+    if (!signalEl || !instrId) {
+      if (signalEl) signalEl.innerHTML = `<span style="font-size:10px;color:var(--text-dim);">Signal unavailable</span>`;
       return;
     }
 
+    // Resolve instrumentID → symbol via eToro search
+    let ticker = '', name = '';
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__etoro__', etoroPath: `/market-data/instruments/${instrId}`, etoroMethod: 'GET', etoroUserKey: _etoroUserKey })
+      });
+      const json = await res.json();
+      const instr = json?.data?.instrument ?? json?.data ?? null;
+      ticker = (instr?.symbolFull || instr?.internalSymbolFull || instr?.symbol || instr?.ticker || '').toUpperCase();
+      name   = instr?.displayName || instr?.name || ticker;
+
+      // Update card ticker/name display if we got something
+      if (ticker) {
+        const card = document.querySelector(`[data-position-id="${posId}"]`);
+        if (card) {
+          const tickerEl  = card.querySelector('.pos-ticker');
+          const nameEl    = card.querySelector('.pos-name');
+          const etoroLink = card.querySelector('.etoro-btn');
+          const closeBtn  = card.querySelector('.close-btn');
+          const pnl       = Number(pos.unrealizedPnL ?? 0);
+          const amount    = Number(pos.amount || pos.initialAmountInDollars || 0);
+          const etoroUrl  = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
+          if (tickerEl)  tickerEl.textContent = ticker.replace('-USD','');
+          if (nameEl)    { nameEl.textContent = name.length > 32 ? name.slice(0,30)+'…' : name; nameEl.style.fontStyle = 'normal'; nameEl.style.color = ''; }
+          if (etoroLink) etoroLink.href = etoroUrl;
+          if (closeBtn)  closeBtn.setAttribute('onclick', `confirmClose('${posId}','${instrId}','${ticker}',${pnl.toFixed(2)},${amount.toFixed(2)})`);
+          card.dataset.ticker = ticker;
+        }
+      }
+    } catch { /* proceed with empty ticker — signal will use instrumentID fallback */ }
+
+    if (!ticker) {
+      signalEl.innerHTML = `<span style="font-size:10px;color:var(--text-dim);">Signal unavailable</span>`;
+      return;
+    }
+
+    const openRate = Number(pos.openRate || 0);
+    const curRate  = Number(pos.currentRate || openRate);
     const isCrypto = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker.replace('-USD',''));
     const yTicker  = isCrypto ? ticker.replace('-USD','') + '-USD' : ticker;
 
-    // Try to get real Yahoo price/metrics for a better signal
     let price = curRate, changePct = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
     let metrics = { rsi:50, volRatio:1, rangePct:50, streak:1, weekPct:changePct, direction: changePct>=0?'up':'down' };
     try {
@@ -1335,7 +1357,7 @@
         const yPrice = result.meta?.regularMarketPrice ?? closes[closes.length-1] ?? 0;
         if (yPrice > 0 && closes.length >= 2) {
           price = yPrice;
-          const prev    = closes[closes.length-2];
+          const prev     = closes[closes.length-2];
           const todayPct = ((yPrice - prev) / prev) * 100;
           const weekPct  = closes.length >= 3 ? ((yPrice - closes[0]) / closes[0]) * 100 : todayPct;
           const todayVol = vols[vols.length-1] ?? 0;
