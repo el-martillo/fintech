@@ -318,11 +318,13 @@
     /* Positions */
     .positions-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;flex-wrap:wrap;gap:8px; }
     .positions-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim); }
-    .positions-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
-    @media (max-width:900px) { .positions-grid { grid-template-columns:repeat(2,1fr); } }
-    @media (max-width:480px) { .positions-grid { grid-template-columns:1fr; } }
-    /* Position card */
-    .pos-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem;transition:border-color 0.15s; }
+    .positions-grid { display:flex;flex-direction:column;gap:0; }
+    /* Position list row */
+    .pos-card { background:var(--surface);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:10px;transition:background 0.12s; }
+    .pos-card:first-child { border-top:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0; }
+    .pos-card:last-child  { border-radius:0 0 var(--radius) var(--radius); }
+    .pos-card:only-child  { border-radius:var(--radius);border:1px solid var(--border); }
+    .pos-card:hover { background:var(--surface2); }
     .pos-card.pos-up   { border-left:3px solid var(--green); }
     .pos-card.pos-down { border-left:3px solid var(--red); }
     .pos-top { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px; }
@@ -1091,7 +1093,10 @@
           <!-- ── RIGHT: Positions ── -->
           <div class="positions-col">
             <div class="positions-header">
-              <div class="positions-title">Open positions</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="positions-title">Open positions</div>
+                <span id="positions-count" style="font-size:11px;font-weight:600;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:1px 8px;display:none;"></span>
+              </div>
               <div style="font-size:11px;color:var(--text-dim);" id="positions-ts"></div>
             </div>
             <div id="positions-loading" class="agent-loading" style="display:none;"><div class="spinner-sm"></div>Loading positions…</div>
@@ -1422,6 +1427,8 @@
       pushPnlPoint(pnl, equity);
       startPnlPolling();
 
+      const countEl = $('positions-count');
+      if (countEl) { countEl.textContent = positions.length; countEl.style.display = positions.length ? 'inline' : 'none'; }
       if (!positions.length) { $('positions-empty').style.display = 'block'; return; }
 
       const grid = $('positions-grid');
@@ -1469,36 +1476,29 @@
     card.dataset.positionId   = posId;
     card.dataset.instrumentId = instrId;
     card.dataset.ticker       = '';
+    const posJson = encodeURIComponent(JSON.stringify(pos));
     card.innerHTML = `
-      <div class="pos-top">
-        <div style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <div class="pos-ticker">…</div>
-            ${dirPill}${levBadge}
-          </div>
-          <div class="pos-name" style="color:var(--text-dim);font-style:italic;">Resolving…${openDateStr ? `<span class="pos-open-date" style="font-style:normal;"> · ${openDateStr}</span>` : ''}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+          <span class="pos-ticker" style="font-size:13px;">...</span>
+          ${dirPill}${levBadge}
         </div>
-        <div class="pos-pnl">
-          <div class="pos-pnl-value" style="color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
-          <div class="pos-pnl-pct"   style="color:${pnlColor};">${sign}${Math.abs(pnlPct).toFixed(2)}%</div>
-        </div>
+        <div class="pos-name" style="font-size:10.5px;color:var(--text-dim);font-style:italic;margin-top:1px;">Resolving...${openDateStr ? ' · ' + openDateStr : ''}</div>
       </div>
-      <div class="pos-meta">
-        <div class="pos-meta-item"><strong>Open</strong> $${openRate.toFixed(openRate < 10 ? 4 : 2)}</div>
-        <div class="pos-meta-item"><strong>Now</strong>  $${curRate.toFixed(curRate < 10 ? 4 : 2)}</div>
-        <div class="pos-meta-item"><strong>Size</strong> $${amount.toFixed(0)}</div>
-        <div class="pos-meta-item"><strong>Lev</strong> ×${leverage}</div>
+      <div style="text-align:right;flex-shrink:0;min-width:90px;">
+        <div style="font-size:11px;color:var(--text-muted);">$${openRate.toFixed(openRate<10?4:2)} → $${curRate.toFixed(curRate<10?4:2)}</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">$${amount.toFixed(0)} · ×${leverage}</div>
       </div>
-      <div class="pos-signal" id="${signalId}">
-        <span class="pos-signal-loading"><span class="pb-spin-inline"></span> Fetching signal…</span>
+      <div class="pos-pnl" style="text-align:right;flex-shrink:0;min-width:58px;">
+        <div class="pos-pnl-value" style="font-size:13px;font-weight:700;color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
+        <div class="pos-pnl-pct"   style="font-size:10.5px;color:${pnlColor};">${sign}${Math.abs(pnlPct).toFixed(2)}%</div>
       </div>
-      <div class="pos-actions">
-        ${posId ? `<button class="pos-btn close-btn" id="closebtn-${posId}" onclick="confirmClose('${posId}','${instrId}','…',${pnl.toFixed(2)},${amount.toFixed(2)})">Close</button>` : ''}
-        <a class="pos-btn etoro-btn" href="https://www.etoro.com/portfolio" target="_blank" rel="noopener">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          eToro
-        </a>
-        <button class="pos-btn pos-refresh-btn" id="refreshbtn-${posId}" onclick="enrichPositionCard(${JSON.stringify(pos).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')})" title="Refresh signal">
+      <div class="pos-signal" id="${signalId}" style="flex-shrink:0;min-width:55px;text-align:center;padding:0;">
+        <span class="pos-signal-loading"><span class="pb-spin-inline"></span></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+        ${posId ? `<button class="pos-btn close-btn" id="closebtn-${posId}" onclick="confirmClose('${posId}','${instrId}','...',${pnl.toFixed(2)},${amount.toFixed(2)})">Close</button>` : ''}
+        <button class="pos-btn pos-refresh-btn" id="refreshbtn-${posId}" onclick="enrichPositionCard(JSON.parse(decodeURIComponent('${posJson}')))" title="Refresh signal">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
       </div>
