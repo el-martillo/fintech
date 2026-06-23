@@ -1970,7 +1970,7 @@
           etoroUserKey: _etoroUserKey,
           instrumentId: Number(instrumentId),
           isBuy:        _tradeDir === 'BUY',
-          amount:       Number(amount),
+          amount:       Math.round(Number(amount) * 100),
           leverage:     Number(leverage),
         })
       });
@@ -2294,7 +2294,7 @@
             etoroUserKey: _etoroUserKey,
             instrumentId: alloc.instrumentId,
             isBuy: true,
-            amount,
+            amount: Math.round(amount * 100),
             leverage: 1,
           })
         });
@@ -2861,7 +2861,7 @@
           etoroUserKey: _etoroUserKey,
           instrumentId: srJson.instrumentId,
           isBuy: signal === 'BUY',
-          amount, leverage: 1,
+          amount: Math.round(amount * 100), leverage: 1,
         })
       });
       const orJson = await orRes.json();
