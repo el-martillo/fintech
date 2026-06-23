@@ -270,6 +270,10 @@
     .setup-connected-dot { width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,0.2);flex-shrink:0; }
     .setup-edit-btn { padding:5px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.12s; }
     .setup-edit-btn:hover { border-color:var(--accent);color:var(--text); }
+    .setup-bot-grid { display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-top:8px;border-top:1px solid var(--border); }
+    .setup-bot-item { display:flex;flex-direction:column;gap:2px; }
+    .setup-bot-item-label { font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim); }
+    .setup-bot-item-value { font-size:12px;color:var(--text-muted);font-weight:500;word-break:break-word; }
     /* Summary */
     .portfolio-summary { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem; }
     @media (max-width:600px) { .portfolio-summary { grid-template-columns:repeat(2,1fr); } }
@@ -406,6 +410,9 @@
     .tp-tab:hover:not(.active) { color:var(--text); }
 
     /* ── Portfolio Builder ── */
+    .pb-suggestions { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px; }
+    .pb-suggestion { padding:4px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;font-size:11px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.12s;white-space:nowrap; }
+    .pb-suggestion:hover { border-color:var(--accent);color:var(--accent);background:var(--accent-dim); }
     .pb-textarea { width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;resize:vertical;line-height:1.5;transition:border-color 0.15s,box-shadow 0.15s; }
     .pb-textarea:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.1); }
     .pb-textarea::placeholder { color:var(--text-dim); }
@@ -698,13 +705,16 @@
 
         <!-- ── Connected state ── -->
         <div id="setup-connected" style="display:none;">
-          <div style="display:flex;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
             <div class="setup-connected-dot"></div>
             <div style="flex:1;">
-              <div style="font-size:13px;font-weight:600;color:var(--text);">eToro connected</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);" id="setup-bot-name">eToro connected</div>
               <div style="font-size:11px;color:var(--text-dim);margin-top:1px;" id="setup-key-preview"></div>
             </div>
             <button class="setup-edit-btn" onclick="setupEditKey()">Edit key</button>
+          </div>
+          <div id="setup-bot-meta" style="display:none;">
+            <div class="setup-bot-grid" id="setup-bot-grid"></div>
           </div>
         </div>
 
@@ -816,6 +826,14 @@
               <div id="pb-step-input">
                 <div class="trade-field">
                   <label>Describe your strategy</label>
+                  <div class="pb-suggestions">
+                    <button class="pb-suggestion" onclick="pbSuggest('60% Magnificent 7 stocks, 20% crypto (BTC, ETH, SOL), 20% semiconductors')">Mag 7 + Crypto</button>
+                    <button class="pb-suggestion" onclick="pbSuggest('50% big tech growth stocks, 30% AI and semiconductor plays, 20% crypto')">AI &amp; Tech heavy</button>
+                    <button class="pb-suggestion" onclick="pbSuggest('40% blue chip stocks, 30% defensive ETFs and dividend payers, 20% crypto, 10% gold ETF')">Balanced</button>
+                    <button class="pb-suggestion" onclick="pbSuggest('50% crypto (BTC, ETH, SOL, XRP), 30% high-growth tech stocks, 20% speculative small caps')">Crypto heavy</button>
+                    <button class="pb-suggestion" onclick="pbSuggest('60% defensive dividend stocks and ETFs, 25% large cap value, 15% bonds ETF')">Defensive income</button>
+                    <button class="pb-suggestion" onclick="pbSuggest('40% US big tech, 20% crypto, 20% emerging market tech, 20% energy stocks')">Global diversified</button>
+                  </div>
                   <textarea id="pb-strategy" class="pb-textarea" placeholder="e.g. 40% big tech, 30% crypto, 20% semiconductors, 10% defensive ETFs" rows="3"></textarea>
                 </div>
                 <button class="pb-parse-btn" id="pb-parse-btn" onclick="pbParse()">
@@ -997,6 +1015,7 @@
     if (data?.etoro_user_key) {
       _etoroUserKey = data.etoro_user_key;
       setupShowConnected(_etoroUserKey);
+      loadBotInfo();
     }
     // always show setup card — either connected or unconnected state
     $('setup-card').style.display = 'block';
@@ -1005,11 +1024,49 @@
   function setupShowConnected(key) {
     $('setup-unconnected').style.display = 'none';
     $('setup-connected').style.display   = 'block';
-    // show masked key: first 6 chars + dots + last 4
     const preview = key.length > 10
       ? key.slice(0, 6) + '••••••••' + key.slice(-4)
       : '••••••••••••';
     $('setup-key-preview').textContent = 'Key: ' + preview;
+    // reset bot info until fresh fetch
+    $('setup-bot-name').textContent = 'eToro connected';
+    $('setup-bot-meta').style.display = 'none';
+    $('setup-bot-grid').innerHTML = '';
+  }
+
+  async function loadBotInfo() {
+    if (!_etoroUserKey) return;
+    try {
+      // Try the agent-portfolios info endpoint — gracefully ignore if unavailable
+      const data = await etoroCall('/agent-portfolios');
+      const bot = Array.isArray(data) ? data[0] : (data?.agentPortfolio ?? data?.portfolio ?? data);
+      if (!bot) return;
+
+      const name   = bot.name || bot.botName || bot.portfolioName || null;
+      const desc   = bot.description || bot.about || null;
+      const status = bot.status || bot.state || null;
+      const since  = bot.createdDate || bot.created || bot.openDate || null;
+      const risk   = bot.riskScore != null ? bot.riskScore : (bot.risk ?? null);
+      const copiers = bot.copiers ?? bot.copiersCount ?? null;
+
+      if (name) $('setup-bot-name').textContent = name;
+
+      const items = [];
+      if (status)  items.push(['Status',  status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()]);
+      if (since)   items.push(['Since',   new Date(since).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})]);
+      if (risk != null) items.push(['Risk score', String(risk)]);
+      if (copiers != null) items.push(['Copiers', Number(copiers).toLocaleString()]);
+      if (desc)    items.push(['About', desc.length > 60 ? desc.slice(0,58)+'…' : desc]);
+
+      if (items.length) {
+        $('setup-bot-grid').innerHTML = items.map(([label, value]) => `
+          <div class="setup-bot-item">
+            <span class="setup-bot-item-label">${label}</span>
+            <span class="setup-bot-item-value">${value}</span>
+          </div>`).join('');
+        $('setup-bot-meta').style.display = 'block';
+      }
+    } catch { /* endpoint unavailable — silently skip */ }
   }
 
   function setupEditKey() {
@@ -1070,6 +1127,7 @@
 
     setTimeout(() => {
       setupShowConnected(userKey);
+      loadBotInfo();
       btn.disabled = false;
       btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg> Save &amp; connect';
       loadPortfolio();
@@ -1115,16 +1173,20 @@
       const cp = data?.clientPortfolio ?? data;
 
       const credit        = Number(cp?.credit ?? 0);
+      const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0);
       const positions     = (cp?.positions     || []).filter(p => p && (p.positionId || p.positionID || p.id));
       const ordersForOpen = cp?.ordersForOpen || [];
-      const orders        = cp?.orders        || [];
 
-      const pendingOpen  = ordersForOpen.filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0).reduce((s, o) => s + Number(o.amount || 0), 0);
-      const pendingClose = orders.reduce((s, o) => s + Number(o.amount || 0), 0);
-      const available    = credit - pendingOpen - pendingClose;
-      const pnl          = positions.reduce((s, p) => s + Number(p.unrealizedPnL?.pnL ?? p.unrealizedPnl?.pnl ?? p.pnl ?? 0), 0);
-      const invested     = positions.reduce((s, p) => s + Number(p.amount || 0), 0) + pendingOpen + pendingClose;
-      const equity       = available + invested + pnl;
+      // credit = total cash balance (already excludes nothing — it's the raw balance)
+      // pendingOpen = cash committed to orders not yet filled
+      const pendingOpen = ordersForOpen
+        .filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0)
+        .reduce((s, o) => s + Number(o.amount || 0), 0);
+
+      const available = credit - pendingOpen;
+      const invested  = positions.reduce((s, p) => s + Number(p.amount || 0), 0);
+      const pnl       = unrealizedPnL;
+      const equity    = credit + pnl;
 
       const fmt = n => '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
       $('sum-cash').textContent   = fmt(available);
@@ -1817,6 +1879,11 @@
     $('pb-close-mode').style.display = checked ? 'block' : 'none';
   }
 
+  function pbSuggest(text) {
+    const ta = $('pb-strategy');
+    if (ta) { ta.value = text; ta.focus(); }
+  }
+
   function pbReset() {
     _pbAllocations = [];
     $('pb-step-input').style.display   = 'block';
@@ -1922,13 +1989,13 @@
     let freshEquity = equity;
     try {
       const data = await etoroCall('/trading/info/real/pnl');
-      const cp = data?.clientPortfolio ?? data;
-      const credit = Number(cp?.credit ?? 0);
-      const ordersForOpen = cp?.ordersForOpen || [];
-      const orders = cp?.orders || [];
-      const pendingOpen  = ordersForOpen.filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0).reduce((s, o) => s + Number(o.amount || 0), 0);
-      const pendingClose = orders.reduce((s, o) => s + Number(o.amount || 0), 0);
-      freshEquity = credit - pendingOpen - pendingClose;
+      const cp2 = data?.clientPortfolio ?? data;
+      const credit2 = Number(cp2?.credit ?? 0);
+      const unrealized2 = Number(cp2?.unrealizedPnL ?? 0);
+      const pendingOpen2 = (cp2?.ordersForOpen || [])
+        .filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0)
+        .reduce((s, o) => s + Number(o.amount || 0), 0);
+      freshEquity = credit2 - pendingOpen2;
       pbLog('info', '💰', `Available cash: $${freshEquity.toFixed(2)}`);
     } catch(e) {
       pbLog('warn', '⚠️', `Could not refresh balance, using $${freshEquity.toFixed(2)}`);
