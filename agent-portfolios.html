@@ -375,6 +375,53 @@
     .confirm-ok.sell { background:var(--red); }
     .confirm-ok:hover { opacity:0.85; }
     .confirm-warn { font-size:11px;padding:7px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:0; }
+
+    /* ── Trade panel tab switcher ── */
+    .tp-tabs { display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 1.25rem; }
+    .tp-tab { padding:10px 14px;border:none;background:transparent;font-size:12.5px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s; }
+    .tp-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
+    .tp-tab:hover:not(.active) { color:var(--text); }
+
+    /* ── Portfolio Builder ── */
+    .pb-textarea { width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;resize:vertical;line-height:1.5;transition:border-color 0.15s,box-shadow 0.15s; }
+    .pb-textarea:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.1); }
+    .pb-textarea::placeholder { color:var(--text-dim); }
+    .pb-parse-btn { width:100%;padding:10px;background:var(--accent-dim);border:1px solid rgba(108,99,255,0.3);border-radius:var(--radius);font-size:13px;font-weight:600;color:#a9a3ff;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:all 0.15s;margin-top:4px; }
+    .pb-parse-btn:hover { background:var(--accent);color:#fff;border-color:var(--accent); }
+    .pb-parse-btn:disabled { opacity:0.45;cursor:not-allowed; }
+    .pb-section-label { font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:8px; }
+    /* Allocation table */
+    .pb-table { width:100%;border-collapse:collapse;font-size:12px;margin-bottom:0.85rem; }
+    .pb-table th { font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);padding:4px 6px;text-align:left;border-bottom:1px solid var(--border); }
+    .pb-table td { padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:middle; }
+    .pb-table tr:last-child td { border-bottom:none; }
+    .pb-ticker-cell { font-family:var(--mono);font-weight:700;color:var(--text);font-size:13px; }
+    .pb-weight-input { width:54px;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:3px 6px;font-size:12px;color:var(--text);outline:none;font-family:var(--mono);text-align:right;transition:border-color 0.12s; }
+    .pb-weight-input:focus { border-color:var(--accent); }
+    .pb-amount-cell { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
+    .pb-rationale-cell { font-size:10.5px;color:var(--text-dim);max-width:100px;line-height:1.4; }
+    .pb-remove-btn { background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px 4px;border-radius:4px;transition:all 0.12s;font-size:13px;line-height:1; }
+    .pb-remove-btn:hover { color:var(--red);background:var(--red-bg); }
+    /* Close toggle */
+    .pb-close-toggle { background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:0.6rem 0.75rem;margin-bottom:0.5rem; }
+    .pb-toggle-row { display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-muted); }
+    .pb-toggle-row input[type=checkbox] { accent-color:var(--accent);width:14px;height:14px;cursor:pointer; }
+    .pb-toggle-label { font-weight:500; }
+    .pb-radio-row { display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text-muted);cursor:pointer;padding:3px 0; }
+    .pb-radio-row input[type=radio] { accent-color:var(--accent);cursor:pointer; }
+    .pb-weight-warn { font-size:11px;padding:6px 10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:6px;color:#f59e0b; }
+    .pb-back-btn { padding:8px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.12s; }
+    .pb-back-btn:hover { border-color:var(--accent);color:var(--text); }
+    /* Execution log */
+    #pb-log { display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto; }
+    .pb-log-row { display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;background:var(--surface2);font-size:11.5px; }
+    .pb-log-icon { flex-shrink:0;font-size:13px;line-height:1.4; }
+    .pb-log-text { color:var(--text-muted);line-height:1.45;flex:1; }
+    .pb-log-row.ok   { background:var(--green-bg);border:1px solid rgba(34,197,94,0.15); }
+    .pb-log-row.err  { background:var(--red-bg);border:1px solid rgba(239,68,68,0.15); }
+    .pb-log-row.info { background:var(--surface2);border:1px solid var(--border); }
+    .pb-log-row.warn { background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2); }
+    .pb-spin-inline { display:inline-block;width:11px;height:11px;border:2px solid rgba(169,163,255,0.3);border-top-color:#a9a3ff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:4px; }
   </style>
 </head>
 <body>
@@ -625,11 +672,15 @@
 
           <!-- ── LEFT: Trade Panel ── -->
           <div class="trade-panel">
-            <div class="trade-panel-header">
-              <div class="trade-panel-title">New Trade</div>
-              <div class="trade-panel-sub">AI-assisted · real account</div>
+            <div class="trade-panel-header" style="padding-bottom:0;">
+              <div class="tp-tabs">
+                <button class="tp-tab active" id="tp-tab-trade"   onclick="switchTradeTab('trade')">New Trade</button>
+                <button class="tp-tab"        id="tp-tab-builder" onclick="switchTradeTab('builder')">Build Portfolio</button>
+              </div>
             </div>
-            <div class="trade-panel-body">
+
+            <!-- ── TAB: New Trade ── -->
+            <div id="tp-body-trade" class="trade-panel-body">
 
               <!-- BUY / SELL toggle -->
               <div class="dir-toggle">
@@ -700,7 +751,62 @@
               </button>
               <div class="trade-msg" id="trade-msg"></div>
 
-            </div>
+            </div><!-- /tp-body-trade -->
+
+            <!-- ── TAB: Build Portfolio ── -->
+            <div id="tp-body-builder" class="trade-panel-body" style="display:none;">
+
+              <!-- Step 1: Strategy input -->
+              <div id="pb-step-input">
+                <div class="trade-field">
+                  <label>Describe your strategy</label>
+                  <textarea id="pb-strategy" class="pb-textarea" placeholder="e.g. 40% big tech, 30% crypto, 20% semiconductors, 10% defensive ETFs" rows="3"></textarea>
+                </div>
+                <button class="pb-parse-btn" id="pb-parse-btn" onclick="pbParse()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                  Parse with AI
+                </button>
+                <div class="trade-msg" id="pb-parse-msg"></div>
+              </div>
+
+              <!-- Step 2: Approval table -->
+              <div id="pb-step-approve" style="display:none;">
+                <div class="pb-section-label">Allocation plan <span id="pb-equity-note"></span></div>
+                <div id="pb-table-wrap"></div>
+
+                <!-- Close existing toggle -->
+                <div class="pb-close-toggle">
+                  <label class="pb-toggle-row">
+                    <input type="checkbox" id="pb-close-existing" onchange="pbToggleCloseMode()"/>
+                    <span class="pb-toggle-label">Close existing positions first</span>
+                  </label>
+                  <div id="pb-close-mode" style="display:none;margin-top:6px;">
+                    <label class="pb-radio-row"><input type="radio" name="pb-close-mode" value="all" checked/> Close all open positions</label>
+                    <label class="pb-radio-row"><input type="radio" name="pb-close-mode" value="partial"/> Close only tickers not in new plan</label>
+                  </div>
+                </div>
+
+                <div class="pb-weight-warn" id="pb-weight-warn" style="display:none;"></div>
+
+                <div style="display:flex;gap:6px;margin-top:0.75rem;">
+                  <button class="pb-back-btn" onclick="pbReset()">← Back</button>
+                  <button class="trade-exec-btn buy" id="pb-exec-btn" onclick="pbExecute()" style="flex:1;font-size:13px;padding:10px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                    Execute plan
+                  </button>
+                </div>
+                <div class="trade-msg" id="pb-exec-msg"></div>
+              </div>
+
+              <!-- Step 3: Execution log -->
+              <div id="pb-step-log" style="display:none;">
+                <div class="pb-section-label">Execution log</div>
+                <div id="pb-log"></div>
+                <button class="pb-back-btn" style="margin-top:0.75rem;width:100%;" onclick="pbReset();loadPortfolio();">← Done — refresh portfolio</button>
+              </div>
+
+            </div><!-- /tp-body-builder -->
+
           </div><!-- /trade-panel -->
 
           <!-- ── RIGHT: Positions ── -->
@@ -1318,6 +1424,314 @@
     el.textContent = msg; el.className = 'trade-msg ' + type; el.style.display = 'block';
     if (type === 'ok') setTimeout(() => { if(el.textContent === msg) el.style.display = 'none'; }, 7000);
   }
+
+  /* ══════════════════════════════════════════
+     TRADE PANEL TAB SWITCHER
+  ══════════════════════════════════════════ */
+  function switchTradeTab(tab) {
+    $('tp-tab-trade').classList.toggle('active', tab === 'trade');
+    $('tp-tab-builder').classList.toggle('active', tab === 'builder');
+    $('tp-body-trade').style.display   = tab === 'trade'   ? 'block' : 'none';
+    $('tp-body-builder').style.display = tab === 'builder' ? 'block' : 'none';
+  }
+
+  /* ══════════════════════════════════════════
+     PORTFOLIO BUILDER
+  ══════════════════════════════════════════ */
+  let _pbAllocations = [];   // [{ticker, weight, rationale, instrumentId}]
+
+  /* ── Step 1: Parse strategy with Claude ── */
+  async function pbParse() {
+    const strategy = $('pb-strategy')?.value?.trim();
+    if (!strategy) { pbShowMsg('pb-parse-msg', 'Enter a strategy description.', 'err'); return; }
+
+    const btn = $('pb-parse-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="pb-spin-inline"></span> Parsing…';
+    pbHideMsg('pb-parse-msg');
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `You are a portfolio allocation assistant. Parse this strategy into specific stock/crypto tickers with percentage allocations.
+
+Strategy: "${strategy}"
+
+Rules:
+- Use real ticker symbols (e.g. AAPL, NVDA, BTC, ETH)
+- Weights must sum to exactly 100
+- 2–10 positions
+- For crypto, use the base symbol only (BTC not BTC-USD)
+- Return ONLY valid JSON, no markdown:
+{"allocations":[{"ticker":"AAPL","weight":25,"rationale":"Large-cap tech leader"},{"ticker":"NVDA","weight":20,"rationale":"AI/GPU dominance"}]}`
+          }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.map(b => b.text || '').join('') || '';
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+
+      if (!parsed.allocations?.length) throw new Error('No allocations returned');
+
+      // Normalise weights to sum to 100
+      const total = parsed.allocations.reduce((s, a) => s + Number(a.weight), 0);
+      _pbAllocations = parsed.allocations.map(a => ({
+        ticker: a.ticker.toUpperCase(),
+        weight: parseFloat(((Number(a.weight) / total) * 100).toFixed(1)),
+        rationale: a.rationale || '',
+        instrumentId: null,
+      }));
+
+      pbShowApprovalTable();
+    } catch(e) {
+      pbShowMsg('pb-parse-msg', 'Parse failed: ' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Parse with AI';
+    }
+  }
+
+  /* ── Step 2: Show editable approval table ── */
+  function pbShowApprovalTable() {
+    $('pb-step-input').style.display   = 'none';
+    $('pb-step-approve').style.display = 'block';
+    pbRenderTable();
+    pbUpdateWeightWarn();
+  }
+
+  function pbRenderTable() {
+    const equity = _availableCash > 0 ? _availableCash : 0;
+    $('pb-equity-note').textContent = equity > 0
+      ? `· $${equity.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0})} available`
+      : '';
+
+    const rows = _pbAllocations.map((a, i) => `
+      <tr>
+        <td class="pb-ticker-cell">${a.ticker}</td>
+        <td><input class="pb-weight-input" type="number" min="0.1" max="100" step="0.1"
+             value="${a.weight}" oninput="pbUpdateWeight(${i}, this.value)"/>%</td>
+        <td class="pb-amount-cell">${equity > 0 ? '$' + ((a.weight/100)*equity).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}) : '—'}</td>
+        <td class="pb-rationale-cell">${a.rationale}</td>
+        <td><button class="pb-remove-btn" onclick="pbRemoveRow(${i})" title="Remove">×</button></td>
+      </tr>`).join('');
+
+    $('pb-table-wrap').innerHTML = `
+      <table class="pb-table">
+        <thead><tr><th>Ticker</th><th>Weight</th><th>Amount</th><th>Rationale</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function pbUpdateWeight(i, val) {
+    _pbAllocations[i].weight = parseFloat(val) || 0;
+    // refresh amount column only
+    const equity = _availableCash > 0 ? _availableCash : 0;
+    const cells = $('pb-table-wrap').querySelectorAll('.pb-amount-cell');
+    if (cells[i]) cells[i].textContent = equity > 0
+      ? '$' + ((_pbAllocations[i].weight/100)*equity).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0})
+      : '—';
+    pbUpdateWeightWarn();
+  }
+
+  function pbRemoveRow(i) {
+    _pbAllocations.splice(i, 1);
+    pbRenderTable();
+    pbUpdateWeightWarn();
+  }
+
+  function pbUpdateWeightWarn() {
+    const total = _pbAllocations.reduce((s, a) => s + Number(a.weight), 0);
+    const warn = $('pb-weight-warn');
+    const diff = Math.abs(total - 100);
+    if (diff > 0.5) {
+      warn.textContent = `Weights sum to ${total.toFixed(1)}% (should be 100%). Adjust before executing.`;
+      warn.style.display = 'block';
+      $('pb-exec-btn').disabled = true;
+    } else {
+      warn.style.display = 'none';
+      $('pb-exec-btn').disabled = false;
+    }
+  }
+
+  function pbToggleCloseMode() {
+    const checked = $('pb-close-existing').checked;
+    $('pb-close-mode').style.display = checked ? 'block' : 'none';
+  }
+
+  function pbReset() {
+    _pbAllocations = [];
+    $('pb-step-input').style.display   = 'block';
+    $('pb-step-approve').style.display = 'none';
+    $('pb-step-log').style.display     = 'none';
+    $('pb-log').innerHTML              = '';
+    $('pb-strategy').value             = '';
+    $('pb-close-existing').checked     = false;
+    $('pb-close-mode').style.display   = 'none';
+    pbHideMsg('pb-parse-msg');
+    pbHideMsg('pb-exec-msg');
+  }
+
+  /* ── Step 3: Execute ── */
+  async function pbExecute() {
+    if (!_etoroUserKey) { pbShowMsg('pb-exec-msg', 'No eToro user key configured.', 'err'); return; }
+
+    const total = _pbAllocations.reduce((s, a) => s + Number(a.weight), 0);
+    if (Math.abs(total - 100) > 0.5) { pbShowMsg('pb-exec-msg', 'Weights must sum to 100%.', 'err'); return; }
+    if (!_pbAllocations.length) { pbShowMsg('pb-exec-msg', 'No allocations to execute.', 'err'); return; }
+
+    $('pb-exec-btn').disabled = true;
+    $('pb-step-approve').style.display = 'none';
+    $('pb-step-log').style.display     = 'block';
+    $('pb-log').innerHTML = '';
+
+    const closeExisting = $('pb-close-existing').checked;
+    const closeMode     = document.querySelector('input[name="pb-close-mode"]:checked')?.value || 'all';
+    const equity        = _availableCash;
+
+    pbLog('info', '🚀', `Starting portfolio build — ${_pbAllocations.length} positions, equity $${equity.toFixed(2)}`);
+
+    /* ── Phase 1: Close positions ── */
+    if (closeExisting) {
+      pbLog('info', '⏳', 'Loading current positions…');
+      try {
+        const data = await etoroCall('/trading/info/real/pnl');
+        const positions = (data?.clientPortfolio ?? data)?.positions || [];
+
+        const newTickers = new Set(_pbAllocations.map(a => a.ticker.toUpperCase()));
+        const toClose = closeMode === 'all'
+          ? positions
+          : positions.filter(p => {
+              const t = String(p.instrumentName || p.symbol || '').toUpperCase().replace('-USD','');
+              return !newTickers.has(t);
+            });
+
+        if (!toClose.length) {
+          pbLog('info', 'ℹ️', 'No positions to close.');
+        } else {
+          pbLog('info', '🔒', `Closing ${toClose.length} position(s)…`);
+          for (const pos of toClose) {
+            const posId  = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
+            const instrId = String(pos.instrumentID ?? pos.instrumentId ?? '');
+            const ticker  = String(pos.instrumentName || pos.symbol || posId).toUpperCase();
+            if (!posId || !instrId) { pbLog('warn', '⚠️', `Skipped ${ticker} — missing IDs`); continue; }
+            try {
+              const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+                body: JSON.stringify({ ticker: '__etoro-close__', etoroUserKey: _etoroUserKey, positionId: posId, instrumentId: instrId })
+              });
+              const json = await res.json();
+              if (json.error || json.status >= 400) throw new Error(json.error || `eToro ${json.status}`);
+              pbLog('ok', '✓', `Closed ${ticker.replace('-USD','')}`);
+            } catch(e) {
+              pbLog('err', '✗', `Close ${ticker.replace('-USD','')} failed: ${e.message}`);
+            }
+            await new Promise(r => setTimeout(r, 3000));
+          }
+        }
+      } catch(e) {
+        pbLog('err', '✗', 'Could not load positions: ' + e.message);
+      }
+    }
+
+    /* ── Phase 2: Resolve tickers → instrumentIds ── */
+    pbLog('info', '🔍', 'Resolving instrument IDs…');
+    const cryptoSet = new Set(['BTC','ETH','SOL','XRP','BNB','DOGE','ADA','AVAX','DOT','LINK','MATIC','LTC','ATOM','NEAR','APT','SUI']);
+
+    for (const alloc of _pbAllocations) {
+      const symbol = cryptoSet.has(alloc.ticker) ? alloc.ticker + '/USD' : alloc.ticker;
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ ticker: '__etoro-search__', symbol, etoroUserKey: _etoroUserKey })
+        });
+        const json = await res.json();
+        if (json.instrumentId) {
+          alloc.instrumentId = json.instrumentId;
+          pbLog('ok', '✓', `${alloc.ticker} → ID ${json.instrumentId}`);
+        } else {
+          pbLog('warn', '⚠️', `${alloc.ticker} — instrument not found, will skip`);
+        }
+      } catch(e) {
+        pbLog('warn', '⚠️', `${alloc.ticker} resolve error: ${e.message}`);
+      }
+    }
+
+    /* ── Phase 3: Open positions ── */
+    // Re-fetch balance after closes
+    let freshEquity = equity;
+    try {
+      const data = await etoroCall('/trading/info/real/pnl');
+      const cp = data?.clientPortfolio ?? data;
+      const credit = Number(cp?.credit ?? 0);
+      const ordersForOpen = cp?.ordersForOpen || [];
+      const orders = cp?.orders || [];
+      const pendingOpen  = ordersForOpen.filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0).reduce((s, o) => s + Number(o.amount || 0), 0);
+      const pendingClose = orders.reduce((s, o) => s + Number(o.amount || 0), 0);
+      freshEquity = credit - pendingOpen - pendingClose;
+      pbLog('info', '💰', `Available cash: $${freshEquity.toFixed(2)}`);
+    } catch(e) {
+      pbLog('warn', '⚠️', `Could not refresh balance, using $${freshEquity.toFixed(2)}`);
+    }
+
+    const executableAllocs = _pbAllocations.filter(a => a.instrumentId);
+    if (!executableAllocs.length) {
+      pbLog('err', '✗', 'No valid instruments to trade — aborting.');
+      return;
+    }
+
+    pbLog('info', '📈', `Opening ${executableAllocs.length} position(s)…`);
+    for (const alloc of executableAllocs) {
+      const amount = parseFloat(((alloc.weight / 100) * freshEquity).toFixed(2));
+      if (amount < 1) { pbLog('warn', '⚠️', `${alloc.ticker} — amount $${amount} too small, skipped`); continue; }
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({
+            ticker: '__etoro-open__',
+            etoroUserKey: _etoroUserKey,
+            instrumentId: alloc.instrumentId,
+            isBuy: true,
+            amount,
+            leverage: 1,
+          })
+        });
+        const json = await res.json();
+        if (json.error || json.status >= 400) throw new Error(json.error || `eToro ${json.status}: ${JSON.stringify(json.data).slice(0,80)}`);
+        pbLog('ok', '✓', `BUY ${alloc.ticker} $${amount.toFixed(2)} (${alloc.weight}%) — placed`);
+      } catch(e) {
+        pbLog('err', '✗', `${alloc.ticker} open failed: ${e.message}`);
+      }
+      await new Promise(r => setTimeout(r, 3000));
+    }
+
+    pbLog('info', '🏁', 'Execution complete.');
+    $('pb-exec-btn').disabled = false;
+  }
+
+  /* ── Log helpers ── */
+  function pbLog(type, icon, text) {
+    const row = document.createElement('div');
+    row.className = `pb-log-row ${type}`;
+    row.innerHTML = `<span class="pb-log-icon">${icon}</span><span class="pb-log-text">${text}</span>`;
+    $('pb-log').appendChild(row);
+    $('pb-log').scrollTop = $('pb-log').scrollHeight;
+  }
+
+  function pbShowMsg(id, msg, type) {
+    const el = $(id); if (!el) return;
+    el.textContent = msg; el.className = 'trade-msg ' + type; el.style.display = 'block';
+  }
+  function pbHideMsg(id) { const el = $(id); if (el) el.style.display = 'none'; }
 
   initPage();
 </script>
