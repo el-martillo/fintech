@@ -436,7 +436,49 @@
     .confirm-ok:hover { opacity:0.85; }
     .confirm-warn { font-size:11px;padding:7px 10px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-bottom:0; }
 
-    /* ── Trade panel tab switcher ── */
+    /* ── Autopilot tab ── */
+    .ap-tab-dot { display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-left:4px;vertical-align:middle;box-shadow:0 0 0 2px rgba(34,197,94,0.25); }
+    .ap-auto-banner { display:flex;align-items:center;gap:7px;padding:7px 10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:7px;font-size:11px;color:#f59e0b;margin-bottom:0.85rem; }
+    .ap-config-row { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:0.65rem;flex-wrap:wrap; }
+    .ap-toggle-group { display:flex;align-items:center;gap:8px; }
+    .ap-master-toggle { display:flex;align-items:center;gap:8px;cursor:pointer; }
+    .ap-toggle-track { position:relative;width:36px;height:20px;background:var(--border2);border-radius:10px;transition:background 0.2s;flex-shrink:0; }
+    .ap-toggle-track.on { background:var(--green); }
+    .ap-toggle-thumb { position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3); }
+    .ap-toggle-track.on .ap-toggle-thumb { transform:translateX(16px); }
+    .ap-toggle-label { font-size:12px;font-weight:600;color:var(--text-muted); }
+    .ap-toggle-label.on { color:var(--green); }
+    .ap-config-right { display:flex;gap:6px; }
+    .ap-select { background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--text-muted);font-family:inherit;cursor:pointer;outline:none; }
+    .ap-full-auto-row { display:flex;align-items:flex-start;gap:10px;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:0.6rem; }
+    .ap-notif-row { display:flex;gap:12px;margin-bottom:0.75rem; }
+    .ap-save-btn { width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);font-size:12.5px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s; }
+    .ap-save-btn:hover { border-color:var(--accent);color:var(--accent); }
+    .ap-divider { height:1px;background:var(--border);margin:0.85rem 0; }
+    .ap-add-row { display:flex;gap:6px;margin-bottom:0.6rem; }
+    .ap-add-btn { padding:7px 14px;background:var(--accent-dim);border:1px solid rgba(108,99,255,0.3);border-radius:var(--radius);font-size:12px;font-weight:600;color:#a9a3ff;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.15s; }
+    .ap-add-btn:hover { background:var(--accent);color:#fff; }
+    .ap-watchlist { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:0.5rem;min-height:10px; }
+    .ap-ticker-chip { display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;font-size:12px;font-family:var(--mono);font-weight:600;color:var(--text-muted); }
+    .ap-ticker-chip button { background:none;border:none;cursor:pointer;color:var(--text-dim);padding:0;font-size:13px;line-height:1;transition:color 0.12s; }
+    .ap-ticker-chip button:hover { color:var(--red); }
+    .ap-signal-feed { display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto; }
+    .ap-signal-row { background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px; }
+    .ap-signal-row.buy  { border-left:3px solid var(--green); }
+    .ap-signal-row.sell { border-left:3px solid var(--red); }
+    .ap-signal-row.hold { border-left:3px solid var(--border2); }
+    .ap-signal-top { display:flex;align-items:center;gap:7px;margin-bottom:4px; }
+    .ap-signal-ticker { font-size:13px;font-weight:700;font-family:var(--mono);color:var(--text); }
+    .ap-signal-price { font-size:11px;color:var(--text-dim);margin-left:auto; }
+    .ap-signal-rationale { font-size:11px;color:var(--text-muted);line-height:1.4;margin-bottom:6px; }
+    .ap-signal-foot { display:flex;align-items:center;justify-content:space-between;gap:6px; }
+    .ap-signal-ts { font-size:10px;color:var(--text-dim); }
+    .ap-exec-btn { padding:4px 12px;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
+    .ap-exec-btn.buy  { background:var(--green);color:#fff; }
+    .ap-exec-btn.sell { background:var(--red);color:#fff; }
+    .ap-exec-btn:hover { opacity:0.82; }
+    .ap-exec-btn:disabled { opacity:0.4;cursor:not-allowed; }
+    .ap-executed-badge { font-size:10px;color:var(--green);font-weight:600; }
     .tp-tabs { display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 1.25rem; }
     .tp-tab { padding:10px 14px;border:none;background:transparent;font-size:12.5px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s; }
     .tp-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
@@ -815,6 +857,10 @@
               <div class="tp-tabs">
                 <button class="tp-tab active" id="tp-tab-trade"   onclick="switchTradeTab('trade')">New Trade</button>
                 <button class="tp-tab"        id="tp-tab-builder" onclick="switchTradeTab('builder')">Build Portfolio</button>
+                <button class="tp-tab"        id="tp-tab-autopilot" onclick="switchTradeTab('autopilot')">
+                  Autopilot
+                  <span class="ap-tab-dot" id="ap-tab-dot" style="display:none;"></span>
+                </button>
               </div>
             </div>
 
@@ -954,6 +1000,88 @@
 
             </div><!-- /tp-body-builder -->
 
+            <!-- ── TAB: Autopilot ── -->
+            <div id="tp-body-autopilot" class="trade-panel-body" style="display:none;">
+
+              <!-- Full auto warning banner -->
+              <div class="ap-auto-banner" id="ap-auto-banner" style="display:none;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Full auto is ON — trades execute automatically on High confidence signals
+              </div>
+
+              <!-- Master toggle + config -->
+              <div class="ap-config-row">
+                <div class="ap-toggle-group">
+                  <label class="ap-master-toggle">
+                    <input type="checkbox" id="ap-enabled" onchange="apToggleEnabled()"/>
+                    <span class="ap-toggle-track"><span class="ap-toggle-thumb"></span></span>
+                    <span class="ap-toggle-label" id="ap-enabled-label">Autopilot off</span>
+                  </label>
+                </div>
+                <div class="ap-config-right">
+                  <select class="ap-select" id="ap-interval">
+                    <option value="1">Every 1 min</option>
+                    <option value="5" selected>Every 5 min</option>
+                    <option value="15">Every 15 min</option>
+                  </select>
+                  <select class="ap-select" id="ap-amount">
+                    <option value="50">$50/trade</option>
+                    <option value="100" selected>$100/trade</option>
+                    <option value="250">$250/trade</option>
+                    <option value="500">$500/trade</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Full auto toggle -->
+              <div class="ap-full-auto-row">
+                <label class="pb-toggle-row">
+                  <input type="checkbox" id="ap-full-auto" onchange="apToggleFullAuto()"/>
+                  <span class="pb-toggle-label">Full auto</span>
+                </label>
+                <span style="font-size:10.5px;color:var(--text-dim);">Executes High confidence signals without confirmation</span>
+              </div>
+
+              <!-- Email notifications -->
+              <div class="ap-notif-row">
+                <label class="pb-toggle-row" style="gap:6px;">
+                  <input type="checkbox" id="ap-email-signal" checked/>
+                  <span style="font-size:11.5px;color:var(--text-muted);">Email on signal</span>
+                </label>
+                <label class="pb-toggle-row" style="gap:6px;">
+                  <input type="checkbox" id="ap-email-trade" checked/>
+                  <span style="font-size:11.5px;color:var(--text-muted);">Email on trade</span>
+                </label>
+              </div>
+
+              <button class="ap-save-btn" onclick="apSaveConfig()">Save settings</button>
+              <div class="trade-msg" id="ap-config-msg"></div>
+
+              <div class="ap-divider"></div>
+
+              <!-- Watchlist -->
+              <div class="pb-section-label" style="margin-bottom:6px;">Watchlist</div>
+              <div class="ap-add-row">
+                <input class="trade-input" id="ap-ticker-input" placeholder="AAPL, BTC, NVDA…"
+                       autocomplete="off" spellcheck="false" style="font-size:13px;padding:7px 10px;"
+                       onkeydown="if(event.key==='Enter')apAddTicker()"/>
+                <button class="ap-add-btn" onclick="apAddTicker()">Add</button>
+              </div>
+              <div id="ap-watchlist" class="ap-watchlist"></div>
+
+              <div class="ap-divider"></div>
+
+              <!-- Signal feed -->
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <div class="pb-section-label" style="margin-bottom:0;">Signal feed</div>
+                <span style="font-size:10px;color:var(--text-dim);" id="ap-last-run"></span>
+              </div>
+              <div id="ap-signal-feed" class="ap-signal-feed">
+                <div style="font-size:11px;color:var(--text-dim);font-style:italic;padding:8px 0;">No signals yet — add tickers and enable autopilot.</div>
+              </div>
+
+            </div><!-- /tp-body-autopilot -->
+
           </div><!-- /trade-panel -->
 
           <!-- ── RIGHT: Positions ── -->
@@ -1067,6 +1195,7 @@
     $('agent-gate').style.display    = 'none';
     $('agent-content').style.display = 'block';
     await loadSavedKeys();
+    apSubscribeSignals();
     if (_etoroUserKey) loadPortfolio();
   }
 
@@ -1877,10 +2006,12 @@
      TRADE PANEL TAB SWITCHER
   ══════════════════════════════════════════ */
   function switchTradeTab(tab) {
-    $('tp-tab-trade').classList.toggle('active', tab === 'trade');
-    $('tp-tab-builder').classList.toggle('active', tab === 'builder');
-    $('tp-body-trade').style.display   = tab === 'trade'   ? 'block' : 'none';
-    $('tp-body-builder').style.display = tab === 'builder' ? 'block' : 'none';
+    ['trade','builder','autopilot'].forEach(t => {
+      $(`tp-tab-${t}`)?.classList.toggle('active', t === tab);
+      const body = $(`tp-body-${t}`);
+      if (body) body.style.display = t === tab ? 'block' : 'none';
+    });
+    if (tab === 'autopilot') apLoadConfig();
   }
 
   /* ══════════════════════════════════════════
@@ -2520,6 +2651,270 @@
       const errEl = $('agent-error');
       if (errEl) { errEl.textContent = '⚠️ Refresh failed: ' + e.message; errEl.style.display = 'block'; }
     }
+  }
+
+  /* ══════════════════════════════════════════
+     AUTOPILOT
+  ══════════════════════════════════════════ */
+  let _apConfig   = null;
+  let _apWatchlist = [];  // [ticker strings]
+
+  /* ── Load config + watchlist from Supabase ── */
+  async function apLoadConfig() {
+    if (!_currentUser) return;
+
+    // Config
+    const { data: cfg } = await db.from('autopilot_config')
+      .select('*').eq('user_id', _currentUser.id).single();
+    _apConfig = cfg;
+
+    if (cfg) {
+      $('ap-enabled').checked   = cfg.enabled;
+      $('ap-full-auto').checked = cfg.full_auto;
+      $('ap-interval').value    = String(cfg.interval_minutes || 5);
+      $('ap-amount').value      = String(cfg.amount_usd || 100);
+      $('ap-email-signal').checked = cfg.email_on_signal !== false;
+      $('ap-email-trade').checked  = cfg.email_on_trade  !== false;
+      apUpdateEnabledUI(cfg.enabled, cfg.full_auto);
+      if (cfg.last_run) $('ap-last-run').textContent = 'Last run: ' + new Date(cfg.last_run).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    }
+
+    // Watchlist
+    const { data: wl } = await db.from('autopilot_watchlist')
+      .select('ticker').eq('user_id', _currentUser.id).order('created_at');
+    _apWatchlist = (wl || []).map(r => r.ticker);
+    apRenderWatchlist();
+
+    // Latest signals
+    const { data: sigs } = await db.from('autopilot_signals')
+      .select('*').eq('user_id', _currentUser.id)
+      .order('ts', { ascending: false }).limit(20);
+    apRenderFeed(sigs || []);
+  }
+
+  /* ── Config UI helpers ── */
+  function apUpdateEnabledUI(enabled, fullAuto) {
+    const track = document.querySelector('.ap-toggle-track');
+    const label = $('ap-enabled-label');
+    const dot   = $('ap-tab-dot');
+    const banner = $('ap-auto-banner');
+    if (track) track.classList.toggle('on', enabled);
+    if (label) { label.textContent = enabled ? 'Autopilot ON' : 'Autopilot off'; label.classList.toggle('on', enabled); }
+    if (dot)   dot.style.display = enabled ? 'inline-block' : 'none';
+    if (banner) banner.style.display = (enabled && fullAuto) ? 'flex' : 'none';
+  }
+
+  function apToggleEnabled() {
+    const enabled = $('ap-enabled').checked;
+    const fullAuto = $('ap-full-auto').checked;
+    apUpdateEnabledUI(enabled, fullAuto);
+  }
+
+  function apToggleFullAuto() {
+    const fullAuto = $('ap-full-auto').checked;
+    const enabled  = $('ap-enabled').checked;
+    if (fullAuto) {
+      // Show warning confirm
+      if (!confirm('⚠️ Full auto will place real trades without asking for confirmation.\n\nOnly High confidence signals will trigger trades.\n\nAre you sure?')) {
+        $('ap-full-auto').checked = false;
+        return;
+      }
+    }
+    apUpdateEnabledUI(enabled, fullAuto);
+  }
+
+  async function apSaveConfig() {
+    if (!_currentUser) return;
+    const config = {
+      user_id:          _currentUser.id,
+      enabled:          $('ap-enabled').checked,
+      full_auto:        $('ap-full-auto').checked,
+      interval_minutes: parseInt($('ap-interval').value),
+      amount_usd:       parseFloat($('ap-amount').value),
+      email_on_signal:  $('ap-email-signal').checked,
+      email_on_trade:   $('ap-email-trade').checked,
+      notify_email:     _currentUser.email,
+    };
+    const { error } = await db.from('autopilot_config')
+      .upsert(config, { onConflict: 'user_id' });
+    if (error) {
+      apConfigMsg('Save failed: ' + error.message, 'err');
+    } else {
+      _apConfig = config;
+      apConfigMsg('✓ Settings saved', 'ok');
+      setTimeout(() => { const el = $('ap-config-msg'); if(el) el.style.display='none'; }, 3000);
+    }
+  }
+
+  function apConfigMsg(msg, type) {
+    const el = $('ap-config-msg'); if (!el) return;
+    el.textContent = msg; el.className = 'trade-msg ' + type; el.style.display = 'block';
+  }
+
+  /* ── Watchlist ── */
+  async function apAddTicker() {
+    const inp = $('ap-ticker-input');
+    const raw = inp?.value?.trim().toUpperCase().replace(/-?USD$/i, '');
+    if (!raw) return;
+    if (_apWatchlist.includes(raw)) { inp.value = ''; return; }
+    if (!_currentUser) return;
+    const { error } = await db.from('autopilot_watchlist')
+      .insert({ user_id: _currentUser.id, ticker: raw });
+    if (!error) {
+      _apWatchlist.push(raw);
+      apRenderWatchlist();
+    }
+    inp.value = '';
+  }
+
+  async function apRemoveTicker(ticker) {
+    if (!_currentUser) return;
+    await db.from('autopilot_watchlist')
+      .delete().eq('user_id', _currentUser.id).eq('ticker', ticker);
+    _apWatchlist = _apWatchlist.filter(t => t !== ticker);
+    apRenderWatchlist();
+  }
+
+  function apRenderWatchlist() {
+    const el = $('ap-watchlist'); if (!el) return;
+    if (!_apWatchlist.length) {
+      el.innerHTML = '<span style="font-size:11px;color:var(--text-dim);font-style:italic;">No tickers yet</span>';
+      return;
+    }
+    el.innerHTML = _apWatchlist.map(t => `
+      <div class="ap-ticker-chip">
+        ${t}
+        <button onclick="apRemoveTicker('${t}')" title="Remove">×</button>
+      </div>`).join('');
+  }
+
+  /* ── Signal feed rendering ── */
+  function apRenderFeed(signals) {
+    const el = $('ap-signal-feed'); if (!el) return;
+    if (!signals.length) {
+      el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);font-style:italic;padding:8px 0;">No signals yet — add tickers and enable autopilot.</div>';
+      return;
+    }
+    el.innerHTML = signals.map(s => {
+      const cls      = s.signal === 'BUY' ? 'buy' : s.signal === 'SELL' ? 'sell' : 'hold';
+      const confColor = s.confidence === 'High' ? 'var(--green)' : s.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
+      const ts       = new Date(s.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      const priceStr = s.price ? '$' + Number(s.price).toFixed(s.price < 10 ? 4 : 2) : '';
+      const execBtn  = (s.signal !== 'HOLD' && !s.executed)
+        ? `<button class="ap-exec-btn ${cls}" onclick="apExecuteSignal('${s.id}','${s.ticker}','${s.signal}',${s.price||0})">
+             ${s.signal === 'BUY' ? '↑ BUY' : '↓ SELL'}
+           </button>`
+        : s.executed
+          ? `<span class="ap-executed-badge">✓ Executed</span>`
+          : '';
+      return `
+        <div class="ap-signal-row ${cls}" id="ap-sig-${s.id}">
+          <div class="ap-signal-top">
+            <span class="ap-signal-ticker">${s.ticker}</span>
+            <span class="signal-pill signal-${s.signal}" style="font-size:10px;padding:2px 7px;">${s.signal}</span>
+            <span style="font-size:10px;color:${confColor};font-weight:600;">${s.confidence}</span>
+            <span class="ap-signal-price">${priceStr}</span>
+          </div>
+          <div class="ap-signal-rationale">${s.rationale || ''}</div>
+          <div class="ap-signal-foot">
+            <span class="ap-signal-ts">${ts}</span>
+            ${execBtn}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  /* ── Manual execute from feed ── */
+  async function apExecuteSignal(sigId, ticker, signal, price) {
+    if (!_etoroUserKey) { alert('No eToro user key configured.'); return; }
+    const amount = parseFloat($('ap-amount')?.value) || 100;
+    const btn = document.querySelector(`#ap-sig-${sigId} .ap-exec-btn`);
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+
+    try {
+      // Resolve instrumentId
+      const isCrypto = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker);
+      const symbol   = isCrypto ? ticker + '/USD' : ticker;
+      const srRes = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__etoro-search__', symbol, etoroUserKey: _etoroUserKey })
+      });
+      const srJson = await srRes.json();
+      if (!srJson.instrumentId) throw new Error('Instrument not found on eToro');
+
+      // Place order
+      const orRes = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          ticker: '__etoro-open__',
+          etoroUserKey: _etoroUserKey,
+          instrumentId: srJson.instrumentId,
+          isBuy: signal === 'BUY',
+          amount, leverage: 1,
+        })
+      });
+      const orJson = await orRes.json();
+      if (orJson.error || orJson.status >= 400) throw new Error(orJson.error || `eToro ${orJson.status}`);
+
+      // Mark executed in DB
+      await db.from('autopilot_signals').update({ executed: true, trade_amount: amount }).eq('id', sigId);
+
+      // Update UI
+      const row = document.getElementById(`ap-sig-${sigId}`);
+      if (row) {
+        const foot = row.querySelector('.ap-signal-foot');
+        if (foot) {
+          const btnEl = foot.querySelector('.ap-exec-btn');
+          if (btnEl) btnEl.outerHTML = '<span class="ap-executed-badge">✓ Executed</span>';
+        }
+      }
+    } catch(e) {
+      if (btn) { btn.disabled = false; btn.textContent = signal === 'BUY' ? '↑ BUY' : '↓ SELL'; }
+      alert('Execution failed: ' + e.message);
+    }
+  }
+
+  /* ── Subscribe to realtime signal inserts ── */
+  function apSubscribeSignals() {
+    if (!_currentUser) return;
+    db.channel('ap-signals')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'autopilot_signals',
+        filter: `user_id=eq.${_currentUser.id}`
+      }, payload => {
+        const s = payload.new;
+        // Prepend to feed
+        const feed = $('ap-signal-feed');
+        if (!feed) return;
+        const existing = feed.querySelector('[style*="font-style:italic"]');
+        if (existing) existing.remove();
+        const cls       = s.signal === 'BUY' ? 'buy' : s.signal === 'SELL' ? 'sell' : 'hold';
+        const confColor = s.confidence === 'High' ? 'var(--green)' : s.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
+        const ts        = new Date(s.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        const priceStr  = s.price ? '$' + Number(s.price).toFixed(s.price < 10 ? 4 : 2) : '';
+        const execBtn   = s.signal !== 'HOLD'
+          ? `<button class="ap-exec-btn ${cls}" onclick="apExecuteSignal('${s.id}','${s.ticker}','${s.signal}',${s.price||0})">${s.signal === 'BUY' ? '↑ BUY' : '↓ SELL'}</button>` : '';
+        const div = document.createElement('div');
+        div.className = `ap-signal-row ${cls}`;
+        div.id = `ap-sig-${s.id}`;
+        div.innerHTML = `
+          <div class="ap-signal-top">
+            <span class="ap-signal-ticker">${s.ticker}</span>
+            <span class="signal-pill signal-${s.signal}" style="font-size:10px;padding:2px 7px;">${s.signal}</span>
+            <span style="font-size:10px;color:${confColor};font-weight:600;">${s.confidence}</span>
+            <span class="ap-signal-price">${priceStr}</span>
+          </div>
+          <div class="ap-signal-rationale">${s.rationale || ''}</div>
+          <div class="ap-signal-foot"><span class="ap-signal-ts">${ts}</span>${execBtn}</div>`;
+        feed.insertBefore(div, feed.firstChild);
+        // Update last run
+        $('ap-last-run').textContent = 'Last run: ' + ts;
+      })
+      .subscribe();
   }
 
   initPage();
