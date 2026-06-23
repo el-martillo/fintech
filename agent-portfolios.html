@@ -428,6 +428,7 @@
     .pb-ticker-cell { font-family:var(--mono);font-weight:700;color:var(--text);font-size:13px; }
     .pb-weight-input { width:54px;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;padding:3px 6px;font-size:12px;color:var(--text);outline:none;font-family:var(--mono);text-align:right;transition:border-color 0.12s; }
     .pb-weight-input:focus { border-color:var(--accent); }
+    .pb-weight-input::placeholder { color:var(--accent);font-style:italic;opacity:0.7; }
     .pb-amount-cell { font-family:var(--mono);font-size:11px;color:var(--text-muted); }
     .pb-rationale-cell { font-size:10.5px;color:var(--text-dim);max-width:100px;line-height:1.4; }
     .pb-remove-btn { background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px 4px;border-radius:4px;transition:all 0.12s;font-size:13px;line-height:1; }
@@ -1300,12 +1301,19 @@
 
   async function enrichPositionCard(pos) {
     const posId    = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
-    const ticker   = String(pos.instrumentName || pos.symbol || pos.internalSymbolFull || '').toUpperCase();
-    const name     = pos.instrumentDisplayName || pos.displayName || ticker;
+    console.log('[enrich] pos keys:', Object.keys(pos), '| posId:', posId, '| instrumentName:', pos.instrumentName, '| symbol:', pos.symbol, '| internalSymbolFull:', pos.internalSymbolFull);
+    const ticker   = String(pos.instrumentName || pos.symbol || pos.internalSymbolFull || pos.internalSymbol || pos.symbolFull || '').toUpperCase();
+    const name     = pos.instrumentDisplayName || pos.displayName || pos.name || ticker;
     const openRate = Number(pos.openRate || 0);
     const curRate  = Number(pos.currentRate || openRate);
     const signalEl = document.getElementById(`signal-${posId || ticker}`);
-    if (!signalEl || !ticker) return;
+
+    // If ticker is empty or signal element missing, show unavailable rather than hanging
+    if (!signalEl) return;
+    if (!ticker) {
+      signalEl.innerHTML = `<span style="font-size:10px;color:var(--text-dim);">Signal unavailable — ticker unknown</span>`;
+      return;
+    }
 
     const isCrypto = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker.replace('-USD',''));
     const yTicker  = isCrypto ? ticker.replace('-USD','') + '-USD' : ticker;
@@ -1829,9 +1837,15 @@
     const rows = _pbAllocations.map((a, i) => `
       <tr>
         <td class="pb-ticker-cell">${a.ticker}</td>
-        <td><input class="pb-weight-input" type="number" min="0.1" max="100" step="0.1"
-             value="${a.weight}" oninput="pbUpdateWeight(${i}, this.value)"/>%</td>
-        <td class="pb-amount-cell">${equity > 0 ? '$' + ((a.weight/100)*equity).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}) : '—'}</td>
+        <td>
+          <input class="pb-weight-input" type="number" min="0.1" max="100" step="0.1"
+               data-idx="${i}"
+               value="${a.weight || ''}"
+               placeholder="auto"
+               oninput="pbUpdateWeight(${i}, this.value)"
+               onblur="pbFillEmpty(); pbRenderTable(); pbUpdateWeightWarn()"/>%
+        </td>
+        <td class="pb-amount-cell">${equity > 0 && a.weight ? '$' + ((a.weight/100)*equity).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}) : '—'}</td>
         <td class="pb-rationale-cell">${a.rationale}</td>
         <td><button class="pb-remove-btn" onclick="pbRemoveRow(${i})" title="Remove">×</button></td>
       </tr>`).join('');
@@ -1843,16 +1857,33 @@
       </table>`;
   }
 
+  function pbFillEmpty() {
+    const filledTotal = _pbAllocations.reduce((s, a, i) => {
+      const inp = $('pb-table-wrap')?.querySelector(`input[data-idx="${i}"]`);
+      return (inp && inp.value.trim() === '') ? s : s + Number(a.weight);
+    }, 0);
+    const emptyIndices = _pbAllocations.reduce((arr, _, i) => {
+      const inp = $('pb-table-wrap')?.querySelector(`input[data-idx="${i}"]`);
+      if (inp && inp.value.trim() === '') arr.push(i);
+      return arr;
+    }, []);
+    if (!emptyIndices.length) return;
+    const remainder = parseFloat(Math.max(0, 100 - filledTotal).toFixed(1));
+    const share     = parseFloat((remainder / emptyIndices.length).toFixed(1));
+    emptyIndices.forEach((i, n) => {
+      const w = n === emptyIndices.length - 1
+        ? parseFloat((remainder - share * (emptyIndices.length - 1)).toFixed(1))
+        : share;
+      _pbAllocations[i].weight = w;
+    });
+  }
+
   function pbUpdateWeight(i, val) {
     _pbAllocations[i].weight = parseFloat(val) || 0;
-    // refresh amount column only
-    const equity = _availableCash > 0 ? _availableCash : 0;
-    const cells = $('pb-table-wrap').querySelectorAll('.pb-amount-cell');
-    if (cells[i]) cells[i].textContent = equity > 0
-      ? '$' + ((_pbAllocations[i].weight/100)*equity).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0})
-      : '—';
     pbUpdateWeightWarn();
   }
+
+  function pbRecalcEmpty() { /* replaced by pbFillEmpty on blur */ }
 
   function pbRemoveRow(i) {
     _pbAllocations.splice(i, 1);
