@@ -1100,11 +1100,12 @@
               <div style="display:flex;align-items:center;gap:6px;">
                 <span style="font-size:10px;color:var(--text-dim);" id="positions-ts"></span>
                 <select id="positions-sort" onchange="sortPositions()" style="font-size:11px;padding:2px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;color:var(--text-muted);font-family:inherit;cursor:pointer;">
-                  <option value="default">Default</option>
+                  <option value="value" selected>Value ↓</option>
                   <option value="name">Name A-Z</option>
                   <option value="portfolio">% Portfolio</option>
                   <option value="profit">Profit $</option>
                   <option value="profit_pct">Profit %</option>
+                  <option value="confidence">Confidence</option>
                 </select>
               </div>
             </div>
@@ -1388,29 +1389,40 @@
     const grid = $('positions-grid');
     if (!grid || !_positionsData.length) return;
     const sorted = [..._positionsData];
-    if (_positionsSort === 'name') {
+    const CONF_RANK = { High: 3, Medium: 2, Low: 1 };
+    if (_positionsSort === 'value' || _positionsSort === 'default') {
+      sorted.sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0));
+    } else if (_positionsSort === 'name') {
       sorted.sort((a, b) => (a._ticker || '').localeCompare(b._ticker || ''));
     } else if (_positionsSort === 'portfolio') {
-      const total = sorted.reduce((s, p) => s + Number(p.amount || 0), 0);
       sorted.sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0));
     } else if (_positionsSort === 'profit') {
       sorted.sort((a, b) => Number(b.unrealizedPnL?.pnL ?? 0) - Number(a.unrealizedPnL?.pnL ?? 0));
     } else if (_positionsSort === 'profit_pct') {
-      const pct = p => { const o = Number(p.openRate||0), c = Number(p.unrealizedPnL?.closeRate||o); return o > 0 ? (c-o)/o*100 : 0; };
+      const pct = p => { const o = Number(p.openRate||0), cur = Number(p.unrealizedPnL?.closeRate||o); return o > 0 ? (cur-o)/o*100 : 0; };
       sorted.sort((a, b) => pct(b) - pct(a));
+    } else if (_positionsSort === 'confidence') {
+      sorted.sort((a, b) => (CONF_RANK[b._confidence] ?? 0) - (CONF_RANK[a._confidence] ?? 0));
     }
-    // Reorder DOM nodes to match sort (preserve enriched content)
+    // Update portfolio % badges then reorder DOM
+    const totalInvested = _positionsData.reduce((s, p) => s + Number(p.amount || 0), 0);
     sorted.forEach(pos => {
       const posId = String(pos.positionID ?? pos.positionId ?? '');
       const card = document.querySelector(`[data-position-id="${posId}"]`);
-      if (card) grid.appendChild(card);
+      if (!card) return;
+      const pctEl = card.querySelector('.pos-port-pct');
+      if (pctEl && totalInvested > 0) {
+        const pct = (Number(pos.amount || 0) / totalInvested * 100).toFixed(1);
+        pctEl.textContent = `(${pct}%)`;
+      }
+      grid.appendChild(card);
     });
   }
 
   /* ── Load portfolio ── */
   let _availableCash = 0;
   let _positionsData  = [];  // cached for sorting
-  let _positionsSort  = 'default';
+  let _positionsSort  = 'value';
 
   async function loadPortfolio() {
     if (!_etoroUserKey) return;
@@ -1527,7 +1539,7 @@
       </div>
       <div style="text-align:right;flex-shrink:0;min-width:90px;">
         <div style="font-size:11px;color:var(--text-muted);">$${openRate.toFixed(openRate<10?4:2)} → $${curRate.toFixed(curRate<10?4:2)}</div>
-        <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">$${amount.toFixed(0)} · ×${leverage}</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">$${amount.toFixed(0)} <span class="pos-port-pct" style="color:#60a5fa;font-weight:600;"></span> · ×${leverage}</div>
       </div>
       <div class="pos-pnl" style="text-align:right;flex-shrink:0;min-width:58px;">
         <div class="pos-pnl-value" style="font-size:13px;font-weight:700;color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
@@ -1659,6 +1671,13 @@
     const cls = ai.signal === 'BUY' ? 'signal-BUY' : ai.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
     const confColor = ai.confidence === 'High' ? 'var(--green)' : ai.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
     const tooltip = [ai.rationale, ai.action].filter(Boolean).join(' — ');
+    // Store confidence on positionsData for sort-by-confidence
+    const card = signalEl.closest('[data-position-id]');
+    if (card) {
+      const posId = card.dataset.positionId;
+      const idx = _positionsData.findIndex(p => String(p.positionID ?? p.positionId ?? '') === posId);
+      if (idx >= 0) _positionsData[idx]._confidence = ai.confidence;
+    }
     signalEl.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:2px;" title="${tooltip.replace(/"/g,'&quot;')}">
         <span class="signal-pill ${cls}" style="font-size:10px;padding:2px 7px;">${ai.signal}</span>
