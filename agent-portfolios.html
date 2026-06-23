@@ -248,16 +248,28 @@
     .agent-back { display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);text-decoration:none;margin-bottom:1.5rem;transition:color 0.15s; }
     .agent-back:hover { color:var(--text); }
     /* Setup card */
-    .setup-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem; }
-    .setup-card h3 { font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px; }
-    .setup-card p { font-size:12px;color:var(--text-dim);margin-bottom:1rem;line-height:1.6; }
+    .setup-card { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem; }
     .setup-field { margin-bottom:0.75rem; }
     .setup-field label { display:block;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px; }
-    .setup-field input { width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--text);outline:none;font-family:inherit;transition:border-color 0.15s; }
-    .setup-field input:focus { border-color:var(--accent); }
+    .setup-pw-wrap { position:relative; }
+    .setup-pw-wrap input { width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 38px 9px 12px;font-size:13px;color:var(--text);outline:none;font-family:var(--mono);transition:border-color 0.15s,box-shadow 0.15s; }
+    .setup-pw-wrap input:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.1); }
+    .setup-pw-wrap input::placeholder { color:var(--text-dim);font-family:inherit; }
+    .setup-eye-btn { position:absolute;right:0;top:0;bottom:0;width:36px;background:none;border:none;cursor:pointer;color:var(--text-dim);display:flex;align-items:center;justify-content:center;transition:color 0.15s; }
+    .setup-eye-btn:hover { color:var(--text-muted); }
     .setup-msg { font-size:12px;padding:7px 10px;border-radius:6px;margin-top:8px;display:none; }
     .setup-msg.ok  { background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,0.2); }
     .setup-msg.err { background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2); }
+    .setup-save-btn { display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:var(--accent);border:none;border-radius:var(--radius);font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
+    .setup-save-btn:hover { opacity:0.88; }
+    .setup-save-btn:disabled { opacity:0.45;cursor:not-allowed; }
+    .setup-docs-link { display:inline-flex;align-items:center;gap:6px;padding:9px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);font-size:12.5px;color:var(--text-muted);text-decoration:none;font-family:inherit;transition:all 0.15s; }
+    .setup-docs-link:hover { border-color:var(--accent);color:var(--text); }
+    .setup-key-icon { width:38px;height:38px;border-radius:10px;background:var(--accent-dim);border:1px solid rgba(108,99,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    /* Connected state */
+    .setup-connected-dot { width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,0.2);flex-shrink:0; }
+    .setup-edit-btn { padding:5px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.12s; }
+    .setup-edit-btn:hover { border-color:var(--accent);color:var(--text); }
     /* Summary */
     .portfolio-summary { display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem; }
     @media (max-width:600px) { .portfolio-summary { grid-template-columns:repeat(2,1fr); } }
@@ -284,13 +296,24 @@
     .pos-meta { display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap; }
     .pos-meta-item { font-size:11px;color:var(--text-dim); }
     .pos-meta-item strong { color:var(--text-muted);font-weight:600; }
-    .pos-signal { display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--surface2);border-radius:6px;margin-bottom:10px;min-height:30px; }
-    .pos-signal-text { font-size:11px;color:var(--text-muted);line-height:1.4;flex:1; }
-    .pos-actions { display:flex;gap:6px; }
-    .pos-btn { flex:1;padding:7px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
+    .pos-signal { padding:6px 8px;background:var(--surface2);border-radius:6px;margin-bottom:10px;min-height:38px; }
+    .pos-signal-loading { font-size:10px;color:var(--text-dim);font-style:italic;display:flex;align-items:center;gap:5px; }
+    .pos-signal-text { font-size:11px;color:var(--text-muted);line-height:1.4; }
+    .pos-actions { display:flex;gap:5px; }
+    .pos-btn { padding:7px 10px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s; }
     .pos-btn:hover { opacity:0.8; }
-    .pos-btn.close-btn { background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.25); }
+    .pos-btn.close-btn { flex:1;background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.25); }
     .pos-btn.etoro-btn { background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2);text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px; }
+    .pos-refresh-btn { background:var(--surface2);color:var(--text-dim);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;padding:7px 9px; }
+    .pos-refresh-btn:hover { color:var(--accent);border-color:var(--accent); }
+    /* Direction pill & leverage badge */
+    .pos-dir-pill { font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:0.04em; }
+    .pos-dir-pill.buy  { background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25); }
+    .pos-dir-pill.sell { background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25); }
+    .pos-lev-badge { font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;background:var(--accent-dim);color:#a9a3ff;border:1px solid rgba(108,99,255,0.2); }
+    .pos-open-date { font-size:10px;color:var(--text-dim); }
+    /* Inline close toast */
+    .pos-close-toast { font-size:11px;padding:5px 8px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-top:6px; }
     /* Env toggle */
     .env-toggle { display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:2px; }
     .env-btn { padding:5px 14px;border:none;border-radius:6px;background:transparent;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s; }
@@ -636,22 +659,55 @@
         </div>
       </div>
 
-      <!-- API key setup — hidden once keys saved -->
+      <!-- API key setup -->
       <div class="setup-card" id="setup-card">
-        <h3>🔑 Connect your eToro API keys</h3>
-        <p>Get your keys from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>. Keys are stored in your profile and proxied server-side — they never appear in the browser.</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div class="setup-field"><label>API Key (x-api-key)</label><input type="password" id="etoro-api-key" placeholder="Your eToro API key" autocomplete="off"/></div>
-          <div class="setup-field"><label>User Key (x-user-key)</label><input type="password" id="etoro-user-key" placeholder="Your eToro user key" autocomplete="off"/></div>
+
+        <!-- ── Unconnected state ── -->
+        <div id="setup-unconnected">
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:1rem;">
+            <div class="setup-key-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;">Connect your eToro Agent Portfolio</div>
+              <div style="font-size:12px;color:var(--text-dim);line-height:1.55;">Enter your <strong style="color:var(--text-muted);">User Key</strong> from <a href="https://www.etoro.com/settings/trade" target="_blank" rel="noopener" style="color:var(--accent);">eToro Settings → Trade</a>. It's stored securely in your profile and proxied server-side — never exposed in the browser.</div>
+            </div>
+          </div>
+          <div class="setup-field">
+            <label>User Key (x-user-key)</label>
+            <div class="setup-pw-wrap">
+              <input type="password" id="etoro-user-key" placeholder="Paste your eToro user key…" autocomplete="off" spellcheck="false"
+                     onkeydown="if(event.key==='Enter')saveApiKeys()"/>
+              <button type="button" class="setup-eye-btn" id="setup-eye" onclick="setupToggleEye()" title="Show / hide">
+                <svg id="setup-eye-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="setup-msg" id="setup-msg"></div>
+          <div style="display:flex;gap:8px;margin-top:0.85rem;flex-wrap:wrap;align-items:center;">
+            <button class="setup-save-btn" id="setup-save-btn" onclick="saveApiKeys()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+              Save &amp; connect
+            </button>
+            <a href="https://api-portal.etoro.com/get-started" target="_blank" rel="noopener" class="setup-docs-link">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              Get your key
+            </a>
+          </div>
         </div>
-        <div class="setup-msg" id="setup-msg"></div>
-        <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;">
-          <button onclick="saveApiKeys()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:var(--radius);font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:opacity 0.15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Save &amp; connect</button>
-          <a href="https://api-portal.etoro.com/get-started" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;color:var(--text-muted);text-decoration:none;font-family:inherit;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            API docs
-          </a>
+
+        <!-- ── Connected state ── -->
+        <div id="setup-connected" style="display:none;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="setup-connected-dot"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;color:var(--text);">eToro connected</div>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:1px;" id="setup-key-preview"></div>
+            </div>
+            <button class="setup-edit-btn" onclick="setupEditKey()">Edit key</button>
+          </div>
         </div>
+
       </div>
 
       <div class="agent-error" id="agent-error"></div>
@@ -938,26 +994,91 @@
   /* ── Keys ── */
   async function loadSavedKeys() {
     const { data } = await db.from('profiles').select('etoro_user_key').eq('id', _currentUser.id).single();
-    if (data?.etoro_user_key) { _etoroUserKey = data.etoro_user_key; if ($('etoro-user-key')) $('etoro-user-key').value = '•'.repeat(24); }
-    if (_etoroUserKey) $('setup-card').style.display = 'none';
+    if (data?.etoro_user_key) {
+      _etoroUserKey = data.etoro_user_key;
+      setupShowConnected(_etoroUserKey);
+    }
+    // always show setup card — either connected or unconnected state
+    $('setup-card').style.display = 'block';
+  }
+
+  function setupShowConnected(key) {
+    $('setup-unconnected').style.display = 'none';
+    $('setup-connected').style.display   = 'block';
+    // show masked key: first 6 chars + dots + last 4
+    const preview = key.length > 10
+      ? key.slice(0, 6) + '••••••••' + key.slice(-4)
+      : '••••••••••••';
+    $('setup-key-preview').textContent = 'Key: ' + preview;
+  }
+
+  function setupEditKey() {
+    $('setup-connected').style.display   = 'none';
+    $('setup-unconnected').style.display = 'block';
+    const inp = $('etoro-user-key');
+    if (inp) { inp.value = ''; inp.focus(); }
+    $('setup-msg').style.display = 'none';
+  }
+
+  function setupToggleEye() {
+    const inp  = $('etoro-user-key');
+    const icon = $('setup-eye-icon');
+    if (!inp) return;
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    icon.innerHTML = show
+      ? '<path d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5.06-5.94M9.9 4.24A9 9 0 0 1 12 4c7 0 11 8 11 8a18 18 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
   }
 
   async function saveApiKeys() {
     const userKey = $('etoro-user-key')?.value?.trim();
-    if (!userKey || userKey.startsWith('•')) { showSetupMsg('Enter your user key.', 'err'); return; }
-    showSetupMsg('Saving…', 'ok');
+    if (!userKey) { showSetupMsg('Paste your user key first.', 'err'); return; }
+    if (userKey.length < 10) { showSetupMsg('Key looks too short — double-check.', 'err'); return; }
+
+    const btn = $('setup-save-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="pb-spin-inline"></span> Saving…';
+    showSetupMsg('', '');
+    $('setup-msg').style.display = 'none';
+
+    // Persist to Supabase
     const { error } = await db.from('profiles').upsert(
       { id: _currentUser.id, etoro_user_key: userKey },
       { onConflict: 'id' }
     );
-    if (error) { showSetupMsg('Save failed: ' + error.message, 'err'); return; }
+    if (error) {
+      showSetupMsg('Save failed: ' + error.message, 'err');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg> Save &amp; connect';
+      return;
+    }
+
     _etoroUserKey = userKey;
-    showSetupMsg('✓ Key saved — loading portfolio…', 'ok');
-    setTimeout(() => { $('setup-card').style.display = 'none'; loadPortfolio(); }, 600);
+
+    // Quick connection test
+    showSetupMsg('Testing connection…', 'ok');
+    try {
+      await etoroCall('/trading/info/real/pnl');
+      showSetupMsg('✓ Connected successfully!', 'ok');
+    } catch(e) {
+      showSetupMsg('⚠️ Key saved but connection test failed: ' + e.message, 'err');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg> Save &amp; connect';
+      return;
+    }
+
+    setTimeout(() => {
+      setupShowConnected(userKey);
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/></svg> Save &amp; connect';
+      loadPortfolio();
+    }, 800);
   }
 
   function showSetupMsg(msg, type) {
     const el = $('setup-msg'); if (!el) return;
+    if (!msg) { el.style.display = 'none'; return; }
     el.textContent = msg; el.className = 'setup-msg ' + type; el.style.display = 'block';
   }
 
@@ -1050,23 +1171,41 @@
     const pnl      = Number(pos.unrealizedPnL?.pnL ?? pos.unrealizedPnl?.pnl ?? pos.pnl ?? pos.profit ?? 0);
     const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
     const amount   = Number(pos.amount || pos.investedAmount || 0);
+    const leverage = Number(pos.leverage || pos.Leverage || 1);
     const isBuy    = pos.isBuy !== false && pos.direction !== 'SELL';
     const isUp     = pnl >= 0;
     const pnlColor = isUp ? 'var(--green)' : 'var(--red)';
     const sign     = isUp ? '+' : '-';
     const etoroUrl = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
     const signalId = `signal-${posId || ticker}`;
+    const cardId   = `poscard-${posId || ticker}`;
+
+    // Open date
+    const openTs = pos.openDateTime || pos.openDate || pos.createdDate || null;
+    const openDateStr = openTs ? new Date(openTs).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : null;
+
+    // Direction pill
+    const dirPill = isBuy
+      ? `<span class="pos-dir-pill buy">↑ LONG</span>`
+      : `<span class="pos-dir-pill sell">↓ SHORT</span>`;
+
+    // Leverage badge
+    const levBadge = leverage > 1 ? `<span class="pos-lev-badge">×${leverage}</span>` : '';
 
     const card = document.createElement('div');
     card.className = `pos-card ${isUp ? 'pos-up' : 'pos-down'}`;
+    card.id = cardId;
     card.dataset.positionId   = posId;
     card.dataset.instrumentId = instrId;
     card.dataset.ticker       = ticker;
     card.innerHTML = `
       <div class="pos-top">
-        <div>
-          <div class="pos-ticker">${ticker.replace('-USD','')}</div>
-          <div class="pos-name">${name.length > 30 ? name.slice(0,28)+'…' : name}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div class="pos-ticker">${ticker.replace('-USD','')}</div>
+            ${dirPill}${levBadge}
+          </div>
+          <div class="pos-name">${name.length > 32 ? name.slice(0,30)+'…' : name}${openDateStr ? `<span class="pos-open-date"> · ${openDateStr}</span>` : ''}</div>
         </div>
         <div class="pos-pnl">
           <div class="pos-pnl-value" style="color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
@@ -1077,49 +1216,160 @@
         <div class="pos-meta-item"><strong>Open</strong> $${openRate.toFixed(openRate < 10 ? 4 : 2)}</div>
         <div class="pos-meta-item"><strong>Now</strong>  $${curRate.toFixed(curRate < 10 ? 4 : 2)}</div>
         <div class="pos-meta-item"><strong>Size</strong> $${amount.toFixed(0)}</div>
-        <div class="pos-meta-item"><strong>${isBuy ? '↑ BUY' : '↓ SELL'}</strong></div>
       </div>
       <div class="pos-signal" id="${signalId}">
-        <span style="font-size:10px;color:var(--text-dim);font-style:italic;">Analysing…</span>
+        <span class="pos-signal-loading">
+          <span class="pb-spin-inline"></span> Fetching signal…
+        </span>
       </div>
       <div class="pos-actions">
-        ${posId ? `<button class="pos-btn close-btn" onclick="confirmClose('${posId}','${instrId}','${ticker}',${pnl.toFixed(2)})">Close position</button>` : ''}
+        ${posId ? `<button class="pos-btn close-btn" id="closebtn-${posId}" onclick="confirmClose('${posId}','${instrId}','${ticker}',${pnl.toFixed(2)},${amount.toFixed(2)})">Close</button>` : ''}
         <a class="pos-btn etoro-btn" href="${etoroUrl}" target="_blank" rel="noopener">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           eToro
         </a>
-      </div>`;
+        <button class="pos-btn pos-refresh-btn" onclick="refreshCardSignal(this,'${posId}','${instrId}','${ticker}','${name.replace(/'/g,'')}')" title="Refresh signal">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      </div>
+      <div class="pos-close-toast" id="toast-${posId}" style="display:none;"></div>`;
     grid.appendChild(card);
   }
 
   async function enrichPositionCard(pos) {
-    const posId     = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
-    const ticker    = String(pos.instrumentName || pos.symbol || pos.internalSymbolFull || '').toUpperCase();
-    const name      = pos.instrumentDisplayName || pos.displayName || ticker;
-    const openRate  = Number(pos.openRate || 0);
-    const curRate   = Number(pos.currentRate || openRate);
-    const changePct = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
-    const signalEl  = document.getElementById(`signal-${posId || ticker}`);
+    const posId    = String(pos.positionId ?? pos.positionID ?? pos.id ?? '');
+    const ticker   = String(pos.instrumentName || pos.symbol || pos.internalSymbolFull || '').toUpperCase();
+    const name     = pos.instrumentDisplayName || pos.displayName || ticker;
+    const openRate = Number(pos.openRate || 0);
+    const curRate  = Number(pos.currentRate || openRate);
+    const signalEl = document.getElementById(`signal-${posId || ticker}`);
     if (!signalEl || !ticker) return;
+
+    const isCrypto = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker.replace('-USD',''));
+    const yTicker  = isCrypto ? ticker.replace('-USD','') + '-USD' : ticker;
+
+    // Try to get real Yahoo price/metrics for a better signal
+    let price = curRate, changePct = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
+    let metrics = { rsi:50, volRatio:1, rangePct:50, streak:1, weekPct:changePct, direction: changePct>=0?'up':'down' };
     try {
-      const yTicker = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker.replace('-USD',''))
-        ? ticker.replace('-USD','') + '-USD' : ticker;
-      const metrics = { rsi:50, volRatio:1, rangePct:50, streak:1, weekPct:changePct, direction:changePct>=0?'up':'down' };
+      const priceRes = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__yahoo__', yTicker, range: '5d', interval: '1d' })
+      });
+      const pd = await priceRes.json();
+      const result = pd?.result;
+      if (result) {
+        const closes = (result.indicators?.adjclose?.[0]?.adjclose || result.indicators?.quote?.[0]?.close || []).filter(p => p != null && p > 0);
+        const vols   = (result.indicators?.quote?.[0]?.volume || []).filter(v => v != null && v > 0);
+        const yPrice = result.meta?.regularMarketPrice ?? closes[closes.length-1] ?? 0;
+        if (yPrice > 0 && closes.length >= 2) {
+          price = yPrice;
+          const prev    = closes[closes.length-2];
+          const todayPct = ((yPrice - prev) / prev) * 100;
+          const weekPct  = closes.length >= 3 ? ((yPrice - closes[0]) / closes[0]) * 100 : todayPct;
+          const todayVol = vols[vols.length-1] ?? 0;
+          const avgVol   = vols.length > 1 ? vols.slice(0,-1).reduce((a,b)=>a+b,0)/(vols.length-1) : todayVol;
+          const volRatio = avgVol > 0 ? parseFloat((todayVol/avgVol).toFixed(2)) : 1;
+          const high5d   = Math.max(...closes), low5d = Math.min(...closes);
+          const rangePct = high5d > low5d ? Math.round(((yPrice-low5d)/(high5d-low5d))*100) : 50;
+          let streak = 1;
+          for (let i = closes.length-2; i > 0; i--) { if((closes[i]>closes[i-1])===(todayPct>=0)) streak++; else break; }
+          changePct = todayPct;
+          metrics = { rsi:50, volRatio, rangePct, streak, weekPct: parseFloat(weekPct.toFixed(2)), direction: todayPct>=0?'up':'down' };
+        }
+      }
+    } catch { /* fall back to eToro rates */ }
+
+    try {
+      const changeStr = (changePct>=0?'+':'') + changePct.toFixed(2) + '%';
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__signal__', signalTicker: yTicker, price: curRate.toFixed(2), change: (changePct>=0?'+':'')+changePct.toFixed(2)+'%', name, metrics })
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: yTicker, price: price.toFixed(price < 10 ? 4 : 2), change: changeStr, name, metrics })
       });
-      if (!res.ok) return;
+      if (!res.ok) throw new Error('signal fetch failed');
       const ai = await res.json();
-      if (!ai?.signal) return;
-      const cls = ai.signal === 'BUY' ? 'signal-BUY' : ai.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
-      signalEl.innerHTML = `<span class="signal-pill ${cls}" style="font-size:10px;padding:2px 8px;flex-shrink:0;">${ai.signal}</span><span class="pos-signal-text">${ai.rationale || ''}</span>`;
-    } catch { signalEl.innerHTML = '<span style="font-size:10px;color:var(--text-dim);">Signal unavailable</span>'; }
+      if (!ai?.signal) throw new Error('no signal');
+      renderSignalInCard(signalEl, ai, price, changeStr);
+    } catch {
+      signalEl.innerHTML = `<span style="font-size:10px;color:var(--text-dim);">Signal unavailable</span>`;
+    }
+  }
+
+  function renderSignalInCard(signalEl, ai, price, changeStr) {
+    const cls = ai.signal === 'BUY' ? 'signal-BUY' : ai.signal === 'SELL' ? 'signal-SELL' : 'signal-HOLD';
+    const confColor = ai.confidence === 'High' ? 'var(--green)' : ai.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
+    signalEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span class="signal-pill ${cls}" style="font-size:10px;padding:2px 8px;flex-shrink:0;">${ai.signal}</span>
+        <span style="font-size:10px;color:${confColor};font-weight:600;">${ai.confidence || ''}</span>
+        ${price > 0 ? `<span style="font-size:10px;color:var(--text-dim);margin-left:auto;">${changeStr}</span>` : ''}
+      </div>
+      <div class="pos-signal-text">${ai.rationale || ''}</div>
+      ${ai.action ? `<div style="font-size:10px;color:var(--text-dim);margin-top:3px;font-style:italic;">${ai.action}</div>` : ''}`;
+  }
+
+  async function refreshCardSignal(btn, posId, instrId, ticker, name) {
+    const signalEl = document.getElementById(`signal-${posId || ticker}`);
+    if (!signalEl) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="pb-spin-inline"></span>';
+    signalEl.innerHTML = `<span class="pos-signal-loading"><span class="pb-spin-inline"></span> Refreshing…</span>`;
+
+    const isCrypto = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker.replace('-USD',''));
+    const yTicker  = isCrypto ? ticker.replace('-USD','') + '-USD' : ticker;
+
+    let price = 0, changePct = 0;
+    let metrics = { rsi:50, volRatio:1, rangePct:50, streak:1, weekPct:0, direction:'up' };
+    try {
+      const priceRes = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__yahoo__', yTicker, range: '5d', interval: '1d' })
+      });
+      const pd = await priceRes.json();
+      const result = pd?.result;
+      if (result) {
+        const closes = (result.indicators?.adjclose?.[0]?.adjclose || result.indicators?.quote?.[0]?.close || []).filter(p => p != null && p > 0);
+        const vols   = (result.indicators?.quote?.[0]?.volume || []).filter(v => v != null && v > 0);
+        price = result.meta?.regularMarketPrice ?? closes[closes.length-1] ?? 0;
+        if (closes.length >= 2 && price > 0) {
+          const prev = closes[closes.length-2];
+          changePct  = ((price - prev) / prev) * 100;
+          const weekPct  = closes.length >= 3 ? ((price - closes[0]) / closes[0]) * 100 : changePct;
+          const todayVol = vols[vols.length-1] ?? 0;
+          const avgVol   = vols.length > 1 ? vols.slice(0,-1).reduce((a,b)=>a+b,0)/(vols.length-1) : todayVol;
+          const volRatio = avgVol > 0 ? parseFloat((todayVol/avgVol).toFixed(2)) : 1;
+          const high5d   = Math.max(...closes), low5d = Math.min(...closes);
+          const rangePct = high5d > low5d ? Math.round(((price-low5d)/(high5d-low5d))*100) : 50;
+          let streak = 1;
+          for (let i = closes.length-2; i > 0; i--) { if((closes[i]>closes[i-1])===(changePct>=0)) streak++; else break; }
+          metrics = { rsi:50, volRatio, rangePct, streak, weekPct: parseFloat(weekPct.toFixed(2)), direction: changePct>=0?'up':'down' };
+        }
+      }
+    } catch {}
+
+    try {
+      const changeStr = (changePct>=0?'+':'') + changePct.toFixed(2) + '%';
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__signal__', signalTicker: yTicker, price: price > 0 ? price.toFixed(price < 10 ? 4 : 2) : '0', change: changeStr, name, metrics })
+      });
+      const ai = await res.json();
+      if (!ai?.signal) throw new Error('no signal');
+      renderSignalInCard(signalEl, ai, price, changeStr);
+    } catch {
+      signalEl.innerHTML = `<span style="font-size:10px;color:var(--text-dim);">Signal unavailable</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
+    }
   }
 
   /* ── Close position ── */
-  function confirmClose(positionId, instrumentId, ticker, pnl) {
+  function confirmClose(positionId, instrumentId, ticker, pnl, amount) {
     document.getElementById('confirm-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'confirm-overlay';
@@ -1129,12 +1379,13 @@
     const sign = pnl >= 0 ? '+$' : '-$';
     overlay.innerHTML = `
       <div class="confirm-modal">
-        <h3>Close ${ticker} position?</h3>
+        <h3>Close ${ticker.replace('-USD','')} position?</h3>
         <div class="confirm-detail">
-          <div class="confirm-detail-row"><span class="label">Instrument</span><span class="val">${ticker}</span></div>
-          <div class="confirm-detail-row"><span class="label">Unrealised P&L</span><span class="val" style="color:${pnlColor};">${sign}${Math.abs(pnl).toFixed(2)}</span></div>
+          <div class="confirm-detail-row"><span class="label">Instrument</span><span class="val">${ticker.replace('-USD','')}</span></div>
+          <div class="confirm-detail-row"><span class="label">Size</span><span class="val">$${Number(amount).toFixed(2)}</span></div>
+          <div class="confirm-detail-row"><span class="label">Unrealised P&amp;L</span><span class="val" style="color:${pnlColor};">${sign}${Math.abs(pnl).toFixed(2)}</span></div>
         </div>
-        <p class="confirm-warn">⚠️ This closes the position at market price with real money and cannot be undone.</p>
+        <p class="confirm-warn">⚠️ This closes at market price with real money and cannot be undone.</p>
         <div class="confirm-row">
           <button class="confirm-cancel" onclick="document.getElementById('confirm-overlay').remove()">Cancel</button>
           <button class="confirm-ok sell" onclick="closePosition('${positionId}','${instrumentId}','${ticker}')">Close position</button>
@@ -1145,8 +1396,14 @@
 
   async function closePosition(positionId, instrumentId, ticker) {
     document.getElementById('confirm-overlay')?.remove();
-    const card = document.querySelector(`[data-position-id="${positionId}"]`);
-    if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
+    const card    = document.querySelector(`[data-position-id="${positionId}"]`);
+    const closeBtn = document.getElementById(`closebtn-${positionId}`);
+    const toast   = document.getElementById(`toast-${positionId}`);
+
+    // Spinner state
+    if (closeBtn) { closeBtn.disabled = true; closeBtn.innerHTML = '<span class="pb-spin-inline"></span>'; }
+    if (card)  { card.style.opacity = '0.6'; card.style.pointerEvents = 'none'; }
+
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
@@ -1162,15 +1419,28 @@
       const json = await res.json();
       if (json.error) throw new Error(json.error);
       if (json.status >= 400) throw new Error(`eToro ${json.status}: ${JSON.stringify(json.data).slice(0,120)}`);
+
+      // Success — fade card out
       if (card) {
-        card.style.transition = 'all 0.35s';
+        card.style.transition = 'all 0.4s';
         card.style.opacity = '0';
         card.style.transform = 'scale(0.95)';
-        setTimeout(() => { card.remove(); $('sum-count').textContent = $('positions-grid').querySelectorAll('.pos-card').length; }, 350);
+        setTimeout(() => {
+          card.remove();
+          const remaining = $('positions-grid').querySelectorAll('.pos-card').length;
+          $('sum-count').textContent = remaining;
+          if (!remaining) $('positions-empty').style.display = 'block';
+        }, 400);
       }
     } catch(e) {
-      if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
-      alert('Failed to close: ' + e.message);
+      // Restore card + show inline error toast
+      if (card)  { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+      if (closeBtn) { closeBtn.disabled = false; closeBtn.textContent = 'Close'; }
+      if (toast) {
+        toast.textContent = '⚠️ ' + e.message;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 6000);
+      }
     }
   }
 
@@ -1451,32 +1721,14 @@
     pbHideMsg('pb-parse-msg');
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `You are a portfolio allocation assistant. Parse this strategy into specific stock/crypto tickers with percentage allocations.
-
-Strategy: "${strategy}"
-
-Rules:
-- Use real ticker symbols (e.g. AAPL, NVDA, BTC, ETH)
-- Weights must sum to exactly 100
-- 2–10 positions
-- For crypto, use the base symbol only (BTC not BTC-USD)
-- Return ONLY valid JSON, no markdown:
-{"allocations":[{"ticker":"AAPL","weight":25,"rationale":"Large-cap tech leader"},{"ticker":"NVDA","weight":20,"rationale":"AI/GPU dominance"}]}`
-          }]
-        })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ ticker: '__portfolio-parse__', strategy })
       });
-      const data = await res.json();
-      const text = data.content?.map(b => b.text || '').join('') || '';
-      const clean = text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(clean);
+      if (!res.ok) throw new Error(`Edge Function error ${res.status}`);
+      const parsed = await res.json();
+      if (parsed.error) throw new Error(parsed.error);
 
       if (!parsed.allocations?.length) throw new Error('No allocations returned');
 
