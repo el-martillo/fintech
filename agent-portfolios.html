@@ -825,9 +825,9 @@
 
           <!-- Left: 2x2 stats -->
           <div class="portfolio-summary">
-            <div class="summary-card"><div class="summary-label">Available cash</div><div class="summary-value" id="sum-cash">—<span class="summary-secondary" id="sum-cash-2"></span></div><div class="summary-sub">USD</div></div>
-            <div class="summary-card"><div class="summary-label">Total equity</div><div class="summary-value" id="sum-equity">—<span class="summary-secondary" id="sum-equity-2"></span></div><div class="summary-sub">USD</div></div>
-            <div class="summary-card"><div class="summary-label">Open P&amp;L</div><div class="summary-value" id="sum-pnl">—<span class="summary-secondary" id="sum-pnl-2"></span></div><div class="summary-sub" id="sum-pnl-ts">unrealised</div></div>
+            <div class="summary-card"><div class="summary-label">Available cash</div><div class="summary-value" id="sum-cash">—</div><div class="summary-sub">USD</div></div>
+            <div class="summary-card"><div class="summary-label">Total equity</div><div class="summary-value" id="sum-equity">—</div><div class="summary-sub">USD</div></div>
+            <div class="summary-card"><div class="summary-label">Open P&amp;L</div><div class="summary-value" id="sum-pnl">—</div><div class="summary-sub" id="sum-pnl-ts">unrealised</div></div>
             <div class="summary-card"><div class="summary-label">Positions</div><div class="summary-value" id="sum-count">—</div><div class="summary-sub">open</div></div>
           </div>
 
@@ -1426,31 +1426,27 @@
       const data = await etoroCall('/trading/info/real/pnl');
       const cp = data?.clientPortfolio ?? data;
 
+      // Use eToro fields directly — no recalculation
       const credit        = Number(cp?.credit ?? 0);
-      const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0);
-      const positions     = (cp?.positions     || []).filter(p => p && (p.positionID || p.positionId) && Number(p.positionID ?? p.positionId) > 0);
-      const ordersForOpen = cp?.ordersForOpen || [];
+      const pnl           = Number(cp?.unrealizedPnL ?? 0);
+      const available     = credit;  // credit IS available cash per eToro API
+      const equity        = credit + pnl;
 
-      const pendingOpen = ordersForOpen
-        .filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0)
-        .reduce((s, o) => s + Number(o.amount || 0), 0);
-
-      const available = credit - pendingOpen;
-      const invested  = positions.reduce((s, p) => s + Number(p.amount || 0), 0);
-      const pnl       = unrealizedPnL;
-      const equity    = credit + pnl;
+      // Filter out positions with pending close orders (matches eToro app count)
+      const closingIds    = new Set((cp?.ordersForClose || []).map(o => String(o.positionID ?? o.positionId ?? '')));
+      const allPositions  = (cp?.positions || []).filter(p => p && (p.positionID || p.positionId) && Number(p.positionID ?? p.positionId) > 0);
+      const positions     = allPositions.filter(p => !closingIds.has(String(p.positionID ?? p.positionId ?? '')));
 
       const fmt  = n => '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
-      const fmt2 = n => '($' + Math.abs(Number(n/100)).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2}) + ')';
-      $('sum-cash').childNodes[0].textContent = fmt(available);
-      $('sum-cash-2').textContent   = fmt2(available);
-      $('sum-equity').childNodes[0].textContent = fmt(equity);
-      $('sum-equity-2').textContent = fmt2(equity);
+      $('sum-cash').textContent = fmt(available);
+      
+      $('sum-equity').textContent = fmt(equity);
+      
       const pnlEl = $('sum-pnl');
-      pnlEl.childNodes[0].textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
       pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-      $('sum-pnl-2').textContent = '(' + (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + ')';
-      $('sum-pnl-2').style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      
+      
       $('sum-count').textContent  = positions.length;
       $('positions-ts').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 
@@ -2626,30 +2622,24 @@
       const data = await etoroCall('/trading/info/real/pnl');
       const cp = data?.clientPortfolio ?? data;
 
-      const credit        = Number(cp?.credit ?? 0);
-      const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0);
-      const positions     = (cp?.positions || []).filter(p => p && (p.positionID || p.positionId));
-      const ordersForOpen = cp?.ordersForOpen || [];
-      const pendingOpen   = ordersForOpen
-        .filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0)
-        .reduce((s, o) => s + Number(o.amount || 0), 0);
-
-      const available = credit - pendingOpen;
-      const pnl       = unrealizedPnL;
-      const equity    = credit + pnl;
+      const credit       = Number(cp?.credit ?? 0);
+      const pnl          = Number(cp?.unrealizedPnL ?? 0);
+      const available    = credit;
+      const equity       = credit + pnl;
+      const closingIds2  = new Set((cp?.ordersForClose || []).map(o => String(o.positionID ?? o.positionId ?? '')));
+      const positions    = (cp?.positions || []).filter(p => p && (p.positionID || p.positionId) && !closingIds2.has(String(p.positionID ?? p.positionId ?? '')));
 
       const fmt  = n => '$' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
-      const fmt2 = n => '($' + Math.abs(Number(n/100)).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2}) + ')';
-      $('sum-cash').childNodes[0].textContent = fmt(available);
-      $('sum-cash-2').textContent   = fmt2(available);
-      $('sum-equity').childNodes[0].textContent = fmt(equity);
-      $('sum-equity-2').textContent = fmt2(equity);
+      $('sum-cash').textContent = fmt(available);
+      
+      $('sum-equity').textContent = fmt(equity);
+      
 
       const pnlEl = $('sum-pnl');
-      pnlEl.childNodes[0].textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
       pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-      $('sum-pnl-2').textContent = '(' + (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + ')';
-      $('sum-pnl-2').style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      
+      
 
       const ts = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
       const tsEl = $('sum-pnl-ts');
