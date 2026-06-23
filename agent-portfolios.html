@@ -1200,6 +1200,7 @@
     $('agent-content').style.display = 'block';
     await loadSavedKeys();
     apSubscribeSignals();
+    apCheckEnabledDot();
     if (_etoroUserKey) loadPortfolio();
   }
 
@@ -2678,7 +2679,7 @@
       const res = await fetch(`${SUPABASE_URL}/functions/v1/run-autopilot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({})
+        body: JSON.stringify({ force: true })
       });
       const data = await res.json();
       if (data.ran > 0) {
@@ -2694,6 +2695,14 @@
   }
 
   /* ── Load config + watchlist from Supabase ── */
+  /* ── Show green dot on tab if autopilot is enabled (runs on page load) ── */
+  async function apCheckEnabledDot() {
+    if (!_currentUser) return;
+    const { data: cfg } = await db.from('autopilot_config')
+      .select('enabled, full_auto').eq('user_id', _currentUser.id).single();
+    if (cfg?.enabled) apUpdateEnabledUI(true, cfg.full_auto || false);
+  }
+
   async function apLoadConfig() {
     if (!_currentUser) return;
 
