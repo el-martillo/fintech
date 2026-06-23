@@ -1375,16 +1375,14 @@
       const data = await etoroCall('/trading/info/real/pnl');
       const cp = data?.clientPortfolio ?? data;
 
-      const credit        = Number(cp?.credit ?? 0);
-      const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0);
+      const credit        = Number(cp?.credit ?? 0) / 100;
+      const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0) / 100;
       const positions     = (cp?.positions     || []).filter(p => p && (p.positionId || p.positionID || p.id));
       const ordersForOpen = cp?.ordersForOpen || [];
 
-      // credit = total cash balance (already excludes nothing — it's the raw balance)
-      // pendingOpen = cash committed to orders not yet filled
       const pendingOpen = ordersForOpen
         .filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0)
-        .reduce((s, o) => s + Number(o.amount || 0), 0);
+        .reduce((s, o) => s + Number(o.amount || 0) / 100, 0);
 
       const available = credit - pendingOpen;
       const invested  = positions.reduce((s, p) => s + Number(p.amount || 0), 0);
@@ -1436,11 +1434,11 @@
   function renderPositionCard(pos, grid) {
     const posId    = String(pos.positionID ?? pos.positionId ?? pos.id ?? '');
     const instrId  = String(pos.instrumentID ?? pos.instrumentId ?? '');
-    const openRate = Number(pos.openRate || 0);
-    const curRate  = Number(pos.unrealizedPnL?.closeRate || pos.currentRate || openRate);
-    const pnl      = Number(pos.unrealizedPnL?.pnL ?? 0);
+    const openRate = Number(pos.openRate || 0) / 100;
+    const curRate  = Number(pos.unrealizedPnL?.closeRate || pos.currentRate || 0) / 100 || openRate;
+    const pnl      = Number(pos.unrealizedPnL?.pnL ?? 0) / 100;
     const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
-    const amount   = Number(pos.amount || pos.initialAmountInDollars || 0);
+    const amount   = Number(pos.amount || pos.initialAmountInDollars || 0) / 100;
     const leverage = Number(pos.leverage || 1);
     const isBuy    = pos.isBuy !== false;
     const isUp     = pnl >= 0;
@@ -1534,8 +1532,8 @@
           const nameEl    = card.querySelector('.pos-name');
           const etoroLink = card.querySelector('.etoro-btn');
           const closeBtn  = card.querySelector('.close-btn');
-          const pnl2      = Number(pos.unrealizedPnL?.pnL ?? 0);
-          const amount2   = Number(pos.amount || pos.initialAmountInDollars || 0);
+          const pnl2      = Number(pos.unrealizedPnL?.pnL ?? 0) / 100;
+          const amount2   = Number(pos.amount || pos.initialAmountInDollars || 0) / 100;
           const etoroUrl  = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
           if (tickerEl)  tickerEl.textContent = ticker.replace('-USD','');
           if (nameEl)    { nameEl.textContent = name.length > 32 ? name.slice(0,30)+'…' : name; nameEl.style.fontStyle = 'normal'; nameEl.style.color = ''; }
@@ -1551,8 +1549,8 @@
       return;
     }
 
-    const openRate = Number(pos.openRate || 0);
-    const curRate  = Number(pos.unrealizedPnL?.closeRate || pos.currentRate || openRate);
+    const openRate = Number(pos.openRate || 0) / 100;
+    const curRate  = Number(pos.unrealizedPnL?.closeRate || pos.currentRate || 0) / 100 || openRate;
     const isCrypto = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker.replace('-USD',''));
     const yTicker  = isCrypto ? ticker.replace('-USD','') + '-USD' : ticker;
 
@@ -2260,11 +2258,11 @@
     try {
       const data = await etoroCall('/trading/info/real/pnl');
       const cp2 = data?.clientPortfolio ?? data;
-      const credit2 = Number(cp2?.credit ?? 0);
-      const unrealized2 = Number(cp2?.unrealizedPnL ?? 0);
+      const credit2 = Number(cp2?.credit ?? 0) / 100;
+      const unrealized2 = Number(cp2?.unrealizedPnL ?? 0) / 100;
       const pendingOpen2 = (cp2?.ordersForOpen || [])
         .filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0)
-        .reduce((s, o) => s + Number(o.amount || 0), 0);
+        .reduce((s, o) => s + Number(o.amount || 0) / 100, 0);
       freshEquity = credit2 - pendingOpen2;
       pbLog('info', '💰', `Available cash: $${freshEquity.toFixed(2)}`);
     } catch(e) {
@@ -2574,13 +2572,13 @@
       const data = await etoroCall('/trading/info/real/pnl');
       const cp = data?.clientPortfolio ?? data;
 
-      const credit        = Number(cp?.credit ?? 0);
-      const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0);
+      const credit        = Number(cp?.credit ?? 0) / 100;
+      const unrealizedPnL = Number(cp?.unrealizedPnL ?? 0) / 100;
       const positions     = (cp?.positions || []).filter(p => p && (p.positionID || p.positionId));
       const ordersForOpen = cp?.ordersForOpen || [];
       const pendingOpen   = ordersForOpen
         .filter(o => (o.mirrorID ?? o.mirrorId ?? 0) === 0)
-        .reduce((s, o) => s + Number(o.amount || 0), 0);
+        .reduce((s, o) => s + Number(o.amount || 0) / 100, 0);
 
       const available = credit - pendingOpen;
       const pnl       = unrealizedPnL;
@@ -2605,9 +2603,9 @@
         const posId  = String(pos.positionID ?? pos.positionId ?? '');
         const cardEl = document.querySelector(`[data-position-id="${posId}"]`);
         if (!cardEl) continue;
-        const posPnl   = Number(pos.unrealizedPnL?.pnL ?? 0);
-        const openRate = Number(pos.openRate || 0);
-        const curRate  = Number(pos.unrealizedPnL?.closeRate || openRate);
+        const posPnl   = Number(pos.unrealizedPnL?.pnL ?? 0) / 100;
+        const openRate = Number(pos.openRate || 0) / 100;
+        const curRate  = Number(pos.unrealizedPnL?.closeRate || 0) / 100 || openRate;
         const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
         const isUp     = posPnl >= 0;
         const color    = isUp ? 'var(--green)' : 'var(--red)';
