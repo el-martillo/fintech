@@ -1227,12 +1227,12 @@
   function renderPositionCard(pos, grid) {
     const posId    = String(pos.positionID ?? pos.positionId ?? pos.id ?? '');
     const instrId  = String(pos.instrumentID ?? pos.instrumentId ?? '');
-    const openRate = Number(pos.openRate || pos.openPrice || 0);
-    const curRate  = Number(pos.currentRate || pos.currentPrice || openRate);
-    const pnl      = Number(pos.unrealizedPnL ?? pos.pnl ?? pos.profit ?? 0);
+    const openRate = Number(pos.openRate || 0);
+    const curRate  = Number(pos.unrealizedPnL?.closeRate || pos.currentRate || openRate);
+    const pnl      = Number(pos.unrealizedPnL?.pnL ?? 0);
     const pnlPct   = openRate > 0 ? ((curRate - openRate) / openRate) * 100 : 0;
     const amount   = Number(pos.amount || pos.initialAmountInDollars || 0);
-    const leverage = Number(pos.leverage || pos.Leverage || 1);
+    const leverage = Number(pos.leverage || 1);
     const isBuy    = pos.isBuy !== false;
     const isUp     = pnl >= 0;
     const pnlColor = isUp ? 'var(--green)' : 'var(--red)';
@@ -1240,7 +1240,7 @@
     const signalId = `signal-${posId}`;
     const cardId   = `poscard-${posId}`;
 
-    const openTs = pos.openDateTime || pos.openDate || null;
+    const openTs = pos.openDateTime || null;
     const openDateStr = openTs ? new Date(openTs).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : null;
 
     const dirPill  = isBuy ? `<span class="pos-dir-pill buy">↑ LONG</span>` : `<span class="pos-dir-pill sell">↓ SHORT</span>`;
@@ -1276,12 +1276,12 @@
         <span class="pos-signal-loading"><span class="pb-spin-inline"></span> Fetching signal…</span>
       </div>
       <div class="pos-actions">
-        ${posId ? `<button class="pos-btn close-btn" id="closebtn-${posId}" onclick="confirmClose('${posId}','${instrId}','ID ${instrId}',${pnl.toFixed(2)},${amount.toFixed(2)})">Close</button>` : ''}
+        ${posId ? `<button class="pos-btn close-btn" id="closebtn-${posId}" onclick="confirmClose('${posId}','${instrId}','…',${pnl.toFixed(2)},${amount.toFixed(2)})">Close</button>` : ''}
         <a class="pos-btn etoro-btn" href="https://www.etoro.com/portfolio" target="_blank" rel="noopener">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           eToro
         </a>
-        <button class="pos-btn pos-refresh-btn" id="refreshbtn-${posId}" onclick="enrichPositionCard(${JSON.stringify(pos).replace(/"/g,'&quot;')})" title="Refresh signal">
+        <button class="pos-btn pos-refresh-btn" id="refreshbtn-${posId}" onclick="enrichPositionCard(${JSON.stringify(pos).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')})" title="Refresh signal">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         </button>
       </div>
@@ -1304,14 +1304,20 @@
       const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ ticker: '__etoro__', etoroPath: `/market-data/instruments/${instrId}`, etoroMethod: 'GET', etoroUserKey: _etoroUserKey })
+        body: JSON.stringify({
+          ticker: '__etoro__',
+          etoroPath: `/market-data/search?instrumentIds=${instrId}&fields=instrumentId,internalSymbolFull,displayname`,
+          etoroMethod: 'GET',
+          etoroUserKey: _etoroUserKey
+        })
       });
       const json = await res.json();
-      const instr = json?.data?.instrument ?? json?.data ?? null;
-      ticker = (instr?.symbolFull || instr?.internalSymbolFull || instr?.symbol || instr?.ticker || '').toUpperCase();
-      name   = instr?.displayName || instr?.name || ticker;
+      const items = json?.data?.items || json?.data?.data || (Array.isArray(json?.data) ? json.data : []);
+      const instr = items.find(i => String(i.instrumentId) === instrId) || items[0] || null;
+      ticker = (instr?.internalSymbolFull || instr?.symbolFull || instr?.symbol || '').toUpperCase();
+      name   = instr?.displayname || instr?.displayName || instr?.name || ticker;
 
-      // Update card ticker/name display if we got something
+      // Update card display
       if (ticker) {
         const card = document.querySelector(`[data-position-id="${posId}"]`);
         if (card) {
@@ -1319,13 +1325,13 @@
           const nameEl    = card.querySelector('.pos-name');
           const etoroLink = card.querySelector('.etoro-btn');
           const closeBtn  = card.querySelector('.close-btn');
-          const pnl       = Number(pos.unrealizedPnL ?? 0);
-          const amount    = Number(pos.amount || pos.initialAmountInDollars || 0);
+          const pnl2      = Number(pos.unrealizedPnL?.pnL ?? 0);
+          const amount2   = Number(pos.amount || pos.initialAmountInDollars || 0);
           const etoroUrl  = `https://www.etoro.com/markets/${ticker.toLowerCase().replace('-usd','')}`;
           if (tickerEl)  tickerEl.textContent = ticker.replace('-USD','');
           if (nameEl)    { nameEl.textContent = name.length > 32 ? name.slice(0,30)+'…' : name; nameEl.style.fontStyle = 'normal'; nameEl.style.color = ''; }
           if (etoroLink) etoroLink.href = etoroUrl;
-          if (closeBtn)  closeBtn.setAttribute('onclick', `confirmClose('${posId}','${instrId}','${ticker}',${pnl.toFixed(2)},${amount.toFixed(2)})`);
+          if (closeBtn)  closeBtn.setAttribute('onclick', `confirmClose('${posId}','${instrId}','${ticker}',${pnl2.toFixed(2)},${amount2.toFixed(2)})`);
           card.dataset.ticker = ticker;
         }
       }
@@ -1337,7 +1343,7 @@
     }
 
     const openRate = Number(pos.openRate || 0);
-    const curRate  = Number(pos.currentRate || openRate);
+    const curRate  = Number(pos.unrealizedPnL?.closeRate || pos.currentRate || openRate);
     const isCrypto = /^(BTC|ETH|SOL|XRP|BNB|DOGE|ADA|AVAX|DOT|LINK|MATIC|LTC|ATOM|NEAR|APT|SUI)$/i.test(ticker.replace('-USD',''));
     const yTicker  = isCrypto ? ticker.replace('-USD','') + '-USD' : ticker;
 
