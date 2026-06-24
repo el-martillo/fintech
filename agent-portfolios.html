@@ -372,6 +372,15 @@
     .trade-panel-title { font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px; }
     .trade-panel-sub { font-size:11px;color:var(--text-dim); }
     .trade-panel-body { padding:1rem 1.25rem; }
+    .trade-panel-toggle { display:none;width:100%;background:var(--surface2);border:none;border-bottom:1px solid var(--border);padding:10px 1.25rem;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--text);text-align:left;align-items:center;justify-content:space-between; }
+    .trade-panel-toggle svg { transition:transform 0.2s; flex-shrink:0; }
+    .trade-panel-toggle.collapsed svg { transform:rotate(-90deg); }
+    @media (max-width:860px) {
+      .trade-panel { position:static; }
+      .trade-panel-toggle { display:flex; }
+      .trade-panel-header { display:none; }
+      .trade-panel-body.mobile-collapsed { display:none !important; }
+    }
 
     /* Direction toggle */
     .dir-toggle { display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:1rem; }
@@ -856,6 +865,10 @@
 
           <!-- ── LEFT: Trade Panel ── -->
           <div class="trade-panel">
+            <button class="trade-panel-toggle" id="trade-panel-toggle" onclick="toggleTradePanel()">
+              <span id="trade-panel-toggle-label">▾ Trade Panel</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
             <div class="trade-panel-header" style="padding-bottom:0;">
               <div class="tp-tabs">
                 <button class="tp-tab active" id="tp-tab-trade"   onclick="switchTradeTab('trade')">New Trade</button>
@@ -1529,17 +1542,25 @@
     card.dataset.instrumentId = instrId;
     card.dataset.ticker       = '';
     const posJson = encodeURIComponent(JSON.stringify(pos));
+    // Extra computed fields
+    const daysHeld = openTs ? Math.max(0, Math.floor((Date.now() - new Date(openTs).getTime()) / 86400000)) : null;
+    const daysStr  = daysHeld !== null ? (daysHeld === 0 ? 'today' : daysHeld + 'd') : '';
+    const slRate   = Number(pos.stopLossRate || 0);
+    const slDist   = (slRate > 0.001 && curRate > 0) ? Math.abs((curRate - slRate) / curRate * 100) : null;
+    const slColor  = slDist !== null && slDist < 5 ? 'var(--red)' : slDist !== null && slDist < 10 ? '#f59e0b' : 'var(--text-dim)';
+    const slLabel  = slDist !== null ? slDist.toFixed(1) + '% to SL' : '';
+
     card.innerHTML = `
       <div style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
           <span class="pos-ticker" style="font-size:13px;">...</span>
           ${dirPill}${levBadge}
         </div>
-        <div class="pos-name" style="font-size:10.5px;color:var(--text-dim);font-style:italic;margin-top:1px;">Resolving...${openDateStr ? ' · ' + openDateStr : ''}</div>
+        <div class="pos-name" style="font-size:10.5px;color:var(--text-dim);font-style:italic;margin-top:1px;">Resolving...${openDateStr ? ` · ${openDateStr}` : ''}${daysStr ? ` <span style="font-style:normal;">(${daysStr})</span>` : ''}</div>
       </div>
       <div style="text-align:right;flex-shrink:0;min-width:90px;">
-        <div style="font-size:11px;color:var(--text-muted);">$${openRate.toFixed(openRate<10?4:2)} → $${curRate.toFixed(curRate<10?4:2)}</div>
-        <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">$${amount.toFixed(0)} <span class="pos-port-pct" style="color:#60a5fa;font-weight:600;"></span> · ×${leverage}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);" id="live-price-${posId}">$${curRate.toFixed(curRate<10?4:2)}</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">$${amount.toFixed(0)} <span class="pos-port-pct" style="color:#60a5fa;font-weight:600;"></span>${slLabel ? ` · <span style="color:${slColor};">${slLabel}</span>` : ''}</div>
       </div>
       <div class="pos-pnl" style="text-align:right;flex-shrink:0;min-width:58px;">
         <div class="pos-pnl-value" style="font-size:13px;font-weight:700;color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
@@ -2687,6 +2708,8 @@
         if (pctEl) { pctEl.textContent = sign + Math.abs(pnlPct).toFixed(2) + '%'; pctEl.style.color = color; }
         if (nowEl) nowEl.innerHTML = `<strong>Now</strong>  $${curRate.toFixed(curRate < 10 ? 4 : 2)}`;
         cardEl.className = `pos-card ${isUp ? 'pos-up' : 'pos-down'}`;
+        const livePriceEl = document.getElementById(`live-price-${posId}`);
+        if (livePriceEl && curRate > 0) livePriceEl.textContent = '$' + curRate.toFixed(curRate < 10 ? 4 : 2);
       }
 
       // Push to chart + persist
@@ -2999,6 +3022,17 @@
         $('ap-last-run').textContent = 'Last run: ' + ts;
       })
       .subscribe();
+  }
+
+  /* ── Trade panel collapse (mobile) ── */
+  let _tradePanelCollapsed = false;
+  function toggleTradePanel() {
+    _tradePanelCollapsed = !_tradePanelCollapsed;
+    document.querySelectorAll('.trade-panel-body').forEach(b => b.classList.toggle('mobile-collapsed', _tradePanelCollapsed));
+    const btn = $('trade-panel-toggle');
+    const lbl = $('trade-panel-toggle-label');
+    if (btn) btn.classList.toggle('collapsed', _tradePanelCollapsed);
+    if (lbl) lbl.textContent = _tradePanelCollapsed ? '▸ Trade Panel (collapsed)' : '▾ Trade Panel';
   }
 
   initPage();
