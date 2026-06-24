@@ -898,17 +898,17 @@
           <div class="trade-panel">
             <div class="trade-panel-header" style="padding-bottom:0;">
               <div class="tp-tabs">
-                <button class="tp-tab active" id="tp-tab-trade"   onclick="switchTradeTab('trade')">New Trade</button>
-                <button class="tp-tab"        id="tp-tab-builder" onclick="switchTradeTab('builder')">Build Portfolio</button>
-                <button class="tp-tab"        id="tp-tab-autopilot" onclick="switchTradeTab('autopilot')">
+                <button class="tp-tab active" id="tp-tab-autopilot" onclick="switchTradeTab('autopilot')">
                   Autopilot
                   <span class="ap-tab-dot" id="ap-tab-dot" style="display:none;"></span>
                 </button>
+                <button class="tp-tab" id="tp-tab-trade" onclick="switchTradeTab('trade')">New Trade</button>
+                <button class="tp-tab" id="tp-tab-builder" onclick="switchTradeTab('builder')">Build Portfolio</button>
               </div>
             </div>
 
             <!-- ── TAB: New Trade ── -->
-            <div id="tp-body-trade" class="trade-panel-body">
+            <div id="tp-body-trade" class="trade-panel-body" style="display:none;">
 
               <!-- BUY / SELL toggle -->
               <div class="dir-toggle">
@@ -1044,7 +1044,7 @@
             </div><!-- /tp-body-builder -->
 
             <!-- ── TAB: Autopilot ── -->
-            <div id="tp-body-autopilot" class="trade-panel-body" style="display:none;">
+            <div id="tp-body-autopilot" class="trade-panel-body">
 
               <!-- Full auto warning banner -->
               <div class="ap-auto-banner" id="ap-auto-banner" style="display:none;">
