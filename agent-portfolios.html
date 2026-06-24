@@ -3301,7 +3301,7 @@
     el.innerHTML = signals.map(s => {
       const cls      = s.signal === 'BUY' ? 'buy' : s.signal === 'SELL' ? 'sell' : 'hold';
       const confColor = s.confidence === 'High' ? 'var(--green)' : s.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
-      const ts       = new Date(s.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      const ts       = new Date(s.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
       const priceStr = s.price ? '$' + Number(s.price).toFixed(s.price < 10 ? 4 : 2) : '';
       const execBtn  = (s.signal !== 'HOLD' && !s.executed)
         ? `<button class="ap-exec-btn ${cls}" onclick="apExecuteSignal('${s.id}','${s.ticker}','${s.signal}',${s.price||0})">
@@ -3397,7 +3397,7 @@
         if (existing) existing.remove();
         const cls       = s.signal === 'BUY' ? 'buy' : s.signal === 'SELL' ? 'sell' : 'hold';
         const confColor = s.confidence === 'High' ? 'var(--green)' : s.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
-        const ts        = new Date(s.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        const ts        = new Date(s.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
         const priceStr  = s.price ? '$' + Number(s.price).toFixed(s.price < 10 ? 4 : 2) : '';
         const execBtn   = s.signal !== 'HOLD'
           ? `<button class="ap-exec-btn ${cls}" onclick="apExecuteSignal('${s.id}','${s.ticker}','${s.signal}',${s.price||0})">${s.signal === 'BUY' ? '↑ BUY' : '↓ SELL'}</button>` : '';
