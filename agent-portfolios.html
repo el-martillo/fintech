@@ -372,6 +372,18 @@
     .pos-group-children.open { display:block; }
     .pos-group-child { background:var(--surface2);border-bottom:1px solid var(--border);padding:6px 12px 6px 24px;display:flex;align-items:center;gap:10px;font-size:12px; }
     .pos-group-child:last-child { border-bottom:none; }
+    /* Transaction history */
+    .txn-row { background:var(--surface);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;align-items:center;gap:10px;transition:background 0.12s; }
+    .txn-row:first-child { border-top:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0; }
+    .txn-row:last-child  { border-radius:0 0 var(--radius) var(--radius); }
+    .txn-row:only-child  { border-radius:var(--radius);border:1px solid var(--border); }
+    .txn-row:hover { background:var(--surface2); }
+    .txn-row.txn-buy  { border-left:3px solid var(--green); }
+    .txn-row.txn-sell { border-left:3px solid var(--red); }
+    .txn-ticker { font-size:13px;font-weight:700;font-family:var(--mono);color:var(--text);min-width:60px; }
+    .txn-name   { font-size:11px;color:var(--text-dim);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .txn-date   { font-size:11px;color:var(--text-dim);white-space:nowrap;min-width:90px;text-align:right; }
+    .txn-value  { font-size:12px;font-weight:600;font-family:var(--mono);color:var(--text);min-width:70px;text-align:right; }
     /* Env toggle */
     .env-toggle { display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:2px; }
     .env-btn { padding:5px 14px;border:none;border-radius:6px;background:transparent;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s; }
@@ -1112,6 +1124,32 @@
         </div><!-- /trading-layout -->
       </div><!-- /portfolio-section -->
 
+      <!-- Transaction History -->
+      <div id="txn-section" style="display:none;margin-top:2rem;">
+        <div class="positions-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="positions-title">Transaction History</span>
+            <span id="txn-count" style="display:none;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:1px 8px;font-size:11px;font-weight:600;color:var(--text-muted);"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <select id="txn-sort" onchange="sortTxn()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--text-muted);font-family:inherit;outline:none;cursor:pointer;">
+              <option value="date_desc">Date ↓</option>
+              <option value="date_asc">Date ↑</option>
+              <option value="name">Name</option>
+              <option value="value_desc">Value ↓</option>
+              <option value="value_asc">Value ↑</option>
+            </select>
+            <button onclick="downloadTxnCsv()" title="Download CSV" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;font-size:11px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.12s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-muted)'">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV
+            </button>
+          </div>
+        </div>
+        <div id="txn-loading" style="display:none;padding:2rem;text-align:center;font-size:12px;color:var(--text-dim);">Loading transactions…</div>
+        <div id="txn-empty"  style="display:none;padding:2rem;text-align:center;font-size:12px;color:var(--text-dim);font-style:italic;">No transaction history found.</div>
+        <div id="txn-grid" class="positions-grid"></div>
+      </div>
+
       <footer class="site-footer" style="margin-top:3rem;">
         <span class="footer-left">© 2025 eToro Stock Advisor · Agent Portfolios powered by eToro API</span>
         <a class="footer-top-btn" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
@@ -1508,6 +1546,9 @@
         }
       })();
 
+      // Load transaction history from same API response + dedicated history endpoint
+      loadTxnHistory(cp);
+
     } catch(e) {
       $('positions-loading').style.display = 'none';
       errEl.textContent = '⚠️ Could not load portfolio: ' + e.message + ' — check your connection key.';
@@ -1646,6 +1687,197 @@
     } else {
       grid.appendChild(card);
     }
+  }
+
+  /* ── Transaction History ── */
+  let _txnData = [];
+  let _txnSort = 'date_desc';
+  let _txnNameCache = {}; // instrId → {ticker, name}
+
+  async function loadTxnHistory(cp) {
+    $('txn-section').style.display = 'block';
+    $('txn-loading').style.display = 'block';
+    $('txn-empty').style.display   = 'none';
+    $('txn-grid').innerHTML = '';
+
+    // Build transactions from closed positions in pnl response
+    // Use exitOrders + ordersForClose + positions that are closing as closed trades
+    // Also try fetching dedicated history endpoint
+    let txns = [];
+
+    // From current pnl: closed positions = ordersForClose (have positionID + instrID + dates)
+    const closed = [...(cp?.ordersForClose || []), ...(cp?.ordersForCloseMultiple || [])];
+    for (const o of closed) {
+      txns.push({
+        _type:      'SELL',
+        instrId:    String(o.instrumentID ?? o.instrumentId ?? ''),
+        positionId: String(o.positionID ?? ''),
+        amount:     Number(o.amount || 0),
+        rate:       Number(o.rate || o.closeRate || 0),
+        date:       o.lastUpdate || o.openDateTime || null,
+        ticker:     '',
+        name:       '',
+      });
+    }
+
+    // From current pnl: open positions are BUYs (use openDateTime)
+    for (const p of (cp?.positions || [])) {
+      txns.push({
+        _type:      p.isBuy !== false ? 'BUY' : 'SELL',
+        instrId:    String(p.instrumentID ?? p.instrumentId ?? ''),
+        positionId: String(p.positionID ?? p.positionId ?? ''),
+        amount:     Number(p.amount || 0),
+        rate:       Number(p.openRate || 0),
+        date:       p.openDateTime || null,
+        ticker:     '',
+        name:       '',
+      });
+    }
+
+    // Try fetching closed positions history from eToro
+    try {
+      const hist = await etoroCall('/trading/history/real/positions?PageSize=50&PageNumber=1');
+      const items = hist?.positions || hist?.data?.positions || hist?.data || [];
+      for (const h of items) {
+        txns.push({
+          _type:      h.isBuy !== false ? 'BUY' : 'SELL',
+          instrId:    String(h.instrumentID ?? h.instrumentId ?? ''),
+          positionId: String(h.positionID ?? h.positionId ?? ''),
+          amount:     Number(h.amount || h.initialAmountInDollars || 0),
+          rate:       Number(h.openRate || 0),
+          closeRate:  Number(h.closeRate || 0),
+          pnl:        Number(h.profit || h.pnL || 0),
+          date:       h.closeDateTime || h.openDateTime || null,
+          ticker:     '',
+          name:       '',
+          closed:     true,
+        });
+      }
+    } catch(_) { /* history endpoint may not exist — silently ignore */ }
+
+    // Deduplicate by positionId
+    const seen = new Set();
+    txns = txns.filter(t => {
+      if (!t.positionId || seen.has(t.positionId)) return false;
+      seen.add(t.positionId);
+      return true;
+    });
+
+    // Remove zero-amount entries
+    txns = txns.filter(t => t.amount > 0 || t.rate > 0);
+
+    _txnData = txns;
+    $('txn-loading').style.display = 'none';
+
+    if (!txns.length) { $('txn-empty').style.display = 'block'; return; }
+
+    renderTxnGrid();
+
+    // Enrich with ticker names in background
+    const uniqueInstrs = [...new Set(txns.map(t => t.instrId).filter(Boolean))];
+    for (let i = 0; i < uniqueInstrs.length; i += 10) {
+      const batch = uniqueInstrs.slice(i, i + 10);
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-stock`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({
+            ticker: '__etoro__',
+            etoroPath: `/market-data/search?instrumentIds=${batch.join(',')}&fields=instrumentId,internalSymbolFull,displayname`,
+            etoroMethod: 'GET',
+            etoroUserKey: _etoroUserKey
+          })
+        });
+        const json = await res.json();
+        const items = json?.data?.items || (Array.isArray(json?.data) ? json.data : []);
+        for (const item of items) {
+          _txnNameCache[String(item.instrumentId)] = {
+            ticker: (item.internalSymbolFull || '').toUpperCase(),
+            name:   item.displayname || item.displayName || '',
+          };
+        }
+      } catch(_) {}
+      // Update displayed rows with resolved names
+      for (const t of _txnData) {
+        if (_txnNameCache[t.instrId]) {
+          t.ticker = _txnNameCache[t.instrId].ticker;
+          t.name   = _txnNameCache[t.instrId].name;
+        }
+      }
+      renderTxnGrid();
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+
+  function sortTxn() {
+    _txnSort = $('txn-sort')?.value || 'date_desc';
+    renderTxnGrid();
+  }
+
+  function renderTxnGrid() {
+    const grid = $('txn-grid');
+    if (!grid) return;
+
+    const sorted = [..._txnData];
+    if (_txnSort === 'date_desc') sorted.sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+    else if (_txnSort === 'date_asc') sorted.sort((a,b) => new Date(a.date||0) - new Date(b.date||0));
+    else if (_txnSort === 'name') sorted.sort((a,b) => (a.ticker||a.instrId).localeCompare(b.ticker||b.instrId));
+    else if (_txnSort === 'value_desc') sorted.sort((a,b) => b.amount - a.amount);
+    else if (_txnSort === 'value_asc')  sorted.sort((a,b) => a.amount - b.amount);
+
+    const countEl = $('txn-count');
+    if (countEl) { countEl.textContent = sorted.length; countEl.style.display = sorted.length ? 'inline' : 'none'; }
+
+    grid.innerHTML = sorted.map(t => {
+      const isBuy   = t._type === 'BUY';
+      const cls     = isBuy ? 'txn-buy' : 'txn-sell';
+      const dirPill = isBuy
+        ? `<span class="pos-dir-pill buy" style="font-size:9px;">↑ BUY</span>`
+        : `<span class="pos-dir-pill sell" style="font-size:9px;">↓ SELL</span>`;
+      const ticker  = t.ticker || `#${t.instrId}`;
+      const name    = t.name || (t.ticker ? '' : 'Resolving…');
+      const dateStr = t.date ? new Date(t.date).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) + ' ' +
+                               new Date(t.date).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const amt     = t.amount > 0 ? '$' + Number(t.amount).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
+      const rateStr = t.rate > 0 ? `@ $${Number(t.rate).toFixed(t.rate < 10 ? 4 : 2)}` : '';
+      const pnlStr  = t.pnl ? `<span style="font-size:11px;font-weight:600;color:${t.pnl>=0?'var(--green)':'var(--red)'};">${t.pnl>=0?'+':'-'}$${Math.abs(t.pnl).toFixed(2)}</span>` : '';
+      const closedBadge = t.closed ? `<span style="font-size:9px;padding:1px 6px;border-radius:4px;background:var(--surface2);border:1px solid var(--border2);color:var(--text-dim);">closed</span>` : '';
+
+      return `<div class="txn-row ${cls}">
+        <span class="txn-ticker">${ticker}</span>
+        ${dirPill}
+        <span class="txn-name">${name} ${rateStr}</span>
+        ${pnlStr}
+        ${closedBadge}
+        <span class="txn-value">${amt}</span>
+        <span class="txn-date">${dateStr}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function downloadTxnCsv() {
+    if (!_txnData.length) return;
+    const sorted = [..._txnData].sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+    const rows = [['Date','Type','Ticker','Name','Amount ($)','Open Rate','Close Rate','P&L ($)']];
+    for (const t of sorted) {
+      rows.push([
+        t.date ? new Date(t.date).toISOString() : '',
+        t._type,
+        t.ticker || t.instrId,
+        t.name || '',
+        t.amount.toFixed(2),
+        t.rate || '',
+        t.closeRate || '',
+        t.pnl != null ? t.pnl.toFixed(2) : '',
+      ]);
+    }
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `transactions-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   async function enrichPositionCard(pos) {
