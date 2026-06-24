@@ -315,6 +315,17 @@
     .pnl-chart-wrap { position:relative;flex:1;min-height:120px; }
     .pnl-chart-wrap canvas { width:100%!important; }
     .pnl-chart-empty { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-dim);font-style:italic; }
+    /* Chart expand modal */
+    .chart-modal-overlay { display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.72);align-items:center;justify-content:center;padding:1.5rem; }
+    .chart-modal-overlay.open { display:flex; }
+    .chart-modal { background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem;width:100%;max-width:860px;box-shadow:0 24px 80px rgba(0,0,0,0.55);animation:adpIn 0.18s cubic-bezier(.22,.68,0,1.15) forwards; }
+    .chart-modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:8px; }
+    .chart-modal-title { font-size:13px;font-weight:600;color:var(--text); }
+    .chart-modal-actions { display:flex;align-items:center;gap:6px; }
+    .chart-modal-close { background:none;border:none;cursor:pointer;color:var(--text-dim);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.12s; }
+    .chart-modal-close:hover { color:var(--text);background:var(--surface2); }
+    .chart-modal-wrap { position:relative;height:380px; }
+    .chart-expand-hint { position:absolute;bottom:6px;right:8px;font-size:10px;color:var(--text-dim);pointer-events:none;opacity:0.6; }
     /* Positions */
     .positions-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;flex-wrap:wrap;gap:8px; }
     .positions-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim); }
@@ -354,6 +365,13 @@
     .pos-open-date { font-size:10px;color:var(--text-dim); }
     /* Inline close toast */
     .pos-close-toast { font-size:11px;padding:5px 8px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:var(--red);margin-top:6px; }
+    /* Grouped positions */
+    .pos-group-badge { display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--accent-dim);color:#a9a3ff;border:1px solid rgba(108,99,255,0.25);cursor:pointer;transition:all 0.12s;font-family:inherit;white-space:nowrap; }
+    .pos-group-badge:hover { background:var(--accent);color:#fff; }
+    .pos-group-children { display:none;border-top:1px solid var(--border); }
+    .pos-group-children.open { display:block; }
+    .pos-group-child { background:var(--surface2);border-bottom:1px solid var(--border);padding:6px 12px 6px 24px;display:flex;align-items:center;gap:10px;font-size:12px; }
+    .pos-group-child:last-child { border-bottom:none; }
     /* Env toggle */
     .env-toggle { display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:2px; }
     .env-btn { padding:5px 14px;border:none;border-radius:6px;background:transparent;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s; }
@@ -839,17 +857,23 @@
           <div class="pnl-chart-card">
             <div class="pnl-chart-header">
               <span class="pnl-chart-title">P&amp;L over time</span>
-              <div class="pnl-range-tabs">
-                <button class="pnl-range-btn active" data-range="live" onclick="setPnlRange('live')">Live</button>
-                <button class="pnl-range-btn" data-range="1h"   onclick="setPnlRange('1h')">1h</button>
-                <button class="pnl-range-btn" data-range="6h"   onclick="setPnlRange('6h')">6h</button>
-                <button class="pnl-range-btn" data-range="24h"  onclick="setPnlRange('24h')">24h</button>
-                <button class="pnl-range-btn" data-range="7d"   onclick="setPnlRange('7d')">7d</button>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div class="pnl-range-tabs">
+                  <button class="pnl-range-btn active" data-range="live" onclick="setPnlRange('live')">Live</button>
+                  <button class="pnl-range-btn" data-range="1h"   onclick="setPnlRange('1h')">1h</button>
+                  <button class="pnl-range-btn" data-range="6h"   onclick="setPnlRange('6h')">6h</button>
+                  <button class="pnl-range-btn" data-range="24h"  onclick="setPnlRange('24h')">24h</button>
+                  <button class="pnl-range-btn" data-range="7d"   onclick="setPnlRange('7d')">7d</button>
+                </div>
+                <button onclick="downloadPnlChart()" title="Download chart" style="background:none;border:none;cursor:pointer;color:var(--text-dim);padding:3px;border-radius:5px;display:flex;align-items:center;transition:color 0.12s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-dim)'">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
               </div>
             </div>
-            <div class="pnl-chart-wrap">
+            <div class="pnl-chart-wrap" onclick="expandPnlChart()" style="cursor:pointer;" title="Click to expand">
               <canvas id="pnl-chart"></canvas>
               <div class="pnl-chart-empty" id="pnl-chart-empty">Collecting data…</div>
+              <span class="chart-expand-hint">⤢ expand</span>
             </div>
           </div>
 
@@ -1376,17 +1400,25 @@
       sorted.sort((a, b) => (CONF_RANK[b._confidence] ?? 0) - (CONF_RANK[a._confidence] ?? 0));
     }
     // Update portfolio % badges then reorder DOM
+    // Only move top-level cards/wrappers (primary positions); children stay inside their wrapper
     const totalInvested = _positionsData.reduce((s, p) => s + Number(p.amount || 0), 0);
+    const seen = new Set();
     sorted.forEach(pos => {
       const posId = String(pos.positionID ?? pos.positionId ?? '');
-      const card = document.querySelector(`[data-position-id="${posId}"]`);
+      // Find the top-level element: either a wrapper div or the card itself
+      const card = document.querySelector(`#poscard-${posId}`);
       if (!card) return;
+      const topEl = card.closest('[data-position-id]') || card;
+      // Only reorder if this is a direct child of grid (not a child row inside a wrapper)
+      if (topEl.parentElement !== grid) return;
+      if (seen.has(topEl)) return;
+      seen.add(topEl);
       const pctEl = card.querySelector('.pos-port-pct');
       if (pctEl && totalInvested > 0) {
         const pct = (Number(pos.amount || 0) / totalInvested * 100).toFixed(1);
         pctEl.textContent = `(${pct}%)`;
       }
-      grid.appendChild(card);
+      grid.appendChild(topEl);
     });
   }
 
@@ -1447,14 +1479,27 @@
       pushPnlPoint(pnl, equity);
       startPnlPolling();
 
+      // Group by instrumentID — eToro merges same-instrument positions in their UI
+      const groupMap = {};
+      for (const pos of positions) {
+        const key = String(pos.instrumentID ?? pos.instrumentId ?? pos.positionID);
+        if (!groupMap[key]) groupMap[key] = [];
+        groupMap[key].push(pos);
+      }
+      const groupedCount = Object.keys(groupMap).length;
+
       const countEl = $('positions-count');
-      if (countEl) { countEl.textContent = positions.length; countEl.style.display = positions.length ? 'inline' : 'none'; }
+      if (countEl) { countEl.textContent = groupedCount; countEl.style.display = groupedCount ? 'inline' : 'none'; }
+      $('sum-count').textContent = groupedCount;
       if (!positions.length) { $('positions-empty').style.display = 'block'; return; }
 
       const grid = $('positions-grid');
       _positionsData = positions;
-      // Render cards first, then sort
-      for (const pos of positions) renderPositionCard(pos, grid);
+      for (const key of Object.keys(groupMap)) {
+        const group = groupMap[key];
+        const primary = group.reduce((a, b) => Number(b.amount||0) > Number(a.amount||0) ? b : a);
+        renderPositionCard(primary, grid, group.length > 1 ? group.filter(p => p !== primary) : []);
+      }
       renderSortedPositions();
       (async () => {
         for (const pos of positions) {
@@ -1471,7 +1516,7 @@
     }
   }
 
-  function renderPositionCard(pos, grid) {
+  function renderPositionCard(pos, grid, siblings = []) {
     const posId    = String(pos.positionID ?? pos.positionId ?? pos.id ?? '');
     const instrId  = String(pos.instrumentID ?? pos.instrumentId ?? '');
     const openRate = Number(pos.openRate || 0);
@@ -1526,7 +1571,81 @@
         </button>
       </div>
       <div class="pos-close-toast" id="toast-${posId}" style="display:none;"></div>`;
-    grid.appendChild(card);
+
+    // If there are sibling positions on the same instrument, add a grouped wrapper
+    if (siblings.length > 0) {
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'border-bottom:1px solid var(--border);';
+      wrapper.dataset.positionId   = posId;
+      wrapper.dataset.instrumentId = instrId;
+      wrapper.dataset.ticker       = '';
+
+      // Move card into wrapper (strip its own bottom border since wrapper handles it)
+      card.style.borderBottom = 'none';
+      wrapper.appendChild(card);
+
+      // Inject "2 trades" badge into the name line
+      const childrenId = `pos-group-children-${posId}`;
+      const badge = document.createElement('button');
+      badge.className = 'pos-group-badge';
+      badge.innerHTML = `${siblings.length + 1} trades ▾`;
+      badge.onclick = () => {
+        const ch = document.getElementById(childrenId);
+        const open = ch.classList.toggle('open');
+        badge.innerHTML = open ? `${siblings.length + 1} trades ▴` : `${siblings.length + 1} trades ▾`;
+      };
+      const nameEl = card.querySelector('.pos-name');
+      if (nameEl) nameEl.appendChild(badge);
+
+      // Build children rows
+      const childrenDiv = document.createElement('div');
+      childrenDiv.className = 'pos-group-children';
+      childrenDiv.id = childrenId;
+      for (const sib of siblings) {
+        const sibId    = String(sib.positionID ?? sib.positionId ?? '');
+        const sibPnl   = Number(sib.unrealizedPnL?.pnL ?? 0);
+        const sibAmt   = Number(sib.amount || 0);
+        const sibRate  = Number(sib.openRate || 0);
+        const sibCur   = Number(sib.unrealizedPnL?.closeRate || sibRate);
+        const sibPct   = sibRate > 0 ? ((sibCur - sibRate) / sibRate * 100) : 0;
+        const sibColor = sibPnl >= 0 ? 'var(--green)' : 'var(--red)';
+        const sibSign  = sibPnl >= 0 ? '+' : '-';
+        const sibIsBuy = sib.isBuy !== false;
+        const sibDir   = sibIsBuy ? `<span class="pos-dir-pill buy" style="font-size:9px;">↑ LONG</span>` : `<span class="pos-dir-pill sell" style="font-size:9px;">↓ SHORT</span>`;
+        const sibOpenDate = sib.openDateTime ? new Date(sib.openDateTime).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : '';
+        const sibJson = encodeURIComponent(JSON.stringify(sib));
+        const row = document.createElement('div');
+        row.className = 'pos-group-child';
+        row.id = `poscard-${sibId}`;
+        row.dataset.positionId   = sibId;
+        row.dataset.instrumentId = instrId;
+        row.dataset.ticker       = '';
+        row.innerHTML = `
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            ${sibDir}
+            <span style="font-size:11px;color:var(--text-dim);">$${sibAmt.toFixed(0)} · $${sibRate.toFixed(sibRate<10?4:2)} → $${sibCur.toFixed(sibCur<10?4:2)}${sibOpenDate ? ' · ' + sibOpenDate : ''}</span>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <span style="font-size:12px;font-weight:700;color:${sibColor};">${sibSign}$${Math.abs(sibPnl).toFixed(2)}</span>
+            <span style="font-size:10px;color:${sibColor};margin-left:4px;">${sibSign}${Math.abs(sibPct).toFixed(2)}%</span>
+          </div>
+          <div class="pos-signal" id="signal-${sibId}" style="flex-shrink:0;min-width:55px;text-align:center;padding:0;">
+            <span class="pos-signal-loading"><span class="pb-spin-inline"></span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+            ${sibId ? `<button class="pos-btn close-btn" id="closebtn-${sibId}" onclick="confirmClose('${sibId}','${instrId}','...',${sibPnl.toFixed(2)},${sibAmt.toFixed(2)})" style="font-size:11px;padding:5px 8px;">Close</button>` : ''}
+            <button class="pos-btn pos-refresh-btn" id="refreshbtn-${sibId}" onclick="enrichPositionCard(JSON.parse(decodeURIComponent('${sibJson}')))" title="Refresh signal">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </button>
+          </div>
+          <div class="pos-close-toast" id="toast-${sibId}" style="display:none;"></div>`;
+        childrenDiv.appendChild(row);
+      }
+      wrapper.appendChild(childrenDiv);
+      grid.appendChild(wrapper);
+    } else {
+      grid.appendChild(card);
+    }
   }
 
   async function enrichPositionCard(pos) {
@@ -2542,6 +2661,92 @@
     _pnlChart.data.datasets[0].pointBackgroundColor = colour;
     _pnlChart.data.datasets[0].backgroundColor      = bgColour;
     _pnlChart.update('none');
+    // Mirror to modal chart if open
+    if (_pnlChartModal) {
+      _pnlChartModal.data.labels = _pnlChart.data.labels;
+      _pnlChartModal.data.datasets[0].data = _pnlChart.data.datasets[0].data;
+      _pnlChartModal.data.datasets[0].borderColor         = colour;
+      _pnlChartModal.data.datasets[0].pointBackgroundColor = colour;
+      _pnlChartModal.data.datasets[0].backgroundColor      = bgColour;
+      _pnlChartModal.update('none');
+    }
+  }
+
+  let _pnlChartModal = null;
+
+  function expandPnlChart() {
+    const overlay = $('chart-modal-overlay');
+    if (!overlay) return;
+    overlay.classList.add('open');
+    document.addEventListener('keydown', _chartModalEsc);
+
+    // Sync range button state in modal
+    overlay.querySelectorAll('.pnl-range-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.range === _pnlRange);
+    });
+
+    // Init modal chart if needed
+    const canvas = $('pnl-chart-modal');
+    if (!canvas) return;
+    if (!_pnlChartModal) {
+      const isDark     = !document.body.classList.contains('light');
+      const gridColor  = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+      const labelColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+      _pnlChartModal = new Chart(canvas, {
+        type: 'line',
+        data: { labels: [], datasets: [{
+          label: 'P&L ($)', data: [],
+          borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)',
+          borderWidth: 2, pointRadius: 2, pointHoverRadius: 5,
+          pointBackgroundColor: '#6c63ff', fill: true, tension: 0.35,
+        }]},
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 200 },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => {
+              const v = ctx.parsed.y;
+              return (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2);
+            }}}
+          },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: labelColor, font: { size: 11 }, maxTicksLimit: 10 } },
+            y: { grid: { color: gridColor }, ticks: { color: labelColor, font: { size: 11 },
+              callback: v => (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(2) }}
+          }
+        }
+      });
+    }
+    // Copy current data into modal chart
+    if (_pnlChart) {
+      const src = _pnlChart.data.datasets[0];
+      _pnlChartModal.data.labels = [..._pnlChart.data.labels];
+      _pnlChartModal.data.datasets[0].data = [...src.data];
+      _pnlChartModal.data.datasets[0].borderColor         = src.borderColor;
+      _pnlChartModal.data.datasets[0].pointBackgroundColor = src.pointBackgroundColor;
+      _pnlChartModal.data.datasets[0].backgroundColor      = src.backgroundColor;
+      _pnlChartModal.update('none');
+    }
+  }
+
+  function _chartModalEsc(e) { if (e.key === 'Escape') closeChartModal(); }
+
+  function closeChartModal() {
+    $('chart-modal-overlay')?.classList.remove('open');
+    document.removeEventListener('keydown', _chartModalEsc);
+  }
+
+  function downloadPnlChart() {
+    // Use modal chart canvas if open, otherwise inline chart
+    const canvas = (_pnlChartModal && $('chart-modal-overlay')?.classList.contains('open'))
+      ? $('pnl-chart-modal')
+      : $('pnl-chart');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `pnl-chart-${new Date().toISOString().slice(0,16).replace('T','-')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   }
 
   async function setPnlRange(range) {
@@ -3078,6 +3283,33 @@
       <button onclick="apSendTestEmail()" id="ap-test-email-btn" style="padding:9px 14px;background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">&#x2709; Test</button>
     </div>
     <div class="trade-msg" id="ap-config-msg" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- Chart expand modal -->
+<div class="chart-modal-overlay" id="chart-modal-overlay" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-modal">
+    <div class="chart-modal-header">
+      <span class="chart-modal-title">P&L over time</span>
+      <div class="chart-modal-actions">
+        <div class="pnl-range-tabs">
+          <button class="pnl-range-btn" data-range="live" onclick="setPnlRange('live')">Live</button>
+          <button class="pnl-range-btn" data-range="1h"   onclick="setPnlRange('1h')">1h</button>
+          <button class="pnl-range-btn" data-range="6h"   onclick="setPnlRange('6h')">6h</button>
+          <button class="pnl-range-btn" data-range="24h"  onclick="setPnlRange('24h')">24h</button>
+          <button class="pnl-range-btn" data-range="7d"   onclick="setPnlRange('7d')">7d</button>
+        </div>
+        <button onclick="downloadPnlChart()" title="Download" style="background:none;border:none;cursor:pointer;color:var(--text-dim);padding:4px;border-radius:6px;display:flex;align-items:center;transition:color 0.12s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-dim)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="chart-modal-close" onclick="closeChartModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="chart-modal-wrap">
+      <canvas id="pnl-chart-modal"></canvas>
+    </div>
   </div>
 </div>
 
