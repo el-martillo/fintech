@@ -516,6 +516,8 @@
     .ap-exec-btn:hover { opacity:0.82; }
     .ap-exec-btn:disabled { opacity:0.4;cursor:not-allowed; }
     .ap-executed-badge { font-size:10px;color:var(--green);font-weight:600; }
+    .ap-signal-card { background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;transition:border-color 0.15s; }
+    .ap-signal-card:hover { border-color:var(--border2); }
     .tp-tabs { display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 1.25rem; }
     .tp-tab { padding:10px 14px;border:none;background:transparent;font-size:12.5px;font-weight:500;color:var(--text-muted);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s; }
     .tp-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
@@ -1070,28 +1072,9 @@
                 </div>
               </div>
 
-              <div class="ap-divider"></div>
 
-              <!-- Scan universe status -->
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-                <div style="display:flex;align-items:center;gap:7px;">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <span style="font-size:11.5px;color:var(--text-muted);">Scanning <strong style="color:var(--text);" id="ap-universe-count">~120</strong> instruments</span>
-                </div>
-                <span style="font-size:10px;color:var(--text-dim);">S&amp;P 50 · Crypto · eToro trending</span>
-              </div>
 
-              <!-- Signal feed -->
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <div class="pb-section-label" style="margin-bottom:0;">Signal feed</div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span style="font-size:10px;color:var(--text-dim);" id="ap-last-run"></span>
-                  <button id="ap-run-now-btn" onclick="apRunNow()" style="font-size:10.5px;font-weight:600;padding:3px 10px;background:var(--accent);color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;transition:opacity 0.15s;">▶ Run now</button>
-                </div>
-              </div>
-              <div id="ap-signal-feed" class="ap-signal-feed">
-                <div style="font-size:11px;color:var(--text-dim);font-style:italic;padding:8px 0;">No signals yet — enable autopilot to start scanning.</div>
-              </div>
+
 
             </div><!-- /tp-body-autopilot -->
 
@@ -1122,6 +1105,33 @@
           </div>
 
         </div><!-- /trading-layout -->
+
+      <!-- ── SIGNAL FEED ── -->
+      <div id="signal-feed-section" style="display:none;margin-top:1.5rem;">
+        <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;">
+          <!-- Header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span style="font-size:13px;font-weight:700;color:var(--text);">AI Signal Feed</span>
+              <span style="font-size:10px;color:var(--text-dim);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:1px 8px;">
+                Scanning <strong id="ap-universe-count" style="color:var(--text);">~70</strong> instruments · S&amp;P 50 · Crypto · eToro trending
+              </span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:10px;color:var(--text-dim);" id="ap-last-run"></span>
+              <button id="ap-run-now-btn" onclick="apRunNow()" style="font-size:11px;font-weight:600;padding:5px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:opacity 0.15s;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                Run now
+              </button>
+            </div>
+          </div>
+          <!-- Feed grid -->
+          <div id="ap-signal-feed" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;padding:14px 18px;max-height:420px;overflow-y:auto;">
+            <div style="grid-column:1/-1;font-size:11px;color:var(--text-dim);font-style:italic;padding:8px 0;">No signals yet — enable autopilot to start scanning.</div>
+          </div>
+        </div>
+      </div>
       </div><!-- /portfolio-section -->
 
       <!-- Transaction History -->
@@ -1250,6 +1260,8 @@
     apSubscribeSignals();
     apCheckEnabledDot();
     apLoadConfig();
+    const feedSection = $('signal-feed-section');
+    if (feedSection) feedSection.style.display = 'block';
     if (_etoroUserKey) loadPortfolio();
   }
 
@@ -2399,10 +2411,12 @@
   ══════════════════════════════════════════ */
   function switchTradeTab(tab) {
     ['trade','builder','autopilot'].forEach(t => {
-      $(`tp-tab-${t}`)?.classList.toggle('active', t === tab);
-      const body = $(`tp-body-${t}`);
+      $('tp-tab-' + t)?.classList.toggle('active', t === tab);
+      const body = $('tp-body-' + t);
       if (body) body.style.display = t === tab ? 'block' : 'none';
     });
+    const feedSection = $('signal-feed-section');
+    if (feedSection) feedSection.style.display = tab === 'autopilot' ? 'block' : 'none';
     if (tab === 'autopilot') apLoadConfig();
   }
 
@@ -3296,35 +3310,37 @@
   function apRenderFeed(signals) {
     const el = $('ap-signal-feed'); if (!el) return;
     if (!signals.length) {
-      el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);font-style:italic;padding:8px 0;">No signals yet — enable autopilot to start scanning.</div>';
+      el.innerHTML = '<div style="grid-column:1/-1;font-size:11px;color:var(--text-dim);font-style:italic;padding:8px 0;">No signals yet — enable autopilot and hit Run now to start scanning.</div>';
       return;
     }
     el.innerHTML = signals.map(s => {
-      const cls      = s.signal === 'BUY' ? 'buy' : s.signal === 'SELL' ? 'sell' : 'hold';
+      const cls       = s.signal === 'BUY' ? 'buy' : s.signal === 'SELL' ? 'sell' : 'hold';
+      const sigColor  = s.signal === 'BUY' ? 'var(--green)' : s.signal === 'SELL' ? 'var(--red)' : 'var(--text-dim)';
+      const borderCol = s.signal === 'BUY' ? 'var(--green)' : s.signal === 'SELL' ? 'var(--red)' : 'var(--border2)';
       const confColor = s.confidence === 'High' ? 'var(--green)' : s.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
-      const ts       = new Date(s.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-      const priceStr = s.price ? '$' + Number(s.price).toFixed(s.price < 10 ? 4 : 2) : '';
-      const execBtn  = (s.signal !== 'HOLD' && !s.executed)
-        ? `<button class="ap-exec-btn ${cls}" onclick="apExecuteSignal('${s.id}','${s.ticker}','${s.signal}',${s.price||0})">
-             ${s.signal === 'BUY' ? '↑ BUY' : '↓ SELL'}
-           </button>`
-        : s.executed
-          ? `<span class="ap-executed-badge">✓ Executed</span>`
-          : '';
-      return `
-        <div class="ap-signal-row ${cls}" id="ap-sig-${s.id}">
-          <div class="ap-signal-top">
-            <span class="ap-signal-ticker">${s.ticker}</span>
-            <span class="signal-pill signal-${s.signal}" style="font-size:10px;padding:2px 7px;">${s.signal}</span>
-            <span style="font-size:10px;color:${confColor};font-weight:600;">${s.confidence}</span>
-            <span class="ap-signal-price">${priceStr}</span>
+      const confBg    = s.confidence === 'High' ? 'var(--green-bg)' : 'var(--surface2)';
+      const ts        = new Date(s.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      const priceStr  = s.price ? '$' + Number(s.price).toFixed(s.price < 10 ? 4 : 2) : '';
+      const execBtn   = (s.signal !== 'HOLD' && !s.executed)
+        ? `<button class="ap-exec-btn ${cls}" onclick="apExecuteSignal('${s.id}','${s.ticker}','${s.signal}',${s.price||0})">${s.signal === 'BUY' ? '↑ BUY' : '↓ SELL'}</button>`
+        : s.executed ? '<span class="ap-executed-badge">✓ Done</span>' : '';
+      return `<div class="ap-signal-card" id="ap-sig-${s.id}" style="border-left-color:${borderCol};">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:14px;font-weight:800;font-family:var(--mono);color:var(--text);">${s.ticker}</span>
+          <span style="font-size:11px;font-weight:700;color:${sigColor};background:${confBg};border-radius:5px;padding:2px 8px;">${s.signal}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.45;margin-bottom:8px;min-height:32px;">${s.rationale || ''}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:10px;font-weight:600;color:${confColor};">${s.confidence}</span>
+            <span style="font-size:10px;color:var(--text-dim);">·</span>
+            <span style="font-size:10.5px;font-family:var(--mono);color:var(--text-muted);">${priceStr}</span>
+            <span style="font-size:10px;color:var(--text-dim);">·</span>
+            <span style="font-size:10px;color:var(--text-dim);">${ts}</span>
           </div>
-          <div class="ap-signal-rationale">${s.rationale || ''}</div>
-          <div class="ap-signal-foot">
-            <span class="ap-signal-ts">${ts}</span>
-            ${execBtn}
-          </div>
-        </div>`;
+          ${execBtn}
+        </div>
+      </div>`;
     }).join('');
   }
 
@@ -3396,24 +3412,34 @@
         if (!feed) return;
         const existing = feed.querySelector('[style*="font-style:italic"]');
         if (existing) existing.remove();
-        const cls       = s.signal === 'BUY' ? 'buy' : s.signal === 'SELL' ? 'sell' : 'hold';
+        const sigColor  = s.signal === 'BUY' ? 'var(--green)' : s.signal === 'SELL' ? 'var(--red)' : 'var(--text-dim)';
+        const borderCol = s.signal === 'BUY' ? 'var(--green)' : s.signal === 'SELL' ? 'var(--red)' : 'var(--border2)';
         const confColor = s.confidence === 'High' ? 'var(--green)' : s.confidence === 'Low' ? 'var(--text-dim)' : 'var(--text-muted)';
+        const confBg    = s.confidence === 'High' ? 'var(--green-bg)' : 'var(--surface2)';
         const ts        = new Date(s.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
         const priceStr  = s.price ? '$' + Number(s.price).toFixed(s.price < 10 ? 4 : 2) : '';
         const execBtn   = s.signal !== 'HOLD'
-          ? `<button class="ap-exec-btn ${cls}" onclick="apExecuteSignal('${s.id}','${s.ticker}','${s.signal}',${s.price||0})">${s.signal === 'BUY' ? '↑ BUY' : '↓ SELL'}</button>` : '';
+          ? `<button class="ap-exec-btn ${s.signal.toLowerCase()}" onclick="apExecuteSignal('${s.id}','${s.ticker}','${s.signal}',${s.price||0})">${s.signal === 'BUY' ? '↑ BUY' : '↓ SELL'}</button>` : '';
         const div = document.createElement('div');
-        div.className = `ap-signal-row ${cls}`;
+        div.className = 'ap-signal-card';
         div.id = `ap-sig-${s.id}`;
+        div.style.borderLeftColor = borderCol;
         div.innerHTML = `
-          <div class="ap-signal-top">
-            <span class="ap-signal-ticker">${s.ticker}</span>
-            <span class="signal-pill signal-${s.signal}" style="font-size:10px;padding:2px 7px;">${s.signal}</span>
-            <span style="font-size:10px;color:${confColor};font-weight:600;">${s.confidence}</span>
-            <span class="ap-signal-price">${priceStr}</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:800;font-family:var(--mono);color:var(--text);">${s.ticker}</span>
+            <span style="font-size:11px;font-weight:700;color:${sigColor};background:${confBg};border-radius:5px;padding:2px 8px;">${s.signal}</span>
           </div>
-          <div class="ap-signal-rationale">${s.rationale || ''}</div>
-          <div class="ap-signal-foot"><span class="ap-signal-ts">${ts}</span>${execBtn}</div>`;
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.45;margin-bottom:8px;">${s.rationale || ''}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-size:10px;font-weight:600;color:${confColor};">${s.confidence}</span>
+              <span style="font-size:10px;color:var(--text-dim);">·</span>
+              <span style="font-size:10.5px;font-family:var(--mono);color:var(--text-muted);">${priceStr}</span>
+              <span style="font-size:10px;color:var(--text-dim);">·</span>
+              <span style="font-size:10px;color:var(--text-dim);">${ts}</span>
+            </div>
+            ${execBtn}
+          </div>`;
         feed.insertBefore(div, feed.firstChild);
         // Update last run
         $('ap-last-run').textContent = 'Last run: ' + ts;
