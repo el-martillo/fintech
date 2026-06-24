@@ -327,6 +327,15 @@
     .pos-card:hover { background:var(--surface2); }
     .pos-card.pos-up   { border-left:3px solid var(--green); }
     .pos-card.pos-down { border-left:3px solid var(--red); }
+    /* Mobile: 2-row card layout */
+    @media (max-width:600px) {
+      .pos-card { flex-wrap:wrap; gap:6px 8px; padding:8px 10px 8px 12px; }
+      .pos-card .pos-col-name  { flex:1 1 calc(100% - 120px); min-width:0; }
+      .pos-card .pos-col-price { order:3; flex:1 1 80px; text-align:right; }
+      .pos-card .pos-col-pnl   { order:2; flex:0 0 90px; text-align:right; }
+      .pos-card .pos-col-signal{ order:4; flex:0 0 55px; }
+      .pos-card .pos-col-actions{ order:5; flex:0 0 auto; margin-left:auto; }
+    }
     .pos-top { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px; }
     .pos-ticker { font-size:15px;font-weight:700;font-family:var(--mono);color:var(--text); }
     .pos-name { font-size:11px;color:var(--text-dim);margin-top:1px; }
@@ -1551,25 +1560,30 @@
     const slLabel  = slDist !== null ? slDist.toFixed(1) + '% to SL' : '';
 
     card.innerHTML = `
-      <div style="flex:1;min-width:0;">
+      <!-- col1: ticker + name -->
+      <div class="pos-col-name" style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
           <span class="pos-ticker" style="font-size:13px;">...</span>
           ${dirPill}${levBadge}
         </div>
         <div class="pos-name" style="font-size:10.5px;color:var(--text-dim);font-style:italic;margin-top:1px;">Resolving...${openDateStr ? ` · ${openDateStr}` : ''}${daysStr ? ` <span style="font-style:normal;">(${daysStr})</span>` : ''}</div>
       </div>
-      <div style="text-align:right;flex-shrink:0;min-width:90px;">
-        <div style="font-size:12px;font-weight:600;color:var(--text);" id="live-price-${posId}">$${curRate.toFixed(curRate<10?4:2)}</div>
-        <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">$${amount.toFixed(0)} <span class="pos-port-pct" style="color:#60a5fa;font-weight:600;"></span>${slLabel ? ` · <span style="color:${slColor};">${slLabel}</span>` : ''}</div>
-      </div>
-      <div class="pos-pnl" style="text-align:right;flex-shrink:0;min-width:58px;">
+      <!-- col2: P&L (shown first on mobile row 1 right side) -->
+      <div class="pos-col-pnl pos-pnl" style="text-align:right;flex-shrink:0;min-width:58px;">
         <div class="pos-pnl-value" style="font-size:13px;font-weight:700;color:${pnlColor};">${sign}$${Math.abs(pnl).toFixed(2)}</div>
         <div class="pos-pnl-pct"   style="font-size:10.5px;color:${pnlColor};">${sign}${Math.abs(pnlPct).toFixed(2)}%</div>
       </div>
-      <div class="pos-signal" id="${signalId}" style="flex-shrink:0;min-width:55px;text-align:center;padding:0;">
+      <!-- col3: live price + size (row 2 on mobile) -->
+      <div class="pos-col-price" style="text-align:right;flex-shrink:0;min-width:80px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);" id="live-price-${posId}">$${curRate.toFixed(curRate<10?4:2)}</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">$${amount.toFixed(0)} <span class="pos-port-pct" style="color:#60a5fa;font-weight:600;"></span>${slLabel ? ` · <span style="color:${slColor};">${slLabel}</span>` : ''}</div>
+      </div>
+      <!-- col4: signal -->
+      <div class="pos-col-signal pos-signal" id="${signalId}" style="flex-shrink:0;min-width:55px;text-align:center;padding:0;">
         <span class="pos-signal-loading"><span class="pb-spin-inline"></span></span>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+      <!-- col5: actions -->
+      <div class="pos-col-actions" style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
         ${posId ? `<button class="pos-btn close-btn" id="closebtn-${posId}" onclick="confirmClose('${posId}','${instrId}','...',${pnl.toFixed(2)},${amount.toFixed(2)})">Close</button>` : ''}
         <button class="pos-btn pos-refresh-btn" id="refreshbtn-${posId}" onclick="enrichPositionCard(JSON.parse(decodeURIComponent('${posJson}')))" title="Refresh signal">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
