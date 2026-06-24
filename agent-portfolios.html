@@ -3199,11 +3199,13 @@
 
   /* ── Config UI helpers ── */
   function apUpdateEnabledUI(enabled, fullAuto) {
-    const track = document.querySelector('.ap-toggle-track');
-    const label = $('ap-enabled-label');
-    const dot   = $('ap-tab-dot');
+    const tracks = document.querySelectorAll('.ap-toggle-track');
+    const label  = $('ap-enabled-label');
+    const dot    = $('ap-tab-dot');
     const banner = $('ap-auto-banner');
-    if (track) track.classList.toggle('on', enabled);
+    // First track = main autopilot on/off, second track = full-auto
+    if (tracks[0]) tracks[0].classList.toggle('on', enabled);
+    if (tracks[1]) tracks[1].classList.toggle('on', !!fullAuto);
     if (label) { label.textContent = enabled ? 'Autopilot ON' : 'Autopilot off'; label.classList.toggle('on', enabled); }
     if (dot)   dot.style.display = enabled ? 'inline-block' : 'none';
     if (banner) banner.style.display = (enabled && fullAuto) ? 'flex' : 'none';
