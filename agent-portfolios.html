@@ -3206,9 +3206,10 @@
     }
 
     // Latest signals
-    const { data: sigs } = await db.from('autopilot_signals')
+    const { data: sigs, error: sigErr } = await db.from('autopilot_signals')
       .select('*').eq('user_id', _currentUser.id)
       .order('ts', { ascending: false }).limit(20);
+    console.log('[apLoadConfig] signals:', sigs?.length, 'error:', sigErr?.message);
     apRenderFeed(sigs || []);
   }
 
