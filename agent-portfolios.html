@@ -1115,7 +1115,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
               <span style="font-size:13px;font-weight:700;color:var(--text);">AI Signal Feed</span>
               <span style="font-size:10px;color:var(--text-dim);background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:1px 8px;">
-                Scanning <strong id="ap-universe-count" style="color:var(--text);">~70</strong> instruments · S&amp;P 50 · Crypto · eToro trending
+                Scanning <strong id="ap-universe-count" style="color:var(--text);">—</strong> instruments · <span id="ap-universe-label">S&amp;P 500 · Crypto · eToro trending</span>
               </span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -3167,6 +3167,7 @@
       }
     } catch(e) {
       $('ap-last-run').textContent = 'Error: ' + e.message;
+      apShowFeedError('Run failed: ' + e.message);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '▶ Run now'; btn.style.opacity = '1'; }
     }
@@ -3202,15 +3203,33 @@
       const summaryEl = $('ap-settings-summary');
       if (summaryEl) summaryEl.textContent = `$${cfg.amount_usd ?? 100} · ${cfg.interval_minutes ?? 5}min`;
       apUpdateEnabledUI(cfg.enabled, cfg.full_auto);
-      if (cfg.last_run) $('ap-last-run').textContent = 'Last run: ' + new Date(cfg.last_run).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      if (cfg.last_run) $('ap-last-run').textContent = 'Last run: ' + new Date(cfg.last_run).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      // Universe count from DB
+      const countEl = $('ap-universe-count');
+      const labelEl = $('ap-universe-label');
+      if (countEl) countEl.textContent = cfg.last_universe_count ? String(cfg.last_universe_count) : '—';
+      if (labelEl) {
+        const parts = [];
+        parts.push('S&P 500');
+        if (cfg.last_universe_count > 100) parts.push('Sectors');
+        parts.push('Crypto');
+        parts.push('eToro trending');
+        labelEl.innerHTML = parts.join(' · ');
+      }
+      // Batch progress
+      const batchEl = $('ap-batch-progress');
+      if (batchEl && cfg.last_universe_count && cfg.batch_offset != null) {
+        const pct = Math.round((cfg.batch_offset / cfg.last_universe_count) * 100);
+        batchEl.textContent = 'Batch ' + cfg.batch_offset + '/' + cfg.last_universe_count + ' (' + pct + '%)';
+      }
     }
 
     // Latest signals
     const { data: sigs, error: sigErr } = await db.from('autopilot_signals')
       .select('*').eq('user_id', _currentUser.id)
       .order('ts', { ascending: false }).limit(20);
-    console.log('[apLoadConfig] signals:', sigs?.length, 'error:', sigErr?.message);
-    apRenderFeed(sigs || []);
+    if (sigErr) apShowFeedError('DB error: ' + sigErr.message);
+    else apRenderFeed(sigs || []);
   }
 
   /* ── Config UI helpers ── */
@@ -3398,6 +3417,14 @@
   }
 
   /* ── Subscribe to realtime signal inserts ── */
+  function apShowFeedError(msg) {
+    const el = $('ap-signal-feed'); if (!el) return;
+    el.innerHTML = '<div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+      + '<span style="font-size:11px;color:var(--red);">' + msg + '</span>'
+      + '</div>';
+  }
+
   function apSubscribeSignals() {
     if (!_currentUser) return;
     db.channel('ap-signals')
